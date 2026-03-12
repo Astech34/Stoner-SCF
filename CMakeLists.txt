@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(hubbard_tbm CXX)
+project(Stoner-SCF CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -22,15 +22,15 @@ CPMAddPackage(
 # OpenMP
 find_package(OpenMP REQUIRED)
 
-add_executable(hubbard_tbm main.cpp)
+add_executable(Stoner-SCF main.cpp)
 
-target_link_libraries(hubbard_tbm
+target_link_libraries(Stoner-SCF
   PRIVATE
     Eigen3::Eigen
     OpenMP::OpenMP_CXX
 )
 
-target_compile_options(hubbard_tbm PRIVATE
+target_compile_options(Stoner-SCF PRIVATE
   -O3
   -march=native
 )

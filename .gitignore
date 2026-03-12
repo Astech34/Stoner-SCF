@@ -1,0 +1,6 @@
+# Ignore any directory named build
+build/
+# Ignore any directory starting with build
+build*/
+# Standard CMake ignore
+CMakeFiles/
