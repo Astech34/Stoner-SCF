@@ -1,24 +1,53 @@
 #include <iostream>
-#include <Eigen/Dense>
+#include <iomanip>
+#include <cmath>
+#include "hamiltonian.h"
+#include "scf.h"
 
 int main() {
-    // Test Eigen: build a simple 6x6 complex Hermitian matrix and diagonalize it
-    using Mat6 = Eigen::Matrix<std::complex<double>, 6, 6>;
+    // --- Parameters ---
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0.1;
+    p.t2      = 0.1;
+    p.lam     = 0.1;
+    p.U       = 2.0;
 
-    Mat6 H = Mat6::Zero();
-    H.diagonal() << 1.0, 2.0, 3.0, 4.0, 5.0, 6.0;
+    const double S        = 0.2;   // initial Stoner magnetisation guess
+    const double T        = 0.05;  // temperature (in units of t1)
+    const double N_target = 5.0;   // target electron filling
+    const int    grid     = 200;   // k-mesh size (grid x grid)
 
-    Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
+    // --- Print parameters ---
+    std::cout << std::fixed << std::setprecision(4);
+    std::cout << "=== Stoner-SCF ===\n";
+    std::cout << "Parameters:\n";
+    std::cout << "  t1      = " << p.t1      << "\n";
+    std::cout << "  t_delta = " << p.t_delta << "\n";
+    std::cout << "  t2      = " << p.t2      << "\n";
+    std::cout << "  lam     = " << p.lam     << "\n";
+    std::cout << "  U       = " << p.U       << "\n";
+    std::cout << "  S       = " << S         << "\n";
+    std::cout << "  T       = " << T         << "\n";
+    std::cout << "  N       = " << N_target  << "\n";
+    std::cout << "  grid    = " << grid << " x " << grid << "\n\n";
 
-    std::cout << "Eigenvalues:\n" << solver.eigenvalues().transpose() << "\n";
-    std::cout << "\nEigen is working correctly.\n";
+    // --- Diagonalise over k-mesh ---
+    std::cout << "Computing eigensystem..." << std::flush;
+    const Eigensystem sys = compute_eigensystem(S, grid, p);
+    std::cout << " done.\n";
 
-    // Test OpenMP
-    #ifdef _OPENMP
-        std::cout << "OpenMP is enabled. Max threads: " << omp_get_max_threads() << "\n";
-    #else
-        std::cout << "OpenMP is NOT enabled.\n";
-    #endif
+    // --- Find chemical potential ---
+    std::cout << "Finding chemical potential..." << std::flush;
+    const double mu = find_mu(sys, grid, T, N_target);
+    std::cout << " done.\n\n";
+
+    if (std::isnan(mu)) {
+        std::cerr << "ERROR: Could not find chemical potential — Brent's method failed.\n";
+        return 1;
+    }
+
+    std::cout << "Chemical potential mu = " << mu << "\n";
 
     return 0;
 }
