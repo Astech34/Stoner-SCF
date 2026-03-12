@@ -2,6 +2,7 @@
 #include <cmath>
 #include <limits>
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 #include <omp.h>
 
@@ -185,4 +186,35 @@ double calculateS(double S, int grid_size, double T, double N_target, const Para
     const double n_dn = densities.tail<3>().sum();
 
     return (n_up - n_dn) / 2.0;
+}
+
+// -----------------------------------------------------------------------------
+// runSelfCalc — self-consistent loop with linear mixing
+// S_new = alpha * S_calc + (1 - alpha) * S_current
+// -----------------------------------------------------------------------------
+double runSelfCalc(double S0, double alpha, int grid_size,
+                   double T, double N_target, const Params& p) {
+    constexpr int    max_iter = 20;
+    constexpr double tol      = 1e-5;
+ 
+    double S_current = S0;
+ 
+    for (int i = 0; i < max_iter; i++) {
+        const double S_calc = calculateS(S_current, grid_size, T, N_target, p);
+        const double diff   = std::abs(S_calc - S_current);
+ 
+        std::cout << "Iteration " << i
+                  << ", S = "    << std::fixed << std::setprecision(6) << S_current
+                  << ", Difference: " << diff << "\n";
+ 
+        if (diff < tol) {
+            std::cout << "Self-consistency reached!\n";
+            break;
+        }
+ 
+        S_current = alpha * S_calc + (1.0 - alpha) * S_current;
+    }
+ 
+    std::cout << "Final S: " << S_current << "\n";
+    return S_current;
 }

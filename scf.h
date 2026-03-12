@@ -23,3 +23,7 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size = 200, const Params
 // Compute new S from a single diagonalisation pass — core SCF step
 double calculateS(double S, int grid_size = 200, double T = 0.05,
                   double N_target = 5.0, const Params& p = Params{});
+
+// Self-consistent loop with linear mixing
+double runSelfCalc(double S0 = 0.2, double alpha = 0.2, int grid_size = 200,
+                   double T = 0.05, double N_target = 5.0, const Params& p = Params{});
