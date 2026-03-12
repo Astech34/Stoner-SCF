@@ -34,7 +34,7 @@ int main() {
 
     // --- Diagonalise over k-mesh ---
     std::cout << "Computing eigensystem..." << std::flush;
-    const Eigensystem sys = compute_eigensystem(S, grid, p);
+    const Eigensystem sys = compute_eigensystem_grid(S, grid, p);
     std::cout << " done.\n";
 
     // --- Find chemical potential ---
