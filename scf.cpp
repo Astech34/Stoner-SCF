@@ -1,6 +1,7 @@
 #include "scf.h"
 #include <cmath>
 #include <limits>
+#include <iostream>
 #include <stdexcept>
 #include <omp.h>
 
@@ -13,22 +14,22 @@ double brent(std::function<double(double)> f, double a, double b,
              double tol, int max_iter) {
     double fa = f(a), fb = f(b);
     assert(fa * fb < 0.0 && "brent: bracket [a,b] must straddle zero");
- 
+
     // Ensure |f(b)| <= |f(a)| — b is always the best guess
     if (std::abs(fa) < std::abs(fb)) {
         std::swap(a, b);
         std::swap(fa, fb);
     }
- 
+
     double c  = a, fc = fa;
     double s  = b, fs = fb;
     double d  = 0.0;
     bool   mflag = true;  // bisection was used last iteration
- 
+
     for (int i = 0; i < max_iter; i++) {
         if (std::abs(b - a) < tol || std::abs(fs) < std::numeric_limits<double>::epsilon())
             return s;
- 
+
         if (fa != fc && fb != fc) {
             // Inverse quadratic interpolation
             s = a*fb*fc / ((fa-fb)*(fa-fc))
@@ -38,7 +39,7 @@ double brent(std::function<double(double)> f, double a, double b,
             // Secant method
             s = b - fb * (b - a) / (fb - fa);
         }
- 
+
         // Conditions to fall back to bisection
         const double mid = (a + b) / 2.0;
         const bool cond1 = !((3*a + b)/4.0 < s && s < b) && !((3*a + b)/4.0 > s && s > b);
@@ -46,31 +47,31 @@ double brent(std::function<double(double)> f, double a, double b,
         const bool cond3 = !mflag && std::abs(s - b) >= std::abs(c - d) / 2.0;
         const bool cond4 =  mflag && std::abs(b - c) < tol;
         const bool cond5 = !mflag && std::abs(c - d) < tol;
- 
+
         if (cond1 || cond2 || cond3 || cond4 || cond5) {
             s     = mid;
             mflag = true;
         } else {
             mflag = false;
         }
- 
+
         fs = f(s);
         d  = c;
         c  = b; fc = fb;
- 
+
         if (fa * fs < 0.0) { b = s; fb = fs; }
         else               { a = s; fa = fs; }
- 
+
         // Keep b as the best guess
         if (std::abs(fa) < std::abs(fb)) {
             std::swap(a, b);
             std::swap(fa, fb);
         }
     }
- 
+
     throw std::runtime_error("brent: failed to converge within max_iter");
 }
- 
+
 // -----------------------------------------------------------------------------
 // find_mu — mirrors scipy brentq on NTotal(mu) - N_target
 // -----------------------------------------------------------------------------
@@ -78,18 +79,18 @@ double find_mu(const Eigensystem& sys, int grid_size, double T, double N_target)
     // Flatten all eigenvalues into one vector for easy min/max and summation
     const int N_k     = grid_size * grid_size;
     const int N_bands = 6;
- 
+
     double e_min =  std::numeric_limits<double>::infinity();
     double e_max = -std::numeric_limits<double>::infinity();
- 
+
     for (const auto& ev : sys.evals) {
         e_min = std::min(e_min, ev.minCoeff());
         e_max = std::max(e_max, ev.maxCoeff());
     }
- 
+
     const double mu_min = e_min - 5.0 * T;
     const double mu_max = e_max + 5.0 * T;
- 
+
     // NTotal(mu): Fermi-Dirac sum over all k-points and bands
     auto NTotal = [&](double mu) -> double {
         double n = 0.0;
@@ -100,7 +101,7 @@ double find_mu(const Eigensystem& sys, int grid_size, double T, double N_target)
             }
         return n / static_cast<double>(N_k);
     };
- 
+
     try {
         return brent([&](double mu) { return NTotal(mu) - N_target; }, mu_min, mu_max);
     } catch (const std::runtime_error&) {
@@ -122,7 +123,6 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
 
     // Precompute SOC once — it's k-independent
     const Mat6 Hsoc = SOC(p.lam);
-    const Mat6 Hubbard = HubbardU(S, p.U);
 
     #pragma omp parallel for schedule(static)
     for (int idx = 0; idx < N; idx++) {
@@ -133,7 +133,7 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
         const double ky = k_lin[iy];
 
         // Build Hamiltonian for this k-point
-        const Mat6 H = H0(kx, ky, p) + Hsoc + Hubbard;
+        const Mat6 H = H0(kx, ky, p) + Hsoc + HubbardU(S, p.U);
 
         // Diagonalize — SelfAdjointEigenSolver is not shared, safe per thread
         Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
@@ -143,4 +143,46 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
     }
 
     return result;
+}
+
+// -----------------------------------------------------------------------------
+// calculateS — one SCF step: diagonalise, find mu, compute new magnetisation
+// mirrors the Python calculateS function
+// -----------------------------------------------------------------------------
+double calculateS(double S, int grid_size, double T, double N_target, const Params& p) {
+    const int N_k     = grid_size * grid_size;
+    const int N_bands = 6;
+
+    // --- single diagonalisation pass ---
+    const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
+
+    const double mu = find_mu(sys, grid_size, T, N_target);
+
+    if (std::isnan(mu)) {
+        std::cout << "Could not find mu, skipping update.\n";
+        return S;
+    }
+
+    // Accumulate spin-resolved orbital densities over k-points and bands
+    // n[orb] = (1/N_k) * sum_k sum_n |<orb|n,k>|^2 * f(E_nk)
+    // spin-up orbitals: 0,1,2 — spin-down orbitals: 3,4,5 (spin-major ordering)
+    Eigen::Vector<double, 6> densities = Eigen::Vector<double, 6>::Zero();
+
+    for (int idx = 0; idx < N_k; idx++) {
+        for (int band = 0; band < N_bands; band++) {
+            const double x   = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
+            const double f   = 1.0 / (std::exp(x) + 1.0);
+
+            // |<orb|band,k>|^2 * f(E) accumulated per orbital
+            for (int orb = 0; orb < N_bands; orb++)
+                densities[orb] += std::norm(sys.evecs[idx](orb, band)) * f;
+        }
+    }
+
+    densities /= static_cast<double>(N_k);
+
+    const double n_up = densities.head<3>().sum();
+    const double n_dn = densities.tail<3>().sum();
+
+    return (n_up - n_dn) / 2.0;
 }

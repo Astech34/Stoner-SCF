@@ -5,36 +5,46 @@
 #include "scf.h"
 
 int main() {
-    // --- Parameters ---
+       // --- Parameters ---
     Params p;
     p.t1      = 1.0;
     p.t_delta = 0.1;
     p.t2      = 0.1;
     p.lam     = 0.1;
     p.U       = 2.0;
-
-    const double S        = 0.2;   // initial Stoner magnetisation guess
+ 
+    const double S0       = 0.2;   // initial Stoner magnetisation guess
     const double T        = 0.05;  // temperature (in units of t1)
     const double N_target = 5.0;   // target electron filling
     const int    grid     = 200;   // k-mesh size (grid x grid)
-
+ 
     // --- Print parameters ---
-    std::cout << std::fixed << std::setprecision(4);
-    std::cout << "=== Stoner-SCF ===\n";
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "=== Stoner-SCF: single step test ===\n";
     std::cout << "Parameters:\n";
     std::cout << "  t1      = " << p.t1      << "\n";
     std::cout << "  t_delta = " << p.t_delta << "\n";
     std::cout << "  t2      = " << p.t2      << "\n";
     std::cout << "  lam     = " << p.lam     << "\n";
     std::cout << "  U       = " << p.U       << "\n";
-    std::cout << "  S       = " << S         << "\n";
+    std::cout << "  S0      = " << S0        << "\n";
     std::cout << "  T       = " << T         << "\n";
     std::cout << "  N       = " << N_target  << "\n";
     std::cout << "  grid    = " << grid << " x " << grid << "\n\n";
 
+    // --- Single SCF step ---
+    std::cout << "Running single calculateS step..." << std::flush;
+    const double S_new = calculateS(S0, grid, T, N_target, p);
+    std::cout << " done.\n\n";
+ 
+    std::cout << "  S_input  = " << S0    << "\n";
+    std::cout << "  S_output = " << S_new << "\n";
+    std::cout << "  diff     = " << std::abs(S_new - S0) << "\n";
+
+    /*
     // --- Diagonalise over k-mesh ---
-    std::cout << "Computing eigensystem..." << std::flush;
-    const Eigensystem sys = compute_eigensystem_grid(S, grid, p);
+    std::cout << "Computing eigensystem over grid..." << std::flush;
+    const Eigensystem sys = compute_eigensystem_grid(S0, grid, p);
     std::cout << " done.\n";
 
     // --- Find chemical potential ---
@@ -48,6 +58,7 @@ int main() {
     }
 
     std::cout << "Chemical potential mu = " << mu << "\n";
+    */
 
     return 0;
 }
