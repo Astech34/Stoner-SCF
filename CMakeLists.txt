@@ -22,7 +22,7 @@ CPMAddPackage(
 # OpenMP
 find_package(OpenMP REQUIRED)
 
-add_executable(Stoner-SCF main.cpp)
+add_executable(Stoner-SCF main.cpp hamiltonian.cpp scf.cpp)
 
 target_link_libraries(Stoner-SCF
   PRIVATE
