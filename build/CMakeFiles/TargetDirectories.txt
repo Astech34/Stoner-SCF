@@ -1,0 +1,2 @@
+/home/cmp/Documents/Github/Stoner-SCF/build/CMakeFiles/edit_cache.dir
+/home/cmp/Documents/Github/Stoner-SCF/build/CMakeFiles/rebuild_cache.dir
