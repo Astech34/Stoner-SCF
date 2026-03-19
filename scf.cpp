@@ -200,7 +200,9 @@ double runSelfCalc(double S0, double alpha, int grid_size,
     constexpr double tol      = 1e-5;
  
     double S_current = S0;
- 
+                    
+    bool converged = false;
+
     for (int i = 0; i < max_iter; i++) {
         const double S_calc = calculateS(S_current, grid_size, T, N_target, p);
         const double diff   = std::abs(S_calc - S_current);
@@ -211,6 +213,7 @@ double runSelfCalc(double S0, double alpha, int grid_size,
  
         if (diff < tol) {
             std::cout << "Self-consistency reached!\n";
+            converged = true;
             break;
         }
  
