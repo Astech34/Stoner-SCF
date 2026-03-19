@@ -4,3 +4,8 @@ build/
 build*/
 # Standard CMake ignore
 CMakeFiles/
+
+out/
+out*/
+
+*.csv

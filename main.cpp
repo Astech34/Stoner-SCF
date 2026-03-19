@@ -1,5 +1,7 @@
 #include <iostream>
 #include <iomanip>
+#include <filesystem>
+#include <fstream>
 #include "hamiltonian.h"
 #include "scf.h"
 
@@ -9,8 +11,8 @@ int main() {
     p.t1      = 1.0;
     p.t_delta = 0.1;
     p.t2      = 0.1;
-    p.lam     = 0.1;
-    p.U       = 4.0;
+    p.lam     = 0.0;
+    p.U       = 0.5;
 
     const double S0       = 0.2;
     const double alpha    = 0.2;
@@ -34,7 +36,39 @@ int main() {
     std::cout << "  grid    = " << grid << " x " << grid << "\n\n";
 
     // --- Run SCF loop ---
-    const double S_final = runSelfCalc(S0, alpha, grid, T, N_target, p);
+    //const double S_final = runSelfCalc(S0, alpha, grid, T, N_target, p);
+
+        // --- U sweep ---
+    const int    N_points = 50;
+    const double U_min    = 0.0;
+    const double U_max    = 4.0;
+ 
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << "=== Stoner-SCF: U sweep ===\n";
+    std::cout << "U in [" << U_min << ", " << U_max << "], "
+              << N_points << " points\n\n";
+ 
+    // --- Output file ---
+    std::filesystem::create_directories("out");
+    std::ofstream outfile("out/stoner_U_sweep.csv");
+    outfile << std::fixed << std::setprecision(6);
+    outfile << "U,S_final\n";
+ 
+    for (int i = 0; i < N_points; i++) {
+        p.U = U_min + i * (U_max - U_min) / (N_points - 1);
+ 
+        std::cout << "--- U = " << p.U << " (" << i+1 << "/" << N_points << ") ---\n";
+ 
+        const double S_final = runSelfCalc(S0, alpha, grid, T, N_target, p);
+ 
+        outfile << p.U << "," << S_final << "\n";
+        outfile.flush();  // write after each point in case of early exit
+ 
+        std::cout << "\n";
+    }
+ 
+    outfile.close();
+    std::cout << "Results saved to stoner_U_sweep.csv\n";
 
     return 0;
 }
