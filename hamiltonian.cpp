@@ -1,7 +1,9 @@
 #include "hamiltonian.h"
+#include "scf.h"
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <utility>
 #include <iomanip>
 #include <string>
 #include <vector>
@@ -98,7 +100,7 @@ Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
 // Columns: path_index, kx, ky, band_0, band_1, ..., band_5
 // -----------------------------------------------------------------------------
 void save_band_structure(double S, int n_points, const Params& p,
-                         const std::string& filename) {
+                         const std::string& filename, double mu) {
     // High-symmetry points for square lattice
     // Γ = (0,0)  X = (π,0)  M = (π,π)
     struct KPoint { double kx, ky; const char* label; };
@@ -109,65 +111,53 @@ void save_band_structure(double S, int n_points, const Params& p,
         {0.0,   0.0,  "G"}
     };
 
-    // Build the full path by linearly interpolating between corners
     struct PathPoint { double kx, ky; double path_coord; std::string label; };
     std::vector<PathPoint> path;
     path.reserve(n_points);
 
-    // Total number of segments
-    const int n_seg    = static_cast<int>(corners.size()) - 1;
+    const int n_seg       = static_cast<int>(corners.size()) - 1;
     const int pts_per_seg = n_points / n_seg;
-
     double path_coord = 0.0;
 
     for (int seg = 0; seg < n_seg; seg++) {
         const double kx0 = corners[seg].kx,   ky0 = corners[seg].ky;
         const double kx1 = corners[seg+1].kx, ky1 = corners[seg+1].ky;
-
-        // Segment length in k-space (for a physically meaningful x-axis)
         const double seg_len = std::sqrt((kx1-kx0)*(kx1-kx0) + (ky1-ky0)*(ky1-ky0));
         const double d_path  = seg_len / pts_per_seg;
 
-        // Exclude endpoint — it becomes the start of the next segment
         for (int i = 0; i < pts_per_seg; i++) {
             const double t  = static_cast<double>(i) / pts_per_seg;
             const double kx = kx0 + t * (kx1 - kx0);
             const double ky = ky0 + t * (ky1 - ky0);
-
-            // Label only the corner points
             std::string lbl = (i == 0) ? corners[seg].label : "";
             path.push_back({kx, ky, path_coord, lbl});
             path_coord += d_path;
         }
     }
-
     // Add the final Γ point
     path.push_back({corners.back().kx, corners.back().ky, path_coord, corners.back().label});
 
-    // Precompute SOC once
     const Mat6 Hsoc = SOC(p.lam);
 
-    // Open CSV
     std::ofstream file(filename);
     if (!file.is_open())
         throw std::runtime_error("save_band_structure: could not open " + filename);
 
-    // Header
-    file << "path_coord,kx,ky,label";
+    // Header — mu column added
+    file << "path_coord,kx,ky,label,mu";
     for (int b = 0; b < 6; b++)
         file << ",band_" << b;
     file << "\n";
+
     file << std::fixed << std::setprecision(8);
 
-    // Diagonalise and write
     for (const auto& pt : path) {
         const Mat6 H = H0(pt.kx, pt.ky, p) + Hsoc + HubbardU(S, p.U);
-
         Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
         const auto& evals = solver.eigenvalues();
 
         file << pt.path_coord << "," << pt.kx << "," << pt.ky << ","
-             << pt.label;
+             << pt.label << "," << mu;
         for (int b = 0; b < 6; b++)
             file << "," << evals[b];
         file << "\n";
@@ -175,4 +165,58 @@ void save_band_structure(double S, int n_points, const Params& p,
 
     std::cout << "Band structure written to " << filename
               << " (" << path.size() << " k-points)\n";
+}
+// -----------------------------------------------------------------------------
+// save_dos — compute DOS on a fine energy grid and write to CSV
+void save_dos(double S, int grid_size, double T, double N_target,
+              const Params& p, const std::string& filename,
+              int n_energy_points, double sigma)  {
+
+    // --- Compute eigensystem on k-grid ---
+    const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
+    const double mu = find_mu(sys, grid_size, T, N_target);
+
+    // --- Energy axis: span all eigenvalues with some padding ---
+    const int N_k     = grid_size * grid_size;
+    const int N_bands = 6;
+
+    double e_min =  std::numeric_limits<double>::infinity();
+    double e_max = -std::numeric_limits<double>::infinity();
+    for (const auto& ev : sys.evals) {
+        e_min = std::min(e_min, ev.minCoeff());
+        e_max = std::max(e_max, ev.maxCoeff());
+    }
+    const double padding = 5.0 * sigma;
+    const double e_start = e_min - padding;
+    const double e_end   = e_max + padding;
+    const double de      = (e_end - e_start) / (n_energy_points - 1);
+
+    // --- Gaussian broadening ---
+    // DOS(E) = (1 / N_k) * sum_{k,n} (1 / (sigma * sqrt(2pi))) * exp(-0.5 * ((E - E_nk) / sigma)^2)
+    const double norm = 1.0 / (sigma * std::sqrt(2.0 * M_PI));
+    std::vector<double> energy(n_energy_points);
+    std::vector<double> dos(n_energy_points, 0.0);
+
+    for (int ie = 0; ie < n_energy_points; ie++) {
+        energy[ie] = e_start + ie * de;
+        for (int idx = 0; idx < N_k; idx++) {
+            for (int b = 0; b < N_bands; b++) {
+                const double x = (energy[ie] - sys.evals[idx][b]) / sigma;
+                dos[ie] += norm * std::exp(-0.5 * x * x);
+            }
+        }
+        dos[ie] /= static_cast<double>(N_k);
+    }
+
+    // --- Write to CSV ---
+    std::ofstream file(filename);
+    if (!file.is_open())
+        throw std::runtime_error("save_dos: could not open " + filename);
+
+    file << std::fixed << std::setprecision(8);
+    file << "energy,dos,mu\n";
+    for (int ie = 0; ie < n_energy_points; ie++)
+        file << energy[ie] << "," << dos[ie] << "," << mu << "\n";
+
+    std::cout << "DOS written to " << filename << "\n";
 }

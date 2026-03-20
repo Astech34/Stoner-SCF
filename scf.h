@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <cassert>
+#include <utility>
 
 struct Eigensystem {
     std::vector<Eigen::Vector<double, 6>> evals; // (grid_size^2, 6)
@@ -20,10 +21,8 @@ double find_mu(const Eigensystem& sys, int grid_size = 200,
 
 Eigensystem compute_eigensystem_grid(double S, int grid_size = 200, const Params& p = Params{});
 
-// Compute new S from a single diagonalisation pass — core SCF step
-double calculateS(double S, int grid_size = 200, double T = 0.05,
-                  double N_target = 5.0, const Params& p = Params{});
+// Calculate Stoner parameter S for a given guess, and the corresponding chemical potential
+std::pair<double, double> calculateS(double S, int grid_size, double T, double N_target, const Params& p);
 
-// Self-consistent loop with linear mixing
-double runSelfCalc(double S0 = 0.2, double alpha = 0.2, int grid_size = 200,
-                   double T = 0.05, double N_target = 5.0, const Params& p = Params{});
+// Run the self-consistent loop with linear mixing
+std::pair<double, double> runSelfCalc(double S0, double alpha, int grid_size, double T, double N_target, const Params& p);

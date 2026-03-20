@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <complex>
+#include <utility>
 
 using Mat6 = Eigen::Matrix<std::complex<double>, 6, 6>;
 using cd   = std::complex<double>;
@@ -27,5 +28,11 @@ Mat6 HubbardU(double S, double U = 2.0);
 // Full single-layer Hamiltonian
 Mat6 singleLayer(double kx, double ky, double S, const Params& p = Params{});
 
+// Save band structure along high-symmetry path to CSV (for plotting in Python)
 void save_band_structure(double S, int n_points, const Params& p,
-                         const std::string& filename);
+                         const std::string& filename, double mu);
+                         
+// Save DOS on a fine energy grid to CSV (for plotting in Python)
+void save_dos(double S, int grid_size, double T, double N_target,
+              const Params& p, const std::string& filename,
+              int n_energy_points = 500, double sigma = 0.05);

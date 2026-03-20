@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <filesystem>
+#include <utility>
 #include <fstream>
 #include "hamiltonian.h"
 #include "scf.h"
@@ -46,6 +47,7 @@ int main() {
     // --- Output directories ---
     std::filesystem::create_directories("out");
     std::filesystem::create_directories("out/bs_plots");
+    std::filesystem::create_directories("out/dos");
 
     std::ofstream outfile("out/stoner_U_sweep.csv");
     outfile << std::fixed << std::setprecision(6);
@@ -56,7 +58,7 @@ int main() {
 
         std::cout << "--- U = " << p.U << " (" << i+1 << "/" << N_points << ") ---\n";
 
-        const double S_final = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        auto [S_final, mu] = runSelfCalc(S0, alpha, grid, T, N_target, p);
 
         outfile << p.U << "," << S_final << "\n";
         outfile.flush();
@@ -68,8 +70,15 @@ int main() {
                     << std::setw(3) << std::setfill('0') << i
                     << "_U" << std::fixed << std::setprecision(3) << p.U
                     << ".csv";
+        
+        std::ostringstream dos_filename;
+        dos_filename << "out/dos/dos_"
+                     << std::setw(3) << std::setfill('0') << i
+                     << "_U" << std::fixed << std::setprecision(3) << p.U
+                     << ".csv";
 
-        save_band_structure(S_final, 300, p, bs_filename.str());
+        save_band_structure(S_final, 300, p, bs_filename.str(), mu);
+        save_dos(S_final, grid, T, N_target, p, dos_filename.str());
 
         std::cout << "\n";
     }
