@@ -26,3 +26,6 @@ Mat6 HubbardU(double S, double U = 2.0);
 
 // Full single-layer Hamiltonian
 Mat6 singleLayer(double kx, double ky, double S, const Params& p = Params{});
+
+void save_band_structure(double S, int n_points, const Params& p,
+                         const std::string& filename);

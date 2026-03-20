@@ -196,7 +196,7 @@ double calculateS(double S, int grid_size, double T, double N_target, const Para
 // -----------------------------------------------------------------------------
 double runSelfCalc(double S0, double alpha, int grid_size,
                    double T, double N_target, const Params& p) {
-    constexpr int    max_iter = 20;
+    constexpr int    max_iter = 5000;
     constexpr double tol      = 1e-5;
  
     double S_current = S0;
