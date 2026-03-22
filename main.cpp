@@ -58,7 +58,11 @@ int main() {
 
         std::cout << "--- U = " << p.U << " (" << i+1 << "/" << N_points << ") ---\n";
 
-        auto [S_final, mu] = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        //auto [S_final, mu] = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        auto result = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        double S_final = result.S_new;
+        double mu = result.mu;
+        double E_current = result.E_total;
 
         outfile << p.U << "," << S_final << "\n";
         outfile.flush();

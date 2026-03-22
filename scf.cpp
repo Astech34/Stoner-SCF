@@ -1,4 +1,5 @@
 #include "scf.h"
+#include "hamiltonian.h"
 #include <cmath>
 #include <limits>
 #include <iostream>
@@ -150,10 +151,29 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
 }
 
 // -----------------------------------------------------------------------------
+// calculate_total_energy — compute total energy per unit cell for given S
+// -----------------------------------------------------------------------------
+double calculate_total_energy(const Eigensystem& sys, int grid_size, double mu, double T) {
+    const int N_k     = grid_size * grid_size;
+    const int N_bands = 6;
+
+    double E_total = 0.0;
+    for (const auto& ev : sys.evals) {
+        for (int b = 0; b < N_bands; b++) {
+            const double x = std::clamp((ev[b] - mu) / T, -500.0, 500.0);
+            const double f = 1.0 / (std::exp(x) + 1.0);
+            E_total += ev[b] * f;
+        }
+    }
+
+    return E_total / static_cast<double>(N_k);
+}
+
+// -----------------------------------------------------------------------------
 // calculateS — one SCF step: diagonalise, find mu, compute new magnetisation
 // mirrors the Python calculateS function
 // -----------------------------------------------------------------------------
-std::pair<double, double> calculateS(double S, int grid_size, double T, double N_target, const Params& p) {
+CalcResult calculateS(double S, int grid_size, double T, double N_target, const Params& p) {
     const int N_k     = grid_size * grid_size;
     const int N_bands = 6;
 
@@ -177,25 +197,31 @@ std::pair<double, double> calculateS(double S, int grid_size, double T, double N
 
     const double n_up = densities.head<3>().sum();
     const double n_dn = densities.tail<3>().sum();
-    return {(n_up - n_dn) / 2.0, mu};
+    const double E_total = calculate_total_energy(sys, grid_size, mu, T);
+
+    return {(n_up - n_dn) / 2.0, mu, E_total};
 }
 
 // -----------------------------------------------------------------------------
 // runSelfCalc — self-consistent loop with linear mixing
 // S_new = alpha * S_calc + (1 - alpha) * S_current
 // -----------------------------------------------------------------------------
-std::pair<double, double> runSelfCalc(double S0, double alpha, int grid_size,
+CalcResult runSelfCalc(double S0, double alpha, int grid_size,
                                        double T, double N_target, const Params& p) {
     constexpr int    max_iter = 5000;
     constexpr double tol      = 1e-5;
 
     double S_current = S0;
     double mu_current = std::numeric_limits<double>::quiet_NaN();
+    double E_current = std::numeric_limits<double>::quiet_NaN();
     bool converged = false;
 
     for (int i = 0; i < max_iter; i++) {
-        auto [S_calc, mu] = calculateS(S_current, grid_size, T, N_target, p);
-        mu_current = mu;
+        auto result = calculateS(S_current, grid_size, T, N_target, p);
+        double S_calc = result.S_new;
+        mu_current = result.mu;
+        E_current  = result.E_total;
+
         const double diff = std::abs(S_calc - S_current);
 
         std::cout << "Iteration " << i
@@ -214,6 +240,6 @@ std::pair<double, double> runSelfCalc(double S0, double alpha, int grid_size,
     if (!converged)
         throw std::runtime_error("runSelfCalc: failed to converge within max_iter");
 
-    std::cout << "Final S: " << S_current << ", mu: " << mu_current << "\n";
-    return {S_current, mu_current};
+    std::cout << "Final S: " << S_current << ", mu: " << mu_current << ", E_total: " << E_current << "\n";
+    return {S_current, mu_current, E_current};
 }
