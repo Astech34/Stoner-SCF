@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # --- Load data ---
-df = pd.read_csv("build/out/stoner_U_sweep.csv")
+df = pd.read_csv("out/stoner_U_sweep.csv")
 
 # --- Plot ---
 fig, ax = plt.subplots(figsize=(8, 5))
@@ -35,7 +35,7 @@ ax.grid(True, alpha=0.3, linestyle="--")
 ax.tick_params(labelsize=11)
 
 plt.tight_layout()
-plt.savefig("build/out/stoner_U_sweep.png", dpi=150)
+plt.savefig("out/stoner_U_sweep.png", dpi=150)
 plt.show()
 
 print("Plot saved to out/stoner_U_sweep.png")
