@@ -34,3 +34,27 @@ target_compile_options(Stoner-SCF PRIVATE
   -O3
   -march=native
 )
+
+# GoogleTest
+CPMAddPackage(
+  NAME googletest
+  GITHUB_REPOSITORY google/googletest
+  GIT_TAG v1.15.2
+  OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt ON"
+)
+
+enable_testing()
+
+add_executable(Stoner-SCF-tests tests.cpp hamiltonian.cpp scf.cpp sweep.cpp)
+
+target_link_libraries(Stoner-SCF-tests
+  PRIVATE
+    GTest::gtest
+    Eigen3::Eigen
+    OpenMP::OpenMP_CXX
+)
+
+target_compile_options(Stoner-SCF-tests PRIVATE -O2 -march=native)
+
+include(GoogleTest)
+gtest_discover_tests(Stoner-SCF-tests)
