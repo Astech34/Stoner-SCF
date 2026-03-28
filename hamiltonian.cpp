@@ -58,21 +58,21 @@ Mat6 SOC(double lam) {
         for (int j = 0; j < 3; j++)
             for (int si = 0; si < 2; si++)
                 for (int sj = 0; sj < 2; sj++)
-                    Hsoc(2*i+si, 2*j+sj) += lam * Lx(i,j) * sx(si,sj);
+                    Hsoc(3*si+i, 3*sj+j) += lam * Lx(i,j) * sx(si,sj);
 
     // kron(Ly, sy)
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
             for (int si = 0; si < 2; si++)
                 for (int sj = 0; sj < 2; sj++)
-                    Hsoc(2*i+si, 2*j+sj) += lam * Ly(i,j) * sy(si,sj);
+                    Hsoc(3*si+i, 3*sj+j) += lam * Ly(i,j) * sy(si,sj);
 
     // kron(Lz, sz)
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
             for (int si = 0; si < 2; si++)
                 for (int sj = 0; sj < 2; sj++)
-                    Hsoc(2*i+si, 2*j+sj) += lam * Lz(i,j) * sz(si,sj);
+                    Hsoc(3*si+i, 3*sj+j) += lam * Lz(i,j) * sz(si,sj);
 
     return Hsoc;
 }

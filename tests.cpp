@@ -96,13 +96,12 @@ TEST(Hamiltonian, HubbardUShift) {
 
 // -----------------------------------------------------------------------------
 // SOC matrix tests
-// The Kronecker loop uses orbital-major ordering: 2*i+si where i=orbital(0=yz,1=xz,2=xy)
-// and si=spin(0=up,1=dn), so rows/cols are: 0=yz↑, 1=yz↓, 2=xz↑, 3=xz↓, 4=xy↑, 5=xy↓
+// Spin-major ordering: (0,1,2) = up-yz, up-xz, up-xy | (3,4,5) = dn-yz, dn-xz, dn-xy
 //
 // Analytic non-zero entries for SOC = lam*(Lx⊗sx + Ly⊗sy + Lz⊗sz):
-//   Lz⊗sz:  H(0,2)=+i/2  H(1,3)=-i/2  H(2,0)=-i/2  H(3,1)=+i/2   (yz<->xz, same spin)
-//   Lx⊗sx:  H(2,5)=+i/2  H(3,4)=+i/2  H(4,3)=-i/2  H(5,2)=-i/2   (xz<->xy, spin-flip)
-//   Ly⊗sy:  H(0,5)=-1/2  H(1,4)=+1/2  H(4,1)=+1/2  H(5,0)=-1/2   (yz<->xy, spin-flip)
+//   Lz⊗sz:  H(0,1)=+i/2  H(1,0)=-i/2  H(3,4)=-i/2  H(4,3)=+i/2   (yz<->xz, same spin)
+//   Lx⊗sx:  H(1,5)=+i/2  H(4,2)=+i/2  H(2,4)=-i/2  H(5,1)=-i/2   (xz<->xy, spin-flip)
+//   Ly⊗sy:  H(0,5)=-1/2  H(3,2)=+1/2  H(2,3)=+1/2  H(5,0)=-1/2   (yz<->xy, spin-flip)
 //   (all values multiplied by lam)
 // -----------------------------------------------------------------------------
 
@@ -128,61 +127,61 @@ TEST(SOC, DiagonalIsZero) {
         EXPECT_NEAR(std::abs(H(i,i)), 0.0, tol);
 }
 
-// Lz⊗sz: same-spin yz<->xz coupling = ±i*lam/2
+// Lz⊗sz: same-spin yz<->xz coupling
 TEST(SOC, LzSzOrbitalCoupling) {
     const double lam = 1.0;
     const Mat6   H   = SOC(lam);
     const double tol = 1e-12;
 
-    // yz↑ <-> xz↑ : +i*lam/2
-    EXPECT_NEAR(H(0,2).real(),  0.0,      tol);
-    EXPECT_NEAR(H(0,2).imag(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(2,0).real(),  0.0,      tol);
-    EXPECT_NEAR(H(2,0).imag(), -lam/2.0,  tol);
+    // up-yz <-> up-xz : +i*lam/2
+    EXPECT_NEAR(H(0,1).real(),  0.0,      tol);
+    EXPECT_NEAR(H(0,1).imag(),  lam/2.0,  tol);
+    EXPECT_NEAR(H(1,0).real(),  0.0,      tol);
+    EXPECT_NEAR(H(1,0).imag(), -lam/2.0,  tol);
 
-    // yz↓ <-> xz↓ : -i*lam/2
-    EXPECT_NEAR(H(1,3).real(),  0.0,      tol);
-    EXPECT_NEAR(H(1,3).imag(), -lam/2.0,  tol);
-    EXPECT_NEAR(H(3,1).real(),  0.0,      tol);
-    EXPECT_NEAR(H(3,1).imag(),  lam/2.0,  tol);
+    // dn-yz <-> dn-xz : -i*lam/2
+    EXPECT_NEAR(H(3,4).real(),  0.0,      tol);
+    EXPECT_NEAR(H(3,4).imag(), -lam/2.0,  tol);
+    EXPECT_NEAR(H(4,3).real(),  0.0,      tol);
+    EXPECT_NEAR(H(4,3).imag(),  lam/2.0,  tol);
 }
 
-// Lx⊗sx: spin-flip xz<->xy coupling = +i*lam/2
+// Lx⊗sx: spin-flip xz<->xy coupling
 TEST(SOC, LxSxSpinFlip) {
     const double lam = 1.0;
     const Mat6   H   = SOC(lam);
     const double tol = 1e-12;
 
-    // xz↓ <-> xy↑ : +i*lam/2
-    EXPECT_NEAR(H(3,4).real(),  0.0,      tol);
-    EXPECT_NEAR(H(3,4).imag(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(4,3).real(),  0.0,      tol);
-    EXPECT_NEAR(H(4,3).imag(), -lam/2.0,  tol);
+    // up-xz <-> dn-xy : +i*lam/2
+    EXPECT_NEAR(H(1,5).real(),  0.0,      tol);
+    EXPECT_NEAR(H(1,5).imag(),  lam/2.0,  tol);
+    EXPECT_NEAR(H(5,1).real(),  0.0,      tol);
+    EXPECT_NEAR(H(5,1).imag(), -lam/2.0,  tol);
 
-    // xz↑ <-> xy↓ : +i*lam/2
-    EXPECT_NEAR(H(2,5).real(),  0.0,      tol);
-    EXPECT_NEAR(H(2,5).imag(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(5,2).real(),  0.0,      tol);
-    EXPECT_NEAR(H(5,2).imag(), -lam/2.0,  tol);
+    // dn-xz <-> up-xy : +i*lam/2
+    EXPECT_NEAR(H(4,2).real(),  0.0,      tol);
+    EXPECT_NEAR(H(4,2).imag(),  lam/2.0,  tol);
+    EXPECT_NEAR(H(2,4).real(),  0.0,      tol);
+    EXPECT_NEAR(H(2,4).imag(), -lam/2.0,  tol);
 }
 
-// Ly⊗sy: spin-flip yz<->xy coupling = ±lam/2 (real)
+// Ly⊗sy: spin-flip yz<->xy coupling (real)
 TEST(SOC, LySySpinFlip) {
     const double lam = 1.0;
     const Mat6   H   = SOC(lam);
     const double tol = 1e-12;
 
-    // yz↑ <-> xy↓ : -lam/2 (real)
+    // up-yz <-> dn-xy : -lam/2 (real)
     EXPECT_NEAR(H(0,5).real(), -lam/2.0,  tol);
     EXPECT_NEAR(H(0,5).imag(),  0.0,      tol);
     EXPECT_NEAR(H(5,0).real(), -lam/2.0,  tol);
     EXPECT_NEAR(H(5,0).imag(),  0.0,      tol);
 
-    // yz↓ <-> xy↑ : +lam/2 (real)
-    EXPECT_NEAR(H(1,4).real(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(1,4).imag(),  0.0,      tol);
-    EXPECT_NEAR(H(4,1).real(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(4,1).imag(),  0.0,      tol);
+    // dn-yz <-> up-xy : +lam/2 (real)
+    EXPECT_NEAR(H(3,2).real(),  lam/2.0,  tol);
+    EXPECT_NEAR(H(3,2).imag(),  0.0,      tol);
+    EXPECT_NEAR(H(2,3).real(),  lam/2.0,  tol);
+    EXPECT_NEAR(H(2,3).imag(),  0.0,      tol);
 }
 
 // Scales linearly with lam
