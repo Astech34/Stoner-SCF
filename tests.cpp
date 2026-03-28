@@ -184,6 +184,32 @@ TEST(SOC, LySySpinFlip) {
     EXPECT_NEAR(H(2,3).imag(),  0.0,      tol);
 }
 
+// Full matrix check against hand-computed lam=1 result (spin-major ordering)
+// Rows/cols: 0=up-yz, 1=up-xz, 2=up-xy, 3=dn-yz, 4=dn-xz, 5=dn-xy
+//
+//       0      1      2      3      4      5
+// 0: [  0,   i/2,    0,     0,     0,  -1/2 ]
+// 1: [-i/2,   0,     0,     0,     0,   i/2 ]
+// 2: [  0,    0,     0,   1/2,  -i/2,    0  ]
+// 3: [  0,    0,   1/2,    0,   -i/2,    0  ]
+// 4: [  0,    0,   i/2,  i/2,     0,     0  ]
+// 5: [-1/2, -i/2,   0,     0,     0,     0  ]
+TEST(SOC, FullMatrixLam1) {
+    const Mat6   H   = SOC(1.0);
+    const double tol = 1e-12;
+
+    // Build expected matrix entry by entry
+    Mat6 E = Mat6::Zero();
+    E(0,1) = cd( 0,  0.5);  E(0,5) = cd(-0.5,  0);
+    E(1,0) = cd( 0, -0.5);  E(1,5) = cd( 0,   0.5);
+    E(2,3) = cd( 0.5, 0);   E(2,4) = cd( 0,  -0.5);
+    E(3,2) = cd( 0.5, 0);   E(3,4) = cd( 0,  -0.5);
+    E(4,2) = cd( 0,  0.5);  E(4,3) = cd( 0,   0.5);
+    E(5,0) = cd(-0.5, 0);   E(5,1) = cd( 0,  -0.5);
+
+    EXPECT_NEAR((H - E).norm(), 0.0, tol);
+}
+
 // Scales linearly with lam
 TEST(SOC, ScalesWithLambda) {
     const Mat6 H1 = SOC(1.0);
