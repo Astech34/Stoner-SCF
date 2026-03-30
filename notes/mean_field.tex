@@ -1,0 +1,58 @@
+\documentclass[11pt]{article}
+
+\usepackage[left=1.5cm, right=1.5cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{bm}
+
+\title{Hubbard Mean Field}
+\author{Anderson Steckler}
+\date{}
+
+\begin{document}
+\maketitle
+\noindent
+We begin with the Hubabrd term
+\begin{gather}
+    H = U\sum_i \hat n_{i\uparrow}\hat n_{i, \downarrow}
+\end{gather}
+with $\hat n_{i\sigma}=c_{i\sigma}^\dagger c_{i\sigma}$. We then treat is in the mean field approach and write
+\begin{gather}
+    \hat n_{i\sigma} = \langle n_{i\sigma}\rangle + \delta n_{i\sigma}
+\end{gather}
+we plug in (dropping second order fluctuation) to get
+\begin{align}
+    H &= U\sum_i\hat n_{i\uparrow}\hat n_{i \downarrow} \\\nonumber
+    &= U\sum_i\left(\langle n_{i\uparrow} \rangle+\delta n_{i\uparrow}\right)\left(\langle n_{i\downarrow} \rangle+\delta n_{i\downarrow}\right) \\\nonumber
+    &= U\sum_i \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle + \langle n_{i\uparrow}\rangle\delta n_{i\downarrow} + \delta n_{i\uparrow}\langle n_{i\downarrow}\rangle
+\end{align}
+Lets replace $\delta n_{i\sigma}=\hat n_{i\sigma} - \langle n_{i\sigma}\rangle$
+\begin{align}
+    H&=U\sum_i \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle + \langle n_{i\uparrow}\rangle(\hat n_{i\downarrow} - \langle n_{i\downarrow}\rangle) + (\hat n_{i\uparrow} - \langle n_{i\uparrow}\rangle)\langle n_{i\downarrow}\rangle \\\nonumber
+    &= U \sum_i \langle n_{i\uparrow}\rangle \hat n_{i\downarrow} + \langle n_{i\downarrow}\rangle \hat n_{i\uparrow} - \langle n_{i\uparrow}\rangle \langle n_{i\downarrow}\rangle
+\end{align}
+Lets introduce $m_i = \langle n_{i\uparrow}\rangle - \langle n_{i\downarrow}\rangle$ and $\langle n_i\rangle = \langle n_{i\uparrow} \rangle + \langle n_{i\downarrow}\rangle$ and rewrite our Hamiltonian to depend on these terms. We can write
+\begin{gather}
+    \langle n_{i\uparrow}\rangle = \frac{\langle n_i \rangle + m_i}{2} \quad \langle n_{i\downarrow}\rangle = \frac{\langle n_i\rangle -m_i}{2}
+\end{gather}
+we plug in to get
+\begin{align}
+    H = \frac{U}{2}\sum_i m_i\left[\hat n_{i\downarrow} - \hat n_{i\uparrow}\right]  +\langle n_i\rangle \left[\hat n_{i\downarrow} + \hat n_{i\uparrow}\right] + C
+\end{align}
+Where $C = \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle$. The second term is also just a density dependent shift which we can absorb into chemical potential.
+\begin{gather}
+    H=\frac{U}{2}\sum_i m_i\left[\hat n_{i\downarrow} - \hat n_{i\uparrow}\right]
+\end{gather}
+In the z direction we can write $\psi^\dagger \sigma_z\psi = \hat n_{i\downarrow} - \hat n_{i\uparrow}$ to write
+\begin{gather}
+    H=-\frac{U}{2}\sum_im_i\hat\psi^\dagger \hat\sigma_z \hat\psi = -\frac{U}{2}\sum_i\hat\psi^\dagger m_i\hat\sigma_z \hat\psi
+\end{gather}
+So far we have assumed magnetization is along z. For an arbitrary direction we replace
+\begin{gather}
+    H=-\frac{U}{2}\sum_i \hat \psi_i^\dagger \bm m_i\cdot \bm{\hat \sigma} \hat \psi_i 
+\end{gather}
+\end{document}
