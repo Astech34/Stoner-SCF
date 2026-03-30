@@ -34,11 +34,11 @@ $$H_\text{SOC} = \begin{pmatrix} 0 & \frac{i}{2} & 0 & 0 & 0 & -\frac{1}{2} \\ -
 
 ### Hubbard mean-field term — H_Hubbard
 
-Stoner exchange splitting, diagonal in orbital, opposite sign for each spin:
+Stoner exchange splitting for a magnetisation of magnitude $S$ pointing along a fixed direction $\hat{\mathbf{n}} = (\sin\theta\cos\phi,\, \sin\theta\sin\phi,\, \cos\theta)$:
 
-$$H_\text{Hubbard} = US \cdot \text{diag}(-1,-1,-1,+1,+1,+1)$$
+$$H_\text{Hubbard} = -US\,(\hat{\mathbf{n}}\cdot\boldsymbol{\sigma})\otimes I_3 = -US \begin{pmatrix} n_z I_3 & (n_x - in_y)I_3 \\ (n_x + in_y)I_3 & -n_z I_3 \end{pmatrix}$$
 
-where `S = (n↑ - n↓) / 2` is the magnetisation and `U` is the Hubbard parameter.
+where `S` is the scalar magnetisation magnitude and `U` is the Hubbard parameter. The direction $\hat{\mathbf{n}}$ is a fixed input (set via `theta` and `phi` in `Params`); only $S$ is updated self-consistently. For $\hat{\mathbf{n}} = \hat{z}$ ($\theta=0$) this reduces to the diagonal form $US\cdot\text{diag}(-1,-1,-1,+1,+1,+1)$. The off-diagonal spin blocks are non-zero whenever $\hat{\mathbf{n}}$ has an $x$ or $y$ component.
 
 ---
 
@@ -47,9 +47,11 @@ where `S = (n↑ - n↓) / 2` is the magnetisation and `U` is the Hubbard parame
 1. **Guess** an initial magnetisation `S₀`
 2. **Diagonalise** H(k) over a uniform k-grid (N × N) across the Brillouin zone
 3. **Find μ** by solving `N_total(μ) = N_target` using Brent's method on the Fermi-Dirac sum
-4. **Update S** from the spin-resolved orbital occupancies:
+4. **Update S** by projecting the density matrix onto $\hat{\mathbf{n}}$:
 
-$$S_\text{new} = \frac{n_\uparrow - n_\downarrow}{2}, \qquad n_{\uparrow/\downarrow} = \frac{1}{N_k} \sum_{\mathbf{k},n} |{\langle \uparrow/\downarrow | \psi_{n\mathbf{k}} \rangle}|^2 \, f(\varepsilon_{n\mathbf{k}} - \mu)$$
+$$S_\text{new} = \frac{1}{2N_k}\sum_{\mathbf{k},n} f(\varepsilon_{n\mathbf{k}}-\mu)\left[n_z\!\left(|\psi^\uparrow_{n\mathbf{k}}|^2 - |\psi^\downarrow_{n\mathbf{k}}|^2\right) + 2n_x\,\text{Re}[\psi^{\uparrow\dagger}_{n\mathbf{k}}\psi^\downarrow_{n\mathbf{k}}] + 2n_y\,\text{Im}[\psi^{\uparrow\dagger}_{n\mathbf{k}}\psi^\downarrow_{n\mathbf{k}}]\right]$$
+
+where $\psi^\uparrow_{n\mathbf{k}}$ and $\psi^\downarrow_{n\mathbf{k}}$ are the spin-up and spin-down 3-component blocks of the eigenvector. The cross term $\psi^{\uparrow\dagger}\psi^\downarrow$ captures off-diagonal spin coherence needed for $\hat{\mathbf{n}}$ with $x$ or $y$ components. Reduces to $(n_\uparrow - n_\downarrow)/2$ for $\hat{\mathbf{n}}=\hat{z}$.
 
 5. **Mix** to stabilise convergence: $S \leftarrow \alpha S_\text{new} + (1-\alpha) S$
 6. **Repeat** until $|S_\text{new} - S| < 10^{-5}$
@@ -67,5 +69,7 @@ A converged `S ≠ 0` indicates a ferromagnetic ground state; `S = 0` is paramag
 | `t2`      | 0.1   | Next-nearest-neighbour hopping |
 | `lam`     | 0.1   | SOC strength |
 | `U`       | 2.0   | Hubbard interaction |
+| `theta`   | 0.0   | Polar angle of magnetisation direction (0 = z-axis) |
+| `phi`     | 0.0   | Azimuthal angle of magnetisation direction |
 | `T`       | 0.05  | Temperature (in units of `t1`) |
 | `N_target`| 5.0   | Electrons per unit cell |

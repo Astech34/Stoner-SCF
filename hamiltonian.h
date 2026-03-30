@@ -14,6 +14,8 @@ struct Params {
     double t2      = 0.1;
     double lam     = 0.1;
     double U       = 2.0;
+    double theta   = 0.0;  // polar angle of magnetisation direction (0 = z-axis)
+    double phi     = 0.0;  // azimuthal angle of magnetisation direction
 };
 
 // Kinetic hopping term (k-dependent, real diagonal)
@@ -22,8 +24,8 @@ Mat6 H0(double kx, double ky, const Params& p = Params{});
 // Spin-orbit coupling (k-independent, precompute once)
 Mat6 SOC(double lam = 0.1);
 
-// Hubbard mean-field term (k-independent, real diagonal)
-Mat6 HubbardU(double S, double U = 2.0);
+// Hubbard mean-field term (k-independent, off-diagonal in spin for general n̂)
+Mat6 HubbardU(double S, const Params& p = Params{});
 
 // Full single-layer Hamiltonian
 Mat6 singleLayer(double kx, double ky, double S, const Params& p = Params{});

@@ -138,7 +138,7 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
         const double ky = k_lin[iy];
 
         // Build Hamiltonian for this k-point
-        const Mat6 H = H0(kx, ky, p) + Hsoc + HubbardU(S, p.U);
+        const Mat6 H = H0(kx, ky, p) + Hsoc + HubbardU(S, p);
 
         // Diagonalize — SelfAdjointEigenSolver is not shared, safe per thread
         Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
@@ -184,22 +184,33 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
         return {S, std::numeric_limits<double>::quiet_NaN()};
     }
 
-    Eigen::Vector<double, 6> densities = Eigen::Vector<double, 6>::Zero();
+    // Magnetisation direction n̂ = (sin θ cos φ, sin θ sin φ, cos θ)
+    const double nx = std::sin(p.theta) * std::cos(p.phi);
+    const double ny = std::sin(p.theta) * std::sin(p.phi);
+    const double nz = std::cos(p.theta);
+
+    // Project the density matrix onto n̂: M = Tr(ρ (n̂·σ)) summed over orbitals and k
+    // For each eigenstate: ⟨n̂·σ⟩ = nz(|ψ↑|²-|ψ↓|²) + 2·nx·Re[ψ↑†ψ↓] + 2·ny·Im[ψ↑†ψ↓]
+    double spin_sum = 0.0;
     for (int idx = 0; idx < N_k; idx++) {
         for (int band = 0; band < N_bands; band++) {
             const double x = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
             const double f = 1.0 / (std::exp(x) + 1.0);
-            for (int orb = 0; orb < N_bands; orb++)
-                densities[orb] += std::norm(sys.evecs[idx](orb, band)) * f;
+
+            const auto psi_up = sys.evecs[idx].col(band).head<3>();
+            const auto psi_dn = sys.evecs[idx].col(band).tail<3>();
+            const cd cross    = psi_up.dot(psi_dn);  // ψ↑† · ψ↓
+
+            const double proj = nz * (psi_up.squaredNorm() - psi_dn.squaredNorm())
+                              + 2.0 * nx * cross.real()
+                              + 2.0 * ny * cross.imag();
+
+            spin_sum += f * proj;
         }
     }
-    densities /= static_cast<double>(N_k);
 
-    const double n_up = densities.head<3>().sum();
-    const double n_dn = densities.tail<3>().sum();
     const double E_total = calculate_total_energy(sys, grid_size, mu, T);
-
-    return {(n_up - n_dn) / 2.0, mu, E_total};
+    return {spin_sum / (2.0 * N_k), mu, E_total};
 }
 
 // -----------------------------------------------------------------------------

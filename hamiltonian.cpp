@@ -77,21 +77,35 @@ Mat6 SOC(double lam) {
     return Hsoc;
 }
 
-Mat6 HubbardU(double S, double U) {
-    const double shift = U * S;
+Mat6 HubbardU(double S, const Params& p) {
+    // Magnetisation direction n̂ = (sin θ cos φ, sin θ sin φ, cos θ)
+    const double nx = std::sin(p.theta) * std::cos(p.phi);
+    const double ny = std::sin(p.theta) * std::sin(p.phi);
+    const double nz = std::cos(p.theta);
+
+    // H = -U*S * (n̂·σ) ⊗ I₃
+    // (n̂·σ) = [ nz·I₃,        (nx-i·ny)·I₃ ]
+    //          [ (nx+i·ny)·I₃,  -nz·I₃       ]
+    const double scale = -p.U * S;
 
     Mat6 H = Mat6::Zero();
 
-    // spin-up: negative shift | spin-down: positive shift
-    H(0,0) = -shift;  H(1,1) = -shift;  H(2,2) = -shift;
-    H(3,3) =  shift;  H(4,4) =  shift;  H(5,5) =  shift;
+    // Diagonal spin blocks
+    H(0,0) = scale * nz;   H(1,1) = scale * nz;   H(2,2) = scale * nz;
+    H(3,3) = -scale * nz;  H(4,4) = -scale * nz;  H(5,5) = -scale * nz;
+
+    // Off-diagonal spin blocks (only non-zero when n̂ has x or y component)
+    const cd off_up   = scale * cd(nx, -ny);  // spin-up row, spin-down col
+    const cd off_down = scale * cd(nx,  ny);  // spin-down row, spin-up col
+    H(0,3) = off_up;   H(1,4) = off_up;   H(2,5) = off_up;
+    H(3,0) = off_down; H(4,1) = off_down; H(5,2) = off_down;
 
     return H;
 }
 
 Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
     // SOC is k-independent — caller may want to cache this for performance
-    return H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p.U);
+    return H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p);
 }
 
 // Plotting Band Structure
@@ -152,7 +166,7 @@ void save_band_structure(double S, int n_points, const Params& p,
     file << std::fixed << std::setprecision(8);
 
     for (const auto& pt : path) {
-        const Mat6 H = H0(pt.kx, pt.ky, p) + Hsoc + HubbardU(S, p.U);
+        const Mat6 H = H0(pt.kx, pt.ky, p) + Hsoc + HubbardU(S, p);
         Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
         const auto& evals = solver.eigenvalues();
 

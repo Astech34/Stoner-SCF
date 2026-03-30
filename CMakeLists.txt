@@ -54,7 +54,7 @@ target_link_libraries(Stoner-SCF-tests
     OpenMP::OpenMP_CXX
 )
 
-target_compile_options(Stoner-SCF-tests PRIVATE -O2 -march=native)
+target_compile_options(Stoner-SCF-tests PRIVATE -O2 -march=native -UNDEBUG)
 
 include(GoogleTest)
 gtest_discover_tests(Stoner-SCF-tests)

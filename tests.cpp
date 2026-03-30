@@ -68,13 +68,16 @@ TEST(Hamiltonian, FullHamiltonianIsHermitian) {
     EXPECT_NEAR(diff.norm(), 0.0, 1e-12);
 }
 
-// HubbardU splits spin-up and spin-down bands by ±U*S on the diagonal.
+// HubbardU splits spin-up and spin-down bands by ±U*S on the diagonal (n̂ = ẑ).
 TEST(Hamiltonian, HubbardUShift) {
     const double S = 0.5;
-    const double U = 2.0;
+    Params p;
+    p.U     = 2.0;
+    p.theta = 0.0;  // n̂ = ẑ — off-diagonal blocks vanish
+    p.phi   = 0.0;
 
-    const Mat6 H   = HubbardU(S, U);
-    const double shift = U * S;  // 1.0
+    const Mat6 H   = HubbardU(S, p);
+    const double shift = p.U * S;  // 1.0
     const double tol   = 1e-12;
 
     // spin-up   (rows 0,1,2): negative shift
