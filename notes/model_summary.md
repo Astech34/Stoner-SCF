@@ -1,5 +1,7 @@
 # Stoner SCF Model Summary
 
+Before Second Layer
+
 ## Overview
 
 A self-consistent mean-field model for itinerant ferromagnetism in a t2g system on a 2D square lattice. The three t2g orbitals are yz, xz, and xy, giving a 6-band model (3 orbitals × 2 spins).
