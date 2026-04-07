@@ -81,7 +81,7 @@ double brent(std::function<double(double)> f, double a, double b,
 double find_mu(const Eigensystem& sys, int grid_size, double T, double N_target) {
     // Flatten all eigenvalues into one vector for easy min/max and summation
     const int N_k     = grid_size * grid_size;
-    const int N_bands = 6;
+    const int N_bands = 12;
 
     double e_min =  std::numeric_limits<double>::infinity();
     double e_max = -std::numeric_limits<double>::infinity();
@@ -127,7 +127,10 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
         k_lin[i] = -M_PI + i * (2.0 * M_PI / (grid_size));
 
     // Precompute SOC once — it's k-independent
+    // Precompute k-independent pieces once
     const Mat6 Hsoc = SOC(p.lam);
+    const Mat6 Hhub = HubbardU(S, p);
+    const Mat6 T    = T_perp_mat(p);
 
     #pragma omp parallel for schedule(static)
     for (int idx = 0; idx < N; idx++) {
@@ -137,11 +140,15 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
         const double kx = k_lin[ix];
         const double ky = k_lin[iy];
 
-        // Build Hamiltonian for this k-point
-        const Mat6 H = H0(kx, ky, p) + Hsoc + HubbardU(S, p);
+        // Assemble 12x12 bilayer Hamiltonian (layer-major block structure)
+        const Mat6 H_single = H0(kx, ky, p) + Hsoc + Hhub;
+        Mat12 H = Mat12::Zero();
+        H.block<6,6>(0,0) = H_single;
+        H.block<6,6>(6,6) = H_single;
+        H.block<6,6>(0,6) = T;
+        H.block<6,6>(6,0) = T;
 
-        // Diagonalize — SelfAdjointEigenSolver is not shared, safe per thread
-        Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
+        Eigen::SelfAdjointEigenSolver<Mat12> solver(H);
 
         result.evals[idx] = solver.eigenvalues();
         result.evecs[idx] = solver.eigenvectors();
@@ -155,7 +162,7 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
 // -----------------------------------------------------------------------------
 double calculate_total_energy(const Eigensystem& sys, int grid_size, double mu, double T) {
     const int N_k     = grid_size * grid_size;
-    const int N_bands = 6;
+    const int N_bands = 12;
 
     double E_total = 0.0;
     for (const auto& ev : sys.evals) {
@@ -175,7 +182,7 @@ double calculate_total_energy(const Eigensystem& sys, int grid_size, double mu, 
 // -----------------------------------------------------------------------------
 CalcResult calculateS(double S, int grid_size, double T, double N_target, const Params& p) {
     const int N_k     = grid_size * grid_size;
-    const int N_bands = 6;
+    const int N_bands = 12;
 
     const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
     const double mu = find_mu(sys, grid_size, T, N_target);
@@ -197,9 +204,15 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
             const double x = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
             const double f = 1.0 / (std::exp(x) + 1.0);
 
-            const auto psi_up = sys.evecs[idx].col(band).head<3>();
-            const auto psi_dn = sys.evecs[idx].col(band).tail<3>();
-            const cd cross    = psi_up.dot(psi_dn);  // ψ↑† · ψ↓
+            // Layer-major ordering: L1↑(0-2), L1↓(3-5), L2↑(6-8), L2↓(9-11)
+            // Gather spin-up and spin-down across both layers
+            const auto col = sys.evecs[idx].col(band);
+            Eigen::Vector<cd, 6> psi_up, psi_dn;
+            psi_up.segment<3>(0) = col.segment<3>(0);  // L1 spin-up
+            psi_up.segment<3>(3) = col.segment<3>(6);  // L2 spin-up
+            psi_dn.segment<3>(0) = col.segment<3>(3);  // L1 spin-down
+            psi_dn.segment<3>(3) = col.segment<3>(9);  // L2 spin-down
+            const cd cross = psi_up.dot(psi_dn);  // ψ↑† · ψ↓
 
             const double proj = nz * (psi_up.squaredNorm() - psi_dn.squaredNorm())
                               + 2.0 * nx * cross.real()

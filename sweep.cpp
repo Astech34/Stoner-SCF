@@ -64,6 +64,7 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     outfile << "# t_delta = " << p.t_delta << "\n";
     outfile << "# t2      = " << p.t2      << "\n";
     outfile << "# U       = " << p.U       << "\n";
+    outfile << "# t_perp  = " << p.t_perp  << "\n";
 
     outfile << "lam,S_110,E_110,S_001,E_001,E_MCA\n";
 

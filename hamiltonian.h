@@ -4,8 +4,9 @@
 #include <complex>
 #include <utility>
 
-using Mat6 = Eigen::Matrix<std::complex<double>, 6, 6>;
-using cd   = std::complex<double>;
+using Mat6  = Eigen::Matrix<std::complex<double>, 6, 6>;
+using Mat12 = Eigen::Matrix<std::complex<double>, 12, 12>;
+using cd    = std::complex<double>;
 
 // Model parameters with sensible defaults
 struct Params {
@@ -16,6 +17,7 @@ struct Params {
     double U       = 2.0;
     double theta   = 0.0;  // polar angle of magnetisation direction (0 = z-axis)
     double phi     = 0.0;  // azimuthal angle of magnetisation direction
+    double t_perp  = 0.0;  // interlayer hopping for yz and xz orbitals (xy = 0 by symmetry)
 };
 
 // Kinetic hopping term (k-dependent, real diagonal)
@@ -29,6 +31,12 @@ Mat6 HubbardU(double S, const Params& p = Params{});
 
 // Full single-layer Hamiltonian
 Mat6 singleLayer(double kx, double ky, double S, const Params& p = Params{});
+
+// Interlayer hopping matrix (6x6, spin-major): t_perp on yz and xz, zero on xy
+Mat6 T_perp_mat(const Params& p = Params{});
+
+// Full bilayer Hamiltonian (12x12, layer-major block structure)
+Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p = Params{});
 
 // Save band structure along high-symmetry path to CSV (for plotting in Python)
 void save_band_structure(double S, int n_points, const Params& p,

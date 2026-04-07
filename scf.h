@@ -7,8 +7,8 @@
 #include <utility>
 
 struct Eigensystem {
-    std::vector<Eigen::Vector<double, 6>> evals; // (grid_size^2, 6)
-    std::vector<Mat6>                    evecs; // (grid_size^2, 6, 6)
+    std::vector<Eigen::Vector<double, 12>> evals; // (grid_size^2, 12)
+    std::vector<Mat12>                     evecs; // (grid_size^2, 12x12)
 };
 
 struct CalcResult { double S_new; double mu; double E_total; };

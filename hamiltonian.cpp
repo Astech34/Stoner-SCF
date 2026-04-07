@@ -104,8 +104,31 @@ Mat6 HubbardU(double S, const Params& p) {
 }
 
 Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
-    // SOC is k-independent — caller may want to cache this for performance
     return H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p);
+}
+
+Mat6 T_perp_mat(const Params& p) {
+    Mat6 T = Mat6::Zero();
+    // yz (0) and xz (1) hop between layers; xy (2) does not (lobes lie in-plane)
+    // Applied to both spin-up (0,1) and spin-down (3,4) blocks
+    T(0,0) = p.t_perp;  T(1,1) = p.t_perp;
+    T(3,3) = p.t_perp;  T(4,4) = p.t_perp;
+    return T;
+}
+
+Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p) {
+    // Layer-major ordering:
+    //   rows/cols 0-5:  layer 1 (spin-up yz,xz,xy | spin-down yz,xz,xy)
+    //   rows/cols 6-11: layer 2 (same ordering)
+    const Mat6 H_single = H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p);
+    const Mat6 T        = T_perp_mat(p);
+
+    Mat12 H = Mat12::Zero();
+    H.block<6,6>(0,0) = H_single;
+    H.block<6,6>(6,6) = H_single;
+    H.block<6,6>(0,6) = T;
+    H.block<6,6>(6,0) = T;  // T is real and diagonal, so T† = T
+    return H;
 }
 
 // Plotting Band Structure
@@ -152,6 +175,8 @@ void save_band_structure(double S, int n_points, const Params& p,
     path.push_back({corners.back().kx, corners.back().ky, path_coord, corners.back().label});
 
     const Mat6 Hsoc = SOC(p.lam);
+    const Mat6 Hhub = HubbardU(S, p);
+    const Mat6 T    = T_perp_mat(p);
 
     std::ofstream file(filename);
     if (!file.is_open())
@@ -159,20 +184,25 @@ void save_band_structure(double S, int n_points, const Params& p,
 
     // Header — mu column added
     file << "path_coord,kx,ky,label,mu";
-    for (int b = 0; b < 6; b++)
+    for (int b = 0; b < 12; b++)
         file << ",band_" << b;
     file << "\n";
 
     file << std::fixed << std::setprecision(8);
 
     for (const auto& pt : path) {
-        const Mat6 H = H0(pt.kx, pt.ky, p) + Hsoc + HubbardU(S, p);
-        Eigen::SelfAdjointEigenSolver<Mat6> solver(H);
+        const Mat6  H_single = H0(pt.kx, pt.ky, p) + Hsoc + Hhub;
+        Mat12 H = Mat12::Zero();
+        H.block<6,6>(0,0) = H_single;
+        H.block<6,6>(6,6) = H_single;
+        H.block<6,6>(0,6) = T;
+        H.block<6,6>(6,0) = T;
+        Eigen::SelfAdjointEigenSolver<Mat12> solver(H);
         const auto& evals = solver.eigenvalues();
 
         file << pt.path_coord << "," << pt.kx << "," << pt.ky << ","
              << pt.label << "," << mu;
-        for (int b = 0; b < 6; b++)
+        for (int b = 0; b < 12; b++)
             file << "," << evals[b];
         file << "\n";
     }
@@ -192,7 +222,7 @@ void save_dos(double S, int grid_size, double T, double N_target,
 
     // --- Energy axis: span all eigenvalues with some padding ---
     const int N_k     = grid_size * grid_size;
-    const int N_bands = 6;
+    const int N_bands = 12;
 
     double e_min =  std::numeric_limits<double>::infinity();
     double e_max = -std::numeric_limits<double>::infinity();
@@ -239,7 +269,7 @@ void save_dos(double S, int grid_size, double T, double N_target,
 double calculate_total_energy(double S, int grid_size, double T, double N_target,
                                const Params& p) {
     const int N_k     = grid_size * grid_size;
-    const int N_bands = 6;
+    const int N_bands = 12;
 
     const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
     const double mu = find_mu(sys, grid_size, T, N_target);
