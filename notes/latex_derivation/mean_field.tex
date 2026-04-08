@@ -56,7 +56,11 @@ So far we have assumed magnetization is along z. For an arbitrary direction we r
 \begin{gather}
     H=-\frac{U}{2}\sum_i \hat \psi_i^\dagger \bm m_i\cdot \bm{\hat \sigma} \hat \psi_i 
 \end{gather}
-\section{Self Consistent Calculation}
+In our code its easier to write S = $\frac{m}{2} \cdot \hat n$.
+\begin{gather}
+    H = -US \sum_i \psi_i^\dagger \hat n \cdot \hat \sigma \psi_i
+\end{gather}
+\section{Calculating the magnetization}
 In the mean field approach we replace the magnetization with the average. We calculate averages in the grand canonical ensemble
 \begin{gather}
     m = \text{Tr}(\hat m \hat \rho)
@@ -157,20 +161,24 @@ hence with $1=\uparrow$ and $2=\downarrow$ we can write
 \end{align}
 Likewise for $m_y$ we can write
 \begin{align}
-    m_y &= \sum_n f(\varepsilon_n - \mu) (c_2c_1^* - c_1 c_2^*) i
+    m_y &= \sum_n f(\varepsilon_n - \mu) (c_1 c_2^* - c_2c_1^*) i
 \end{align}
 Where
 \begin{align}
-    yz^* - zy^* &= (c+di)(a-bi) - (a+bi)(c-di) \\\nonumber
-    &= ca - bci + dai + db - (ac - adi + bci + bd) \\\nonumber
-    &= 2(ad - bc)i = 2\text{Im}(z^*y)i
+   -(yz^* - zy^*) &= -((c+di)(a-bi) - (a+bi)(c-di)) \\\nonumber
+    &= -(ca - bci + dai + db - (ac - adi + bci + bd)) \\\nonumber
+    &= -2(ad - bc)i = -2\text{Im}(z^*y)i
 \end{align}
 Likewise we can write
 \begin{align}
-    m_y &= 2i\sum_n f(\varepsilon_n - \mu) \text{Im}(c_\uparrow^* c_\downarrow)
+    m_y &= 2\sum_n f(\varepsilon_n - \mu) \text{Im}(c_\uparrow^* c_\downarrow)
 \end{align}
 Lastly for $m_z$ we can write
 \begin{align}
     m_z &= \sum_n f(\varepsilon_n - \mu) (|c_\uparrow|^2 - |c_\downarrow|^2)
 \end{align}
+Now the projection is
+\begin{gather}
+    m_{\hat n} = \bm m \cdot \hat n = m_x n_x + m_y n_y + m_z n_z
+\end{gather}
 \end{document}
