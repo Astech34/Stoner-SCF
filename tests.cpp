@@ -97,6 +97,55 @@ TEST(Hamiltonian, HubbardUShift) {
                 EXPECT_NEAR(std::abs(H(i,j)), 0.0, tol);
 }
 
+// HubbardU at theta=0.5, phi=0.1 checked against Mathematica.
+// Mathematica gives +US*(n̂·σ)⊗I₃; C++ uses scale = -US, so signs are flipped.
+// With US=1, nz=cos(0.5)≈0.877583, nx-iny≈0.47703-0.0478627i:
+//   spin-up diagonal:          -nz
+//   spin-down diagonal:        +nz
+//   upper-right off-diagonal:  -(nx-iny)
+//   lower-left off-diagonal:   -(nx+iny)
+TEST(Hamiltonian, HubbardAngles) {
+    const double S = 0.5;
+    Params p;
+    p.U     = 2.0;
+    p.theta = 0.5;
+    p.phi   = 0.1;
+
+    const Mat6 H = HubbardU(S, p);
+
+    // Analytically computed from n̂ components (US = 1.0)
+    const double nz  =  std::cos(p.theta);
+    const double nx  =  std::sin(p.theta) * std::cos(p.phi);
+    const double ny  =  std::sin(p.theta) * std::sin(p.phi);
+    const double tol = 1e-12;
+
+    // spin-up   (rows 0,1,2): -nz
+    EXPECT_NEAR(H(0,0).real(), -nz, tol);
+    EXPECT_NEAR(H(1,1).real(), -nz, tol);
+    EXPECT_NEAR(H(2,2).real(), -nz, tol);
+
+    // spin-down (rows 3,4,5): +nz
+    EXPECT_NEAR(H(3,3).real(),  nz, tol);
+    EXPECT_NEAR(H(4,4).real(),  nz, tol);
+    EXPECT_NEAR(H(5,5).real(),  nz, tol);
+
+    // upper-right off-diagonal: -(nx - i*ny)
+    EXPECT_NEAR(H(0,3).real(), -nx, tol);
+    EXPECT_NEAR(H(0,3).imag(),  ny, tol);
+    EXPECT_NEAR(H(1,4).real(), -nx, tol);
+    EXPECT_NEAR(H(1,4).imag(),  ny, tol);
+    EXPECT_NEAR(H(2,5).real(), -nx, tol);
+    EXPECT_NEAR(H(2,5).imag(),  ny, tol);
+
+    // lower-left off-diagonal: -(nx + i*ny)
+    EXPECT_NEAR(H(3,0).real(), -nx, tol);
+    EXPECT_NEAR(H(3,0).imag(), -ny, tol);
+    EXPECT_NEAR(H(4,1).real(), -nx, tol);
+    EXPECT_NEAR(H(4,1).imag(), -ny, tol);
+    EXPECT_NEAR(H(5,2).real(), -nx, tol);
+    EXPECT_NEAR(H(5,2).imag(), -ny, tol);
+}
+
 // -----------------------------------------------------------------------------
 // SOC matrix tests
 // Spin-major ordering: (0,1,2) = up-yz, up-xz, up-xy | (3,4,5) = dn-yz, dn-xz, dn-xy
