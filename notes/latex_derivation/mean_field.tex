@@ -1,0 +1,132 @@
+\documentclass[11pt]{article}
+
+\usepackage[left=1.5cm, right=1.5cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{bm}
+
+\title{Hubbard Mean Field}
+\author{Anderson Steckler}
+\date{}
+
+\begin{document}
+\maketitle
+\section{Mean Field Hamiltonian}
+\noindent
+We begin with the Hubabrd term
+\begin{gather}
+    H = U\sum_i \hat n_{i\uparrow}\hat n_{i, \downarrow}
+\end{gather}
+with $\hat n_{i\sigma}=c_{i\sigma}^\dagger c_{i\sigma}$. We then treat is in the mean field approach and write
+\begin{gather}
+    \hat n_{i\sigma} = \langle n_{i\sigma}\rangle + \delta n_{i\sigma}
+\end{gather}
+we plug in (dropping second order fluctuation) to get
+\begin{align}
+    H &= U\sum_i\hat n_{i\uparrow}\hat n_{i \downarrow} \\\nonumber
+    &= U\sum_i\left(\langle n_{i\uparrow} \rangle+\delta n_{i\uparrow}\right)\left(\langle n_{i\downarrow} \rangle+\delta n_{i\downarrow}\right) \\\nonumber
+    &= U\sum_i \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle + \langle n_{i\uparrow}\rangle\delta n_{i\downarrow} + \delta n_{i\uparrow}\langle n_{i\downarrow}\rangle
+\end{align}
+Lets replace $\delta n_{i\sigma}=\hat n_{i\sigma} - \langle n_{i\sigma}\rangle$
+\begin{align}
+    H&=U\sum_i \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle + \langle n_{i\uparrow}\rangle(\hat n_{i\downarrow} - \langle n_{i\downarrow}\rangle) + (\hat n_{i\uparrow} - \langle n_{i\uparrow}\rangle)\langle n_{i\downarrow}\rangle \\\nonumber
+    &= U \sum_i \langle n_{i\uparrow}\rangle \hat n_{i\downarrow} + \langle n_{i\downarrow}\rangle \hat n_{i\uparrow} - \langle n_{i\uparrow}\rangle \langle n_{i\downarrow}\rangle
+\end{align}
+Lets introduce $m_i = \langle n_{i\uparrow}\rangle - \langle n_{i\downarrow}\rangle$ and $\langle n_i\rangle = \langle n_{i\uparrow} \rangle + \langle n_{i\downarrow}\rangle$ and rewrite our Hamiltonian to depend on these terms. We can write
+\begin{gather}
+    \langle n_{i\uparrow}\rangle = \frac{\langle n_i \rangle + m_i}{2} \quad \langle n_{i\downarrow}\rangle = \frac{\langle n_i\rangle -m_i}{2}
+\end{gather}
+we plug in to get
+\begin{align}
+    H = \frac{U}{2}\sum_i m_i\left[\hat n_{i\downarrow} - \hat n_{i\uparrow}\right]  +\langle n_i\rangle \left[\hat n_{i\downarrow} + \hat n_{i\uparrow}\right] + C
+\end{align}
+Where $C = \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle$. The second term is also just a density dependent shift which we can absorb into chemical potential.
+\begin{gather}
+    H=\frac{U}{2}\sum_i m_i\left[\hat n_{i\downarrow} - \hat n_{i\uparrow}\right]
+\end{gather}
+In the z direction we can write $\psi^\dagger \sigma_z\psi = \hat n_{i\downarrow} - \hat n_{i\uparrow}$ to write
+\begin{gather}
+    H=-\frac{U}{2}\sum_im_i\hat\psi^\dagger \hat\sigma_z \hat\psi = -\frac{U}{2}\sum_i\hat\psi^\dagger m_i\hat\sigma_z \hat\psi
+\end{gather}
+So far we have assumed magnetization is along z. For an arbitrary direction we replace
+\begin{gather}
+    H=-\frac{U}{2}\sum_i \hat \psi_i^\dagger \bm m_i\cdot \bm{\hat \sigma} \hat \psi_i 
+\end{gather}
+\section{Self Consistent Calculation}
+In the mean field approach we replace the magnetization with the average. We calculate averages in the grand canonical ensemble
+\begin{gather}
+    m = \text{Tr}(\hat m \hat \rho)
+\end{gather}
+where the density matrix for the grand canonical ensemble is
+\begin{gather}
+    \hat \rho = \frac{e^{-\beta(\hat H-\mu \hat N)}}{Z}
+\end{gather}
+with $Z = \text{Tr} ~e^{-\beta (H - \mu N)}$. The Hamiltonian is non-interacting so it can be written on the energy basis
+\begin{gather}
+    \hat H = \sum_n \varepsilon_n d_n^\dagger d_n 
+\end{gather}
+where the creation operator in this basis is defined by $d_n^{\dagger} = \sum_k \langle k|n\rangle c^\dagger_k$. Our fock space is defined by the occupation number in each energy state, for our fermion system this is either zero or one. We label the Fock state like $|\{n_k\}\rangle$. These are eigenstates of the Hamiltonian
+\begin{align}
+    \hat H|\{n_k\}\rangle = \sum_j \varepsilon_j \hat d_j^\dagger \hat d_j \left(\prod_k 
+    \left(d_k^\dagger\right)^{n_k}\right)
+\end{align}
+For $j\neq k$ the commutation is zero and we can flip the two to normal order which results in zero. The only non zero is for when $j=k$. Therefore for a single fock state we can write
+\begin{gather}
+    \hat H|\{n_k\}\rangle = \sum_j \varepsilon_j n_j |\{n_k\}\rangle
+\end{gather}
+the same reasoning allows us to write
+\begin{gather}
+    \hat N |\{n_k\}\rangle = \sum_jn_j|\{n_k\}\rangle
+\end{gather}
+using these results we find the partition function
+\begin{align}
+    Z &= \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}|\{n_k\}\rangle \\\nonumber
+    &=\sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\sum_j\beta(\varepsilon_j - \mu)n_j}|\{n_k\}\rangle \\\nonumber
+    &= \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \prod_j  \langle \{n_k\}|e^{-\beta(\varepsilon_j-\mu)n_j}|\{n_k\}\rangle
+\end{align}
+The sums out front go from 0, 1 since these are fermions. This means that the sums decouple and we can bring the product outside. Then we evaluate one sum from 0 to 1 and we get
+\begin{gather}
+    Z = \prod_j \left(1 + e^{-\beta(\varepsilon_j - \mu)}\right)
+\end{gather}
+Next we are interested in the density
+\begin{align}
+    \langle d^\dagger_m d_n \rangle &= \frac{\text{Tr}\left(e^{-\beta(\hat H - \mu \hat N)}\hat d_m^\dagger d_n\right)}{Z} \\\nonumber
+    &= \frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}\hat d_m^\dagger d_n|\{n_k\}\rangle
+\end{align}
+Since our $\hat H$ and $\hat N$ are diagonal the density matrix is diagonal in this basis and $m = n$.
+\begin{align}
+    \langle d^\dagger_n d_n \rangle &=\frac{1}{Z}\sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}\hat d_n^\dagger d_n|\{n_k\}\rangle \\\nonumber
+    &=\frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}n_n|\{n_k\}\rangle \\\nonumber
+    &=\frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\sum_j\beta(\varepsilon_j - \mu)n_j}n_n|\{n_k\}\rangle \\\nonumber
+    &=\frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|n_n \prod_je^{-\beta(\varepsilon_j - \mu)n_j}|\{n_k\}\rangle
+\end{align}
+We can cancel out all $j\ne n$ terms from the partition function in the denominator. Hence we will get
+\begin{align}
+      \langle d^\dagger_n d_n \rangle &=\frac{\sum_{n=0}^1n_ne^{-\beta(\varepsilon_n - \mu)n_n}}{1+e^{-\beta(\varepsilon_n-\mu)}} \\\nonumber
+      &= \frac{e^{-\beta(\varepsilon_n - \mu)}}{1+e^{-\beta(\varepsilon_n-\mu)}} \\\nonumber
+      &= f(\varepsilon_n-\mu )
+\end{align}
+where $f$ is the fermi dirac distribution. Now we perform a change of basis to the t2g basis. Recall $d_n^{\dagger} = \sum_k \langle k|n\rangle c^\dagger_k$. From the definition of the density matrix we can write
+\begin{align}
+    \rho_{ab} = \langle c_a^\dagger c_b\rangle &= \langle \left( \sum_k \langle a|k\rangle d_k^\dagger \right ) \left(\sum_q \langle q|b\rangle d_q \right) \rangle \\\nonumber
+    &= \sum_{kq}\langle a|k\rangle\langle q | b\rangle \langle d_k^\dagger d_q\rangle \\\nonumber
+    &= \sum_{kq} \langle a|l\rangle\langle q|b\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
+    &= \sum_n \langle a|n\rangle\langle n|b\rangle f(\varepsilon_k -\mu)
+\end{align}
+Where $|n\rangle$ labels the eigenstates and $a,b$ labels the t2g,spin band.
+\subsection{Magnetization}
+Now we evaluate the magnetization
+\begin{align}
+    \bm m = \text{Tr}(\rho \bm \sigma) &= \sum_n \langle n| \rho \bm \sigma |n\rangle \\\nonumber
+    &= \sum_{n,b} \langle n|\rho|b\rangle\langle b| \bm \sigma |n\rangle \\\nonumber
+    &= \sum_{n,b,a,\alpha}\langle n | a\rangle\rho_{ab} \sigma_{b\alpha} \langle \alpha | n \rangle \\\nonumber
+    &= \sum_{n,b,a,\alpha}\langle \alpha | n \rangle\langle n | a\rangle\rho_{ab} \sigma_{b\alpha} \\\nonumber
+    &= \sum_{b,a,\alpha}\langle \alpha | a\rangle\rho_{ab} \sigma_{b\alpha} \\\nonumber
+    &= \sum_{ba}\rho_{ab}\sigma_{ba} \\\nonumber
+    &= \text{Tr} (\rho \cdot \sigma)
+\end{align}
+\end{document}
