@@ -302,6 +302,10 @@ TEST(SOC, ScalesWithLambda) {
 }
 
 // -----------------------------------------------------------------------------
+// Testing SCF.h functions
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
 // Brent root-finder tests
 // -----------------------------------------------------------------------------
 
@@ -337,6 +341,27 @@ TEST(Brent, ExponentialRoot) {
 TEST(Brent, BadBracketAsserts) {
     auto f = [](double x) { return x*x + 1.0; };  // always positive
     EXPECT_DEATH(brent(f, 1.0, 2.0), "");
+}
+
+// Compute eigensystem
+TEST(SCF, BilayerEigenSystem){
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0;
+    p.t2      = 0;
+    p.lam     = 0;
+    p.U       = 0;
+    p.t_perp  = 0.3;
+
+    auto result = compute_eigensystem_grid(0.0, 2, p);
+
+    auto evals = result.evals;
+
+    Eigen::Vector<double, 12> expected_evals;
+    expected_evals << 1.7, 1.7, 1.7, 1.7, 2.3, 2.3, 2.3, 2.3, 4, 4, 4, 4;
+    
+    EXPECT_NEAR((evals[0] - expected_evals).norm(), 0.0, 1e-12);
+
 }
 
 int main(int argc, char** argv) {
