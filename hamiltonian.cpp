@@ -21,7 +21,7 @@ Mat6 H0(double kx, double ky, const Params& p) {
 
     return H;
 }
-
+// Checked
 Mat6 SOC(double lam) {
     // Orbital angular momentum matrices in t2g basis (yz, xz, xy)
     Eigen::Matrix<cd, 3, 3> Lx, Ly, Lz;
@@ -76,7 +76,7 @@ Mat6 SOC(double lam) {
 
     return Hsoc;
 }
-
+// Checked
 Mat6 HubbardU(double S, const Params& p) {
     // Magnetisation direction n̂ = (sin θ cos φ, sin θ sin φ, cos θ)
     const double nx = std::sin(p.theta) * std::cos(p.phi);
@@ -107,6 +107,7 @@ Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
     return H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p);
 }
 
+// Checked
 Mat6 T_perp_mat(const Params& p) {
     Mat6 T = Mat6::Zero();
     // yz (0) and xz (1) hop between layers; xy (2) does not (lobes lie in-plane)

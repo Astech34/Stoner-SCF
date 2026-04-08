@@ -108,42 +108,47 @@ TEST(Hamiltonian, HubbardAngles) {
     const double S = 0.5;
     Params p;
     p.U     = 2.0;
-    p.theta = 0.5;
-    p.phi   = 0.1;
 
-    const Mat6 H = HubbardU(S, p);
+    for (int i = 0; i < 10; i++){
+        for (int j = 0; j < 10; j++){
+            p.theta = i/5.0 * M_PI;  // 0 to π
+            p.phi   = j/5.0 * 2*M_PI;  // 0 to 2π
 
-    // Analytically computed from n̂ components (US = 1.0)
-    const double nz  =  std::cos(p.theta);
-    const double nx  =  std::sin(p.theta) * std::cos(p.phi);
-    const double ny  =  std::sin(p.theta) * std::sin(p.phi);
-    const double tol = 1e-12;
+            const Mat6 H = HubbardU(S, p);
 
-    // spin-up   (rows 0,1,2): -nz
-    EXPECT_NEAR(H(0,0).real(), -nz, tol);
-    EXPECT_NEAR(H(1,1).real(), -nz, tol);
-    EXPECT_NEAR(H(2,2).real(), -nz, tol);
+            // Analytically computed from n̂ components (US = 1.0)
+            const double nz  =  std::cos(p.theta);
+            const double nx  =  std::sin(p.theta) * std::cos(p.phi);
+            const double ny  =  std::sin(p.theta) * std::sin(p.phi);
+            const double tol = 1e-12;
 
-    // spin-down (rows 3,4,5): +nz
-    EXPECT_NEAR(H(3,3).real(),  nz, tol);
-    EXPECT_NEAR(H(4,4).real(),  nz, tol);
-    EXPECT_NEAR(H(5,5).real(),  nz, tol);
+            // spin-up   (rows 0,1,2): -nz
+            EXPECT_NEAR(H(0,0).real(), -nz, tol);
+            EXPECT_NEAR(H(1,1).real(), -nz, tol);
+            EXPECT_NEAR(H(2,2).real(), -nz, tol);
 
-    // upper-right off-diagonal: -(nx - i*ny)
-    EXPECT_NEAR(H(0,3).real(), -nx, tol);
-    EXPECT_NEAR(H(0,3).imag(),  ny, tol);
-    EXPECT_NEAR(H(1,4).real(), -nx, tol);
-    EXPECT_NEAR(H(1,4).imag(),  ny, tol);
-    EXPECT_NEAR(H(2,5).real(), -nx, tol);
-    EXPECT_NEAR(H(2,5).imag(),  ny, tol);
+            // spin-down (rows 3,4,5): +nz
+            EXPECT_NEAR(H(3,3).real(),  nz, tol);
+            EXPECT_NEAR(H(4,4).real(),  nz, tol);
+            EXPECT_NEAR(H(5,5).real(),  nz, tol);
 
-    // lower-left off-diagonal: -(nx + i*ny)
-    EXPECT_NEAR(H(3,0).real(), -nx, tol);
-    EXPECT_NEAR(H(3,0).imag(), -ny, tol);
-    EXPECT_NEAR(H(4,1).real(), -nx, tol);
-    EXPECT_NEAR(H(4,1).imag(), -ny, tol);
-    EXPECT_NEAR(H(5,2).real(), -nx, tol);
-    EXPECT_NEAR(H(5,2).imag(), -ny, tol);
+            // upper-right off-diagonal: -(nx - i*ny)
+            EXPECT_NEAR(H(0,3).real(), -nx, tol);
+            EXPECT_NEAR(H(0,3).imag(),  ny, tol);
+            EXPECT_NEAR(H(1,4).real(), -nx, tol);
+            EXPECT_NEAR(H(1,4).imag(),  ny, tol);
+            EXPECT_NEAR(H(2,5).real(), -nx, tol);
+            EXPECT_NEAR(H(2,5).imag(),  ny, tol);
+
+            // lower-left off-diagonal: -(nx + i*ny)
+            EXPECT_NEAR(H(3,0).real(), -nx, tol);
+            EXPECT_NEAR(H(3,0).imag(), -ny, tol);
+            EXPECT_NEAR(H(4,1).real(), -nx, tol);
+            EXPECT_NEAR(H(4,1).imag(), -ny, tol);
+            EXPECT_NEAR(H(5,2).real(), -nx, tol);
+            EXPECT_NEAR(H(5,2).imag(), -ny, tol);
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
