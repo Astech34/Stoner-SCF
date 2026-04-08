@@ -151,6 +151,33 @@ TEST(Hamiltonian, HubbardAngles) {
     }
 }
 
+TEST(Hamiltonian, BiLayerSimple){
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0;
+    p.t2      = 0;
+    p.lam     = 0;
+    p.U       = 2.0;
+    p.t_perp  = 0.3;
+    // kx=ky=S = 0
+    Mat12 H = Mat12::Zero();
+    const Mat12 HM = bilayerHamiltonian(0, 0, 0, p);
+
+    H(0,0) = -2.0;  H(1, 1) = -2.0; H(2,2) = -4.0;
+    H(3,3) = -2.0;  H(4, 4) = -2.0; H(5,5) = -4.0;
+    H(6,6) = -2.0;  H(7, 7) = -2.0; H(8,8) = -4.0;
+    H(9,9) = -2.0;  H(10,10) = -2.0; H(11,11) = -4.0;
+
+    H(0,6) = 0.3;  H(1,7) = 0.3; H(2,8) = 0;
+    H(3,9) = 0.3;  H(4,10) = 0.3; H(5,11) = 0;
+
+    H(6,0) = 0.3;  H(7,1) = 0.3; H(8,2) = 0;
+    H(9,3) = 0.3;  H(10,4) = 0.3; H(11,5) = 0;
+
+    EXPECT_NEAR((HM - H).norm(), 0.0, 1e-12);
+
+}
+
 // -----------------------------------------------------------------------------
 // SOC matrix tests
 // Spin-major ordering: (0,1,2) = up-yz, up-xz, up-xy | (3,4,5) = dn-yz, dn-xz, dn-xy
