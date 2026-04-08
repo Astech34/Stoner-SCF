@@ -129,4 +129,48 @@ Now we evaluate the magnetization
     &= \sum_{ba}\rho_{ab}\sigma_{ba} \\\nonumber
     &= \text{Tr} (\rho \cdot \sigma)
 \end{align}
+This allows us to write the components of m as
+\begin{align}
+    m_i &= \sum_{ba}\rho_{ab}\sigma^i_{ba} = \sum_{ba}\sum_n f(\varepsilon_n - \mu) \langle a |n \rangle \langle n | b \rangle \sigma^i_{ba} \\\nonumber
+\end{align}
+Where again $n$ are the energy eigenstates and $a,b$ are the t2g,spin basis. When we diagonalize we get eigenvectors like
+\begin{align}
+    |n\rangle = \sum_{a} \langle a|n\rangle |a\rangle = \sum_a c_a |a\rangle
+\end{align}
+Hence we can rewrite the magnetization as
+\begin{align}
+    m_i &= \sum_{ba}\sum_n f(\varepsilon_n - \mu) c_a c_b^* \sigma^i_{ba}
+\end{align}
+To simplify each of the cases further we can plug in the corresponding pauli matrix.
+\begin{align}
+    m_x = \sum_n \sum_{ab} f(\varepsilon_n - \mu) c_a c_b^* \sigma^x_{ba} &= \sum_n f(\varepsilon_n - \mu) (c_1 c_2^* + c_2 c_1^*)
+\end{align}
+Where we can use the fact that with $z = a+bi$ and $y = c+di$ and  $z^*y = (a-bi)(c+di) = ac + bd + adi - bci$
+\begin{align}
+    zy^* + z^*y &= (a+bi)(c-di) + (a-bi)(c+di) \\\nonumber
+    &= ac - adi + bci + bd + ac + adi - bci + bd \\\nonumber
+    &= 2(ac + bd) = 2\text{Re} (z^*y)
+\end{align}
+hence with $1=\uparrow$ and $2=\downarrow$ we can write
+\begin{align}
+    m_x &= 2\sum_n f(\varepsilon_n - \mu) \text{Re}(c_\uparrow^* c_\downarrow)
+\end{align}
+Likewise for $m_y$ we can write
+\begin{align}
+    m_y &= \sum_n f(\varepsilon_n - \mu) (c_2c_1^* - c_1 c_2^*) i
+\end{align}
+Where
+\begin{align}
+    yz^* - zy^* &= (c+di)(a-bi) - (a+bi)(c-di) \\\nonumber
+    &= ca - bci + dai + db - (ac - adi + bci + bd) \\\nonumber
+    &= 2(ad - bc)i = 2\text{Im}(z^*y)i
+\end{align}
+Likewise we can write
+\begin{align}
+    m_y &= 2i\sum_n f(\varepsilon_n - \mu) \text{Im}(c_\uparrow^* c_\downarrow)
+\end{align}
+Lastly for $m_z$ we can write
+\begin{align}
+    m_z &= \sum_n f(\varepsilon_n - \mu) (|c_\uparrow|^2 - |c_\downarrow|^2)
+\end{align}
 \end{document}
