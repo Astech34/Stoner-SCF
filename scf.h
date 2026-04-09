@@ -18,14 +18,13 @@ double brent(std::function<double(double)> f, double a, double b,
              double tol = 1e-10, int max_iter = 100);
 
 // Find chemical potential via Brent on the total electron count
-double find_mu(const Eigensystem& sys, int grid_size = 200,
-               double T = 0.05, double N_target = 5.0);
+double find_mu(const Eigensystem& sys, double T = 0.05, double N_target = 5.0);
 
 // Compute the eigensystem on a k-grid for a given Stoner parameter S
 Eigensystem compute_eigensystem_grid(double S, int grid_size = 200, const Params& p = Params{});
 
 // Calculate total energy per unit cell
-double calculate_total_energy(const Eigensystem& sys, int grid_size, double mu, double T);
+double calculate_total_energy(const Eigensystem& sys, double mu, double T);
 
 // Calculate Stoner parameter S for a given guess, and the corresponding chemical potential
 CalcResult  calculateS(double S, int grid_size, double T, double N_target, const Params& p);

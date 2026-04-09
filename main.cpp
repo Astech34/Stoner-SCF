@@ -20,7 +20,7 @@ int main() {
     const double alpha    = 0.2;
     const double T        = 0.05;
     const double N_target = 10.0;  // 5 electrons per layer x 2 layers
-    const int    grid     = 200;
+    const int    grid     = 400;
 
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "=== Stoner-SCF: MCA energy ===\n";

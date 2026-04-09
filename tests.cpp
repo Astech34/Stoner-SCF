@@ -2,6 +2,7 @@
 #include "hamiltonian.h"
 #include "scf.h"
 #include <cmath>
+#include <iomanip>
 
 // -----------------------------------------------------------------------------
 // Hamiltonian tests
@@ -361,6 +362,46 @@ TEST(SCF, BilayerEigenSystem){
     expected_evals << 1.7, 1.7, 1.7, 1.7, 2.3, 2.3, 2.3, 2.3, 4, 4, 4, 4;
     
     EXPECT_NEAR((evals[0] - expected_evals).norm(), 0.0, 1e-12);
+
+}
+
+// Compute Total Energy single k
+TEST(SCF, TotalEnergy){
+    Eigensystem sys;
+    Eigen::Vector<double, 12> ev;
+    ev << 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+    sys.evals = {ev};
+
+    double mu = 0.5;
+    double T = 0.05;
+    double E1 = 0.000045397868796/24.0;
+
+    double E_total = calculate_total_energy(sys, mu, T);
+
+    std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
+    std::cout << std::setprecision(17) << "E expected = " << (E1) << "\n";
+    EXPECT_NEAR(E_total, E1, 1e-12);
+
+}
+
+TEST(SCF, TotalEnergyTwoK){
+    Eigensystem sys;
+    Eigen::Vector<double, 12> ev1;
+    Eigen::Vector<double, 12> ev2;
+    ev1 << 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+    ev2 << 6, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+    sys.evals = {ev1, ev2};
+
+    double E1 = 0.000045397868796;
+    double E2 = 0.000045397868796;
+
+    double mu = 0.5;
+    double T = 0.05;
+
+    double E_total = calculate_total_energy(sys, mu, T);
+    //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
+    //std::cout << std::setprecision(17) << "E expected = " << (E1 + E2)/2.0 << "\n";
+    EXPECT_NEAR(E_total, (E1 + E2)/(2.0), 1e-12);
 
 }
 

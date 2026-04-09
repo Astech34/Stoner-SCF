@@ -181,4 +181,23 @@ Now the projection is
 \begin{gather}
     m_{\hat n} = \bm m \cdot \hat n = m_x n_x + m_y n_y + m_z n_z
 \end{gather}
+\section{Total Energy}
+The total energy is given by
+\begin{align}
+    E &= \text{Tr}(\hat H \hat \rho) \\
+    &= \sum_n \langle n | H \rho | n \rangle \\\nonumber
+    &= \sum_{n,m} \langle n | H | m \rangle \langle m | \rho | n \rangle \\\nonumber
+    &= \sum_{n,m} \varepsilon_n \delta_{nm} f(\varepsilon_n - \mu) \\\nonumber
+    &= \sum_n \varepsilon_n f(\varepsilon_n - \mu)
+\end{align}
+\section{Number of particles and chemical potential}
+\subsection{Number of particles}
+The number of particles is given by
+\begin{align}
+    N &= \text{Tr}(\hat N \hat \rho) \\
+    &= \sum_n \langle n | N \rho | n \rangle \\\nonumber
+    &= \sum_{n,m} \langle n | N | m \rangle \langle m | \rho | n \rangle \\\nonumber
+    &= \sum_{n,m} \langle n | N | m \rangle \delta_{nm} f(\varepsilon_n - \mu) \\\nonumber
+    &= \sum_n n_n f(\varepsilon_n - \mu)
+\end{align}
 \end{document}

@@ -219,10 +219,10 @@ void save_dos(double S, int grid_size, double T, double N_target,
 
     // --- Compute eigensystem on k-grid ---
     const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
-    const double mu = find_mu(sys, grid_size, T, N_target);
+    const double mu = find_mu(sys, T, N_target);
 
     // --- Energy axis: span all eigenvalues with some padding ---
-    const int N_k     = grid_size * grid_size;
+    const int N_k     = static_cast<int>(sys.evals.size());
     const int N_bands = 12;
 
     double e_min =  std::numeric_limits<double>::infinity();
@@ -269,11 +269,11 @@ void save_dos(double S, int grid_size, double T, double N_target,
 // calculate total energy at given S (for convergence checks or plotting E vs S)
 double calculate_total_energy(double S, int grid_size, double T, double N_target,
                                const Params& p) {
-    const int N_k     = grid_size * grid_size;
     const int N_bands = 12;
 
     const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
-    const double mu = find_mu(sys, grid_size, T, N_target);
+    const int N_k = static_cast<int>(sys.evals.size());
+    const double mu = find_mu(sys, T, N_target);
 
     if (std::isnan(mu)) {
         std::cout << "calculate_total_energy: could not find mu, returning NaN.\n";

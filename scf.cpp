@@ -78,9 +78,9 @@ double brent(std::function<double(double)> f, double a, double b,
 // -----------------------------------------------------------------------------
 // find_mu — mirrors scipy brentq on NTotal(mu) - N_target
 // -----------------------------------------------------------------------------
-double find_mu(const Eigensystem& sys, int grid_size, double T, double N_target) {
-    // Flatten all eigenvalues into one vector for easy min/max and summation
-    const int N_k     = grid_size * grid_size;
+// Check normalization over k vs N particles
+double find_mu(const Eigensystem& sys, double T, double N_target) {
+    const int N_k     = static_cast<int>(sys.evals.size());
     const int N_bands = 12;
 
     double e_min =  std::numeric_limits<double>::infinity();
@@ -112,6 +112,7 @@ double find_mu(const Eigensystem& sys, int grid_size, double T, double N_target)
     }
 }
 
+// Checked for kx=ky=0 S=0 t=1 tdelta=0 t2=0 lam=0 U=0 t_per=0.3
 Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
     const int N = grid_size * grid_size;
 
@@ -122,6 +123,7 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
     // Precompute k-points (linspace from -pi to pi)
     // We exclude the endpoint to avoid duplicate k-points at the BZ boundary,
     // but this is a minor detail
+    // Check this
     std::vector<double> k_lin(grid_size);
     for (int i = 0; i < grid_size; i++)
         k_lin[i] = -M_PI + i * (2.0 * M_PI / (grid_size));
@@ -160,8 +162,8 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
 // -----------------------------------------------------------------------------
 // calculate_total_energy — compute total energy per unit cell for given S
 // -----------------------------------------------------------------------------
-double calculate_total_energy(const Eigensystem& sys, int grid_size, double mu, double T) {
-    const int N_k     = grid_size * grid_size;
+double calculate_total_energy(const Eigensystem& sys, double mu, double T) {
+    const int N_k     = static_cast<int>(sys.evals.size());
     const int N_bands = 12;
 
     double E_total = 0.0;
@@ -185,7 +187,7 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
     const int N_bands = 12;
 
     const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
-    const double mu = find_mu(sys, grid_size, T, N_target);
+    const double mu = find_mu(sys, T, N_target);
     if (std::isnan(mu)) {
         std::cout << "Could not find mu, skipping update.\n";
         return {S, std::numeric_limits<double>::quiet_NaN()};
@@ -222,7 +224,7 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
         }
     }
 
-    const double E_total = calculate_total_energy(sys, grid_size, mu, T);
+    const double E_total = calculate_total_energy(sys, mu, T);
     return {spin_sum / (2.0 * N_k), mu, E_total};
 }
 
