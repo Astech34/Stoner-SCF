@@ -76,13 +76,26 @@ double brent(std::function<double(double)> f, double a, double b,
 }
 
 // -----------------------------------------------------------------------------
+// NTotal — Fermi-Dirac sum over all k-points and bands, normalised per k-point
+// -----------------------------------------------------------------------------
+double NTotal(const Eigensystem& sys, double mu, double T) {
+    const int N_k     = static_cast<int>(sys.evals.size());
+    const int N_bands = 12;
+
+    double n = 0.0;
+    for (const auto& ev : sys.evals)
+        for (int b = 0; b < N_bands; b++) {
+            const double x = std::clamp((ev[b] - mu) / T, -500.0, 500.0);
+            n += 1.0 / (std::exp(x) + 1.0);
+        }
+    return n / static_cast<double>(N_k);
+}
+
+// -----------------------------------------------------------------------------
 // find_mu — mirrors scipy brentq on NTotal(mu) - N_target
 // -----------------------------------------------------------------------------
 // Check normalization over k vs N particles
 double find_mu(const Eigensystem& sys, double T, double N_target) {
-    const int N_k     = static_cast<int>(sys.evals.size());
-    const int N_bands = 12;
-
     double e_min =  std::numeric_limits<double>::infinity();
     double e_max = -std::numeric_limits<double>::infinity();
 
@@ -94,19 +107,8 @@ double find_mu(const Eigensystem& sys, double T, double N_target) {
     const double mu_min = e_min - 5.0 * T;
     const double mu_max = e_max + 5.0 * T;
 
-    // NTotal(mu): Fermi-Dirac sum over all k-points and bands
-    auto NTotal = [&](double mu) -> double {
-        double n = 0.0;
-        for (const auto& ev : sys.evals)
-            for (int b = 0; b < N_bands; b++) {
-                const double x = std::clamp((ev[b] - mu) / T, -500.0, 500.0);
-                n += 1.0 / (std::exp(x) + 1.0);
-            }
-        return n / static_cast<double>(N_k);
-    };
-
     try {
-        return brent([&](double mu) { return NTotal(mu) - N_target; }, mu_min, mu_max);
+        return brent([&](double mu) { return NTotal(sys, mu, T) - N_target; }, mu_min, mu_max);
     } catch (const std::runtime_error&) {
         return std::numeric_limits<double>::quiet_NaN();
     }

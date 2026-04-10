@@ -38,7 +38,7 @@ int main() {
     std::cout << "  grid    = " << grid << " x " << grid << "\n\n";
 
     // run_U_sweep(S0, alpha, grid, T, N_target, 0.0, 4.0, 50, p);
-    run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.01, 0.5, 20, p);
+    run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.01, 0.5, 5, p);
 
     return 0;
 }

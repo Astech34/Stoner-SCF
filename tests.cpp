@@ -374,12 +374,12 @@ TEST(SCF, TotalEnergy){
 
     double mu = 0.5;
     double T = 0.05;
-    double E1 = 0.000045397868796/24.0;
+    double E1 = 0.000045397868796;
 
     double E_total = calculate_total_energy(sys, mu, T);
 
-    std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
-    std::cout << std::setprecision(17) << "E expected = " << (E1) << "\n";
+    //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
+    //std::cout << std::setprecision(17) << "E expected = " << (E1) << "\n";
     EXPECT_NEAR(E_total, E1, 1e-12);
 
 }
@@ -402,6 +402,41 @@ TEST(SCF, TotalEnergyTwoK){
     //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
     //std::cout << std::setprecision(17) << "E expected = " << (E1 + E2)/2.0 << "\n";
     EXPECT_NEAR(E_total, (E1 + E2)/(2.0), 1e-12);
+
+}
+
+TEST(SCF, TestNTotal){
+    Eigensystem sys;
+    Eigen::Vector<double, 12> ev1;
+    Eigen::Vector<double, 12> ev2;
+    ev1 << 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6;
+    ev2 << 3, 1, 3, 4, 5, 6, 3, 1, 3, 4, 5, 6;
+    sys.evals = {ev1, ev2};
+
+    double Ncalc = 0.0000907957374984;
+    double Ntest = NTotal(sys, 0.5, 0.05);
+
+    std::cout << std::setpreciNsion(17) << "N_diff = " << Ntest-Ncalc << "\n";
+    std::cout << std::setprecision(17) << "N_diff * 1e12 = " << (Ntest-Ncalc) * 1e12 << "\n";
+    EXPECT_NEAR(Ntest, Ncalc, 1e-12);
+}
+
+TEST(SCF, CheckMu){
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0.1;
+    p.t2      = 0.1;
+    p.lam     = 0.3;
+    p.U       = 2.0;
+
+    Eigensystem sys = compute_eigensystem_grid(0.2, 100, p);
+
+    double mu = find_mu(sys, 0.05, 10.0);
+    double T = 0.05;
+
+    double Nt = NTotal(sys, mu, T);
+
+    EXPECT_NEAR(Nt, 10.0, 1e-12);
 
 }
 

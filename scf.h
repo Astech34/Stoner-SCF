@@ -17,6 +17,9 @@ struct CalcResult { double S_new; double mu; double E_total; };
 double brent(std::function<double(double)> f, double a, double b,
              double tol = 1e-10, int max_iter = 100);
 
+// Fermi-Dirac sum over all k-points and bands, normalised per k-point
+double NTotal(const Eigensystem& sys, double mu, double T);
+
 // Find chemical potential via Brent on the total electron count
 double find_mu(const Eigensystem& sys, double T = 0.05, double N_target = 5.0);
 

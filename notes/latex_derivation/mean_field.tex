@@ -192,12 +192,14 @@ The total energy is given by
 \end{align}
 \section{Number of particles and chemical potential}
 \subsection{Number of particles}
-The number of particles is given by
+The number of particles per unit cell is given by
 \begin{align}
-    N &= \text{Tr}(\hat N \hat \rho) \\
-    &= \sum_n \langle n | N \rho | n \rangle \\\nonumber
-    &= \sum_{n,m} \langle n | N | m \rangle \langle m | \rho | n \rangle \\\nonumber
-    &= \sum_{n,m} \langle n | N | m \rangle \delta_{nm} f(\varepsilon_n - \mu) \\\nonumber
-    &= \sum_n n_n f(\varepsilon_n - \mu)
+    N = \frac{1}{N_k}\sum_{n,k} f(\varepsilon_{n,k} - \mu) = 10
 \end{align}
+Where we have 5/6 electrons in the t2g. For two layers each unit cell should
+have 10 electrons. We can employ Brent's method of root finding to find the chemical
+potential by solving this equation.
+\begin{gather}
+    N(\mu) - 10 = 0
+\end{gather}
 \end{document}

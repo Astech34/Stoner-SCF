@@ -9,7 +9,7 @@ double calculate_total_energy(const Eigensystem& sys,double mu, double T)
 ```
 Mathematically this is the energy weighted by the fermi dirac distribution. We sum over bands and over a k grid.
 
-$$E = \sum_{n,\vec k} E_{nk} f(\varepsilon_{nk} - \mu)$$
+$$E = \sum_{n,\vec k} \varepsilon_{nk} f(\varepsilon_{nk} - \mu)$$
 
 Where the energy vals are contained in the ```Eigensystem sys```
 
@@ -33,4 +33,6 @@ double calculate_total_energy(const Eigensystem& sys, double mu, double T) {
 }
 ```
 
-Right now this is weighted by number of k points but I'm unsure if this is the correct weighting.
+Right now this is weighted by number of k points but I'm unsure if this is the correct weighting. This isn't used anywhere else just to compare so the weight does not matter for MCA comparison.
+
+### 
