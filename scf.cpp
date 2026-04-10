@@ -180,6 +180,19 @@ double calculate_total_energy(const Eigensystem& sys, double mu, double T) {
     return E_total / static_cast<double>(N_k);
 }
 
+// Layer-major ordering: L1↑(0-2), L1↓(3-5), L2↑(6-8), L2↓(9-11)
+// Gather spin-up and spin-down spinors across both layers from one eigenvector.
+cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
+              Eigen::Vector<cd, 6>& psi_up,
+              Eigen::Vector<cd, 6>& psi_dn)
+{
+    psi_up.segment<3>(0) = col.segment<3>(0);  // L1 spin-up
+    psi_up.segment<3>(3) = col.segment<3>(6);  // L2 spin-up
+    psi_dn.segment<3>(0) = col.segment<3>(3);  // L1 spin-down
+    psi_dn.segment<3>(3) = col.segment<3>(9);  // L2 spin-down
+    return psi_up.dot(psi_dn);                 // ψ↑† · ψ↓
+}
+
 // -----------------------------------------------------------------------------
 // calculateS — one SCF step: diagonalise, find mu, compute new magnetisation
 // mirrors the Python calculateS function
@@ -208,15 +221,8 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
             const double x = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
             const double f = 1.0 / (std::exp(x) + 1.0);
 
-            // Layer-major ordering: L1↑(0-2), L1↓(3-5), L2↑(6-8), L2↓(9-11)
-            // Gather spin-up and spin-down across both layers
-            const auto col = sys.evecs[idx].col(band);
             Eigen::Vector<cd, 6> psi_up, psi_dn;
-            psi_up.segment<3>(0) = col.segment<3>(0);  // L1 spin-up
-            psi_up.segment<3>(3) = col.segment<3>(6);  // L2 spin-up
-            psi_dn.segment<3>(0) = col.segment<3>(3);  // L1 spin-down
-            psi_dn.segment<3>(3) = col.segment<3>(9);  // L2 spin-down
-            const cd cross = psi_up.dot(psi_dn);  // ψ↑† · ψ↓
+            const cd cross = spin_cross(sys.evecs[idx].col(band), psi_up, psi_dn);
 
             const double proj = nz * (psi_up.squaredNorm() - psi_dn.squaredNorm())
                               + 2.0 * nx * cross.real()

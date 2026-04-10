@@ -13,6 +13,11 @@ struct Eigensystem {
 
 struct CalcResult { double S_new; double mu; double E_total; };
 
+// Extract spin-up/down spinors from a bilayer eigenvector and return ψ↑† · ψ↓
+cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
+              Eigen::Vector<cd, 6>& psi_up,
+              Eigen::Vector<cd, 6>& psi_dn);
+
 // Brent's method root finder — f must be continuous and f(a)*f(b) < 0
 double brent(std::function<double(double)> f, double a, double b,
              double tol = 1e-10, int max_iter = 100);
