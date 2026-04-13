@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # --- Load parameters from comment lines ---
 params = {}
-with open("out/mca_lam_sweep.csv") as f:
+with open("build/out/mca_lam_sweep.csv") as f:
     for line in f:
         if not line.startswith("#"):
             break
@@ -13,7 +13,7 @@ with open("out/mca_lam_sweep.csv") as f:
 param_text = "\n".join(f"{k} = {v:g}" for k, v in params.items())
 
 # --- Load data ---
-df = pd.read_csv("out/mca_lam_sweep.csv",
+df = pd.read_csv("build/out/mca_lam_sweep.csv",
                  comment="#")
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))

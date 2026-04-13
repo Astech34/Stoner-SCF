@@ -376,7 +376,7 @@ TEST(SCF, TotalEnergy){
     double T = 0.05;
     double E1 = 0.000045397868796;
 
-    double E_total = calculate_total_energy(sys, mu, T);
+    double E_total = calculate_total_energy(sys, mu, T, 0.0, 0.0);
 
     //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
     //std::cout << std::setprecision(17) << "E expected = " << (E1) << "\n";
@@ -398,7 +398,7 @@ TEST(SCF, TotalEnergyTwoK){
     double mu = 0.5;
     double T = 0.05;
 
-    double E_total = calculate_total_energy(sys, mu, T);
+    double E_total = calculate_total_energy(sys, mu, T, 0.0, 0.0);
     //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
     //std::cout << std::setprecision(17) << "E expected = " << (E1 + E2)/2.0 << "\n";
     EXPECT_NEAR(E_total, (E1 + E2)/(2.0), 1e-12);
@@ -416,7 +416,7 @@ TEST(SCF, TestNTotal){
     double Ncalc = 0.0000907957374984;
     double Ntest = NTotal(sys, 0.5, 0.05);
 
-    std::cout << std::setpreciNsion(17) << "N_diff = " << Ntest-Ncalc << "\n";
+    std::cout << std::setprecision(17) << "N_diff = " << Ntest-Ncalc << "\n";
     std::cout << std::setprecision(17) << "N_diff * 1e12 = " << (Ntest-Ncalc) * 1e12 << "\n";
     EXPECT_NEAR(Ntest, Ncalc, 1e-12);
 }
@@ -438,6 +438,27 @@ TEST(SCF, CheckMu){
 
     EXPECT_NEAR(Nt, 10.0, 1e-12);
 
+}
+
+TEST(SCF, SpinCross){
+    Eigen::Vector<cd, 12> col;
+    col << cd(0,1), cd(2,0), cd(0,3),   // L1 spin-up   (indices 0-2)
+           cd(4,0), cd(5,0), cd(6,0),   // L1 spin-down (indices 3-5)
+           cd(7,0), cd(8,0), cd(9,0),   // L2 spin-up   (indices 6-8)
+           cd(10,0),cd(11,0),cd(12,0);  // L2 spin-down (indices 9-11)
+
+    Eigen::Vector<cd, 6> psi_up, psi_dn;
+    cd cross = spin_cross(col, psi_up, psi_dn);
+
+    // Check spinor extraction
+    EXPECT_EQ(psi_up(0), cd(0,1));   // L1↑
+    EXPECT_EQ(psi_up(3), cd(7,0));   // L2↑
+    EXPECT_EQ(psi_dn(0), cd(4,0));   // L1↓
+    EXPECT_EQ(psi_dn(3), cd(10,0));  // L2↓
+
+    // cross = ψ↑† · ψ↓
+    EXPECT_NEAR(cross.real(), 276, 1e-12);
+    EXPECT_NEAR(cross.imag(), -22, 1e-12);
 }
 
 int main(int argc, char** argv) {

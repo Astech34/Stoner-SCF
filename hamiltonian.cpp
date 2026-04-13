@@ -289,5 +289,6 @@ double calculate_total_energy(double S, int grid_size, double T, double N_target
         }
     }
 
-    return E_total / static_cast<double>(N_k);
+    const double n_orb = N_bands / 2.0;
+    return E_total / static_cast<double>(N_k) + n_orb * p.U * S * S;
 }

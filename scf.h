@@ -32,7 +32,8 @@ double find_mu(const Eigensystem& sys, double T = 0.05, double N_target = 5.0);
 Eigensystem compute_eigensystem_grid(double S, int grid_size = 200, const Params& p = Params{});
 
 // Calculate total energy per unit cell
-double calculate_total_energy(const Eigensystem& sys, double mu, double T);
+double calculate_total_energy(const Eigensystem& sys, double mu, double T,
+                              double S, double U);
 
 // Calculate Stoner parameter S for a given guess, and the corresponding chemical potential
 CalcResult  calculateS(double S, int grid_size, double T, double N_target, const Params& p);

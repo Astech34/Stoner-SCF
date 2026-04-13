@@ -163,8 +163,12 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
 
 // -----------------------------------------------------------------------------
 // calculate_total_energy — compute total energy per unit cell for given S
+// Includes the double-counting correction from the Hubbard mean-field decoupling:
+//   the constant C = -U<n↑><n↓> dropped from H_MF contributes +U*S² per orbital.
+//   With 6 orbitals (3 t2g × 2 layers) the correction is +6*U*S².
 // -----------------------------------------------------------------------------
-double calculate_total_energy(const Eigensystem& sys, double mu, double T) {
+double calculate_total_energy(const Eigensystem& sys, double mu, double T,
+                              double S, double U) {
     const int N_k     = static_cast<int>(sys.evals.size());
     const int N_bands = 12;
 
@@ -177,7 +181,8 @@ double calculate_total_energy(const Eigensystem& sys, double mu, double T) {
         }
     }
 
-    return E_total / static_cast<double>(N_k);
+    const double n_orb = N_bands / 2.0;  // 6: per-orbital Hubbard sites (3 t2g × 2 layers)
+    return E_total / static_cast<double>(N_k) + n_orb * U * S * S;
 }
 
 // Layer-major ordering: L1↑(0-2), L1↓(3-5), L2↑(6-8), L2↓(9-11)
@@ -232,7 +237,7 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
         }
     }
 
-    const double E_total = calculate_total_energy(sys, mu, T);
+    const double E_total = calculate_total_energy(sys, mu, T, S, p.U);
     return {spin_sum / (2.0 * N_k), mu, E_total};
 }
 
