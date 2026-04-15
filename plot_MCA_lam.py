@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # --- Load parameters from comment lines ---
 params = {}
-with open("build/out/mca_lam_sweep.csv") as f:
+with open("out/mca_lam_sweep.csv") as f:
     for line in f:
         if not line.startswith("#"):
             break

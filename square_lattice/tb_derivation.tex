@@ -1,0 +1,65 @@
+\documentclass[11pt]{article}
+
+\usepackage[left=1.5cm, right=1.5cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{bm}
+
+\title{t2g square lattice tight-binding derivation}
+\author{Anderson Steckler}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Single Layer}
+\noindent
+We look at hopping from all orbitals along the two x-y directions.
+\subsection{xy band}
+\subsubsection{x-direction}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/xshift_xy_xy.png}
+        \caption{$d_{xy}$--$d_{xy}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/xshift_xy_xz.png}
+        \caption{$d_{xy}$--$d_{xz}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/xshift_xy_yz.png}
+        \caption{$d_{xy}$--$d_{yz}$}
+    \end{subfigure}
+    \caption{t2g orbital overlaps for nearest-neighbour hopping along $x$.}
+    \label{fig:xshift_overlaps}
+\end{figure}
+
+We look at the slater-koster integrals. The slater direction cosines are
+\begin{gather}
+    l = \frac{\bm R \cdot \hat x}{|\bm R|} \quad m = \frac{\bm R \cdot \hat y}{|\bm R|} \quad n = \frac{\bm R \cdot \hat z}{|\bm R|} \\
+\end{gather}
+In the x direction this is just.
+\begin{gather}
+    l = 1 \quad m = 0 \quad n = 0
+\end{gather}
+This simplifies the xy-xy, xy-xz, and xy-yz integrals to
+\begin{gather}
+    t_{xy,xy} = V_dd\pi \\\nonumber
+    t_{xy,yz} = 0
+    t_{xy,xz} = 0
+\end{gather}
+
+
+\end{document}
