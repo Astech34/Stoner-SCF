@@ -87,13 +87,12 @@ Mat6 HubbardU(double S, const Params& p) {
     // (n̂·σ) = [ nz·I₃,        (nx-i·ny)·I₃ ]
     //          [ (nx+i·ny)·I₃,  -nz·I₃       ]
     const double scale = -p.U * S;
-    const double cshift = p.U * S * S;
 
     Mat6 H = Mat6::Zero();
 
     // Diagonal spin blocks
-    H(0,0) = scale * nz + cshift;   H(1,1) = scale * nz + cshift;   H(2,2) = scale * nz + cshift;
-    H(3,3) = -scale * nz + cshift;  H(4,4) = -scale * nz + cshift;  H(5,5) = -scale * nz + cshift;
+    H(0,0) = scale * nz;   H(1,1) = scale * nz;   H(2,2) = scale * nz;
+    H(3,3) = -scale * nz;  H(4,4) = -scale * nz;  H(5,5) = -scale * nz;
 
     // Off-diagonal spin blocks (only non-zero when n̂ has x or y component)
     const cd off_up   = scale * cd(nx, -ny);  // spin-up row, spin-down col
@@ -291,5 +290,5 @@ double calculate_total_energy(double S, int grid_size, double T, double N_target
     }
 
     const double n_orb = N_bands / 2.0;
-    return E_total / static_cast<double>(N_k);
+    return E_total / static_cast<double>(N_k) + p.U * S * S;
 }
