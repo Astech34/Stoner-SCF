@@ -56,10 +56,49 @@ In the x direction this is just.
 \end{gather}
 This simplifies the xy-xy, xy-xz, and xy-yz integrals to
 \begin{gather}
-    t_{xy,xy} = V_dd\pi \\\nonumber
-    t_{xy,yz} = 0
+    t_{xy,xy} = V_{dd\pi} \quad
+    t_{xy,yz} = 0 \quad
     t_{xy,xz} = 0
 \end{gather}
 
-
+\subsubsection{y-direction}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/yshift_xy_xy.png}
+        \caption{$d_{xy}$--$d_{xy}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/yshift_xy_xz.png}
+        \caption{$d_{xy}$--$d_{xz}$}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/yshift_xy_yz.png}
+        \caption{$d_{xy}$--$d_{yz}$}
+    \end{subfigure}
+    \caption{t2g orbital overlaps for nearest-neighbour hopping along $y$.}
+    \label{fig:yshift_overlaps}
+\end{figure}
+For the y-direction the slater direction cosines are
+\begin{gather}
+    l = 0 \quad m = 1 \quad n = 0
+\end{gather}
+and the integrals are
+\begin{gather}
+    t_{xy,xy} = V_{dd\pi} \quad
+    t_{xy,yz} = 0 \quad
+    t_{xy,xz} = 0
+\end{gather}
+\subsection{Tight Binding Hamiltonian}
+Putting this all together we get this hopping term in the hamiltonian and apply the Fourier transformation
+$c_i = \frac{1}{\sqrt{N}} \sum_k e^{i \bm k \cdot \bm R_i} c_{\bm k}$
+\begin{align}
+    H &= t \sum_{nn, \delta} c_{i+\delta}^\dagger c_i \\\nonumber
+    &= \frac{t}{n} \sum_{nn, \delta} \sum_{q, k} e^{-i \bm q \cdot (\bm R_i + \bm \delta)} e^{i \bm k \cdot \bm R_i} c_{\bm q}^\dagger c_{\bm k} \\\nonumber
+\end{align}
 \end{document}

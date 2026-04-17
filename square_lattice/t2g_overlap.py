@@ -26,10 +26,10 @@ def orbital(name, X, Y, Z, center=(0, 0, 0)):
 # Configuration
 # ---------------------------------------------------------------------------
 orbital_1 = 'xy'
-orbital_2 = 'xz'
+orbital_2 = 'yz'
 
 lattice_const = 20.0                    # square lattice constant (in same units as grid)
-shift = (lattice_const, 0.0, 0.0)      # nearest-neighbour shift along x
+shift = (0.0, lattice_const, 0.0)      # nearest-neighbour shift along x
 
 site_1 = (0.0, 0.0, 0.0)
 site_2 = (site_1[0] + shift[0], site_1[1] + shift[1], site_1[2] + shift[2])
@@ -109,6 +109,23 @@ no_axis = dict(
     showticklabels=False, showaxeslabels=False, visible=False
 )
 
+# Compute axis ranges that work for any shift direction.
+# Each shifted axis spans from -padding past the near site to +padding past the far site;
+# unshifted axes are centred on their midpoint with the same total span.
+padding = 15
+total_span = lattice_const + 2 * padding
+
+def axis_range(lo, hi):
+    span = hi - lo
+    if span < total_span:
+        c = (lo + hi) / 2
+        return [c - total_span / 2, c + total_span / 2]
+    return [lo - padding, hi + padding]
+
+x_range = axis_range(min(site_1[0], site_2[0]), max(site_1[0], site_2[0]))
+y_range = axis_range(min(site_1[1], site_2[1]), max(site_1[1], site_2[1]))
+z_range = axis_range(min(site_1[2], site_2[2]), max(site_1[2], site_2[2]))
+
 fig = go.Figure(data=[
     make_isosurface(V1, f"{orbital_1} at {site_1}", show_scale=True),
     make_isosurface(V2, f"{orbital_2} at {site_2}"),
@@ -116,9 +133,9 @@ fig = go.Figure(data=[
 fig.update_layout(
     title=f"{orbital_1} at {site_1}  |  {orbital_2} at {site_2}",
     scene=dict(
-        xaxis=dict(**no_axis, range=[-15, site_2[0] + 15]),
-        yaxis=dict(**no_axis, range=[-(site_2[0] + 30)/2, (site_2[0] + 30)/2]),
-        zaxis=dict(**no_axis, range=[-(site_2[0] + 30)/2, (site_2[0] + 30)/2]),
+        xaxis=dict(**no_axis, range=x_range),
+        yaxis=dict(**no_axis, range=y_range),
+        zaxis=dict(**no_axis, range=z_range),
         bgcolor='white',
         aspectmode='cube',
         camera=dict(eye=dict(x=0.7, y=0.7, z=0.7)),

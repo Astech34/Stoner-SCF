@@ -44,7 +44,7 @@ we plug in to get
 \begin{align}
     H = \frac{U}{2}\sum_i m_i\left[\hat n_{i\downarrow} - \hat n_{i\uparrow}\right]  +\langle n_i\rangle \left[\hat n_{i\downarrow} + \hat n_{i\uparrow}\right] + C
 \end{align}
-Where $C = \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle$. The second term is also just a density dependent shift which we can absorb into chemical potential.
+Where $C = -\langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle$. The second term depends on the occupancy which we fix to be 10/12 for double layer.
 \begin{gather}
     H=\frac{U}{2}\sum_i m_i\left[\hat n_{i\downarrow} - \hat n_{i\uparrow}\right]
 \end{gather}
@@ -56,10 +56,24 @@ So far we have assumed magnetization is along z. For an arbitrary direction we r
 \begin{gather}
     H=-\frac{U}{2}\sum_i \hat \psi_i^\dagger \bm m_i\cdot \bm{\hat \sigma} \hat \psi_i 
 \end{gather}
-In our code its easier to write S = $\frac{m}{2} \cdot \hat n$.
+In our code its easier to write S = $\frac{m}{2} \cdot \hat n$. Since $m = Tr(\rho \sigma)$ this includes all orbital contributions.
+Lastly we can assume translational invariance and drop the sum over lattice points.
 \begin{gather}
-    H = -US \sum_i \psi_i^\dagger \hat n \cdot \hat \sigma \psi_i
+    H = -US \psi^\dagger \hat n \cdot \hat \sigma \psi
 \end{gather}
+Where $\psi$ is the t2g orbital. Since we calculate the MCA by $E(\hat n) - E(\hat z)$ we need to include the constant
+\begin{align}
+    \langle n_{i\uparrow}\rangle\langle n_{i\downarrow}\rangle &= (\langle n_i\rangle/2 + S)(\langle n_i\rangle/2 - S) \\\nonumber
+    &= \left(\frac{\langle n_i\rangle}{2}\right)^2 - S^2
+\end{align}
+again the filling term is constant and will not effect MCA. Our complete Hamiltonian is then
+\begin{align}
+    H = -US \psi^\dagger \hat n \cdot \hat \sigma \psi + US^2
+\end{align}
+Written in explicit matrix form (spin major) we can write
+\begin{align}
+    H = -US \left[\hat n \cdot \hat \sigma \otimes I_3\right] + US^2 I_6
+\end{align}
 \section{Calculating the magnetization}
 In the mean field approach we replace the magnetization with the average. We calculate averages in the grand canonical ensemble
 \begin{gather}
