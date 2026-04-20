@@ -179,6 +179,28 @@ TEST(Hamiltonian, BiLayerSimple){
 
 }
 
+// For printing Hamiltonian for testing
+TEST(Hamiltonian, PrintBiLayerH){
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0.1;
+    p.t2      = 0.1;
+    p.lam     = 0.1;
+    p.U       = 2.0;
+    p.t_perp  = 0.3;
+    p.theta   = 0.0;
+    p.phi     = 0.0;
+
+    const double S  = 0.3;
+    const double kx = 0.0;
+    const double ky = 0.0;
+
+    const Mat12 H = bilayerHamiltonian(kx, ky, S, p);
+
+    //std::cout << "\nBilayer H (kx=" << kx << ", ky=" << ky << ", S=" << S << "):\n"
+             // << H << "\n";
+}
+
 // -----------------------------------------------------------------------------
 // SOC matrix tests
 // Spin-major ordering: (0,1,2) = up-yz, up-xz, up-xy | (3,4,5) = dn-yz, dn-xz, dn-xy
@@ -459,6 +481,57 @@ TEST(SCF, SpinCross){
     // cross = ψ↑† · ψ↓
     EXPECT_NEAR(cross.real(), 276, 1e-12);
     EXPECT_NEAR(cross.imag(), -22, 1e-12);
+}
+
+// calculateS with U=0 and lam=0: no exchange and no SOC means the spin-up and
+// spin-down blocks of the Hamiltonian are identical.  Every eigenstate carries
+// equal ↑ and ↓ weight, so the spin projection sums to zero exactly regardless
+// of the initial guess S or the chosen direction n̂.
+TEST(SCF, CalculateS_ZeroExchangeGivesZeroMagnetization) {
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0.1;
+    p.t2      = 0.1;
+    p.lam     = 0.0;   // no SOC
+    p.U       = 0.0;   // no exchange
+    p.t_perp  = 0.1;
+    p.theta   = 0.3;   // arbitrary, should not matter
+    p.phi     = 1.1;
+
+    const CalcResult r = calculateS(0.4, 10, 0.05, 10.0, p);
+
+    EXPECT_NEAR(r.S_new, 0.0, 1e-12);
+}
+
+// calculateS with lam=0: the Stoner Hamiltonian has exact SU(2) spin-rotation
+// symmetry when SOC is absent — H0 is spin-diagonal with equal ↑/↓ dispersions,
+// so the Hubbard term for any n̂ is unitarily equivalent to the n̂=ẑ case.
+// S_new must therefore be independent of (theta, phi).
+TEST(SCF, CalculateS_RotationalSymmetryNoSOC) {
+    Params p;
+    p.t1      = 1.0;
+    p.t_delta = 0.1;
+    p.t2      = 0.1;
+    p.lam     = 0.0;   // no SOC → exact spin-rotation symmetry
+    p.U       = 2.0;
+    p.t_perp  = 0.0;
+
+    const double S_in = 0.3;
+    const double T    = 0.05;
+    const double N    = 10.0;
+    const int    grid = 10;
+
+    p.theta = 0.0;         p.phi = 0.0;
+    const double S_z    = calculateS(S_in, grid, T, N, p).S_new;
+
+    p.theta = M_PI / 2.0; p.phi = 0.0;
+    const double S_x    = calculateS(S_in, grid, T, N, p).S_new;
+
+    p.theta = M_PI / 4.0; p.phi = M_PI / 3.0;
+    const double S_diag = calculateS(S_in, grid, T, N, p).S_new;
+
+    EXPECT_NEAR(S_x,    S_z, 1e-10);
+    EXPECT_NEAR(S_diag, S_z, 1e-10);
 }
 
 int main(int argc, char** argv) {

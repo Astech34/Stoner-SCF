@@ -220,6 +220,8 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
 
     // Project the density matrix onto n̂: M = Tr(ρ (n̂·σ)) summed over orbitals and k
     // For each eigenstate: ⟨n̂·σ⟩ = nz(|ψ↑|²-|ψ↓|²) + 2·nx·Re[ψ↑†ψ↓] + 2·ny·Im[ψ↑†ψ↓]
+    // spin_sum is actually definition for magnetization
+    // to return Stoner S we divide by two (in return statment)
     double spin_sum = 0.0;
     for (int idx = 0; idx < N_k; idx++) {
         for (int band = 0; band < N_bands; band++) {

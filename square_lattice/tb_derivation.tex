@@ -94,11 +94,40 @@ and the integrals are
     t_{xy,yz} = 0 \quad
     t_{xy,xz} = 0
 \end{gather}
-\subsection{Tight Binding Hamiltonian}
+\subsubsection{Tight Binding Hamiltonian}
 Putting this all together we get this hopping term in the hamiltonian and apply the Fourier transformation
 $c_i = \frac{1}{\sqrt{N}} \sum_k e^{i \bm k \cdot \bm R_i} c_{\bm k}$
 \begin{align}
-    H &= t \sum_{nn, \delta} c_{i+\delta}^\dagger c_i \\\nonumber
-    &= \frac{t}{n} \sum_{nn, \delta} \sum_{q, k} e^{-i \bm q \cdot (\bm R_i + \bm \delta)} e^{i \bm k \cdot \bm R_i} c_{\bm q}^\dagger c_{\bm k} \\\nonumber
+    H &= t \sum_{R, \delta} c_{i+\delta}^\dagger c_i \\\nonumber
+    &= \frac{t}{N} \sum_{R, \delta} \sum_{q, k} e^{-i \bm q \cdot (\bm R_i + \bm \delta)} e^{i \bm k \cdot \bm R_i} c_{\bm q}^\dagger c_{\bm k} \\\nonumber
+    &= \frac{t}{N} \sum_\delta \sum_{q, k} \delta_{qk} e^{-i \bm q \cdot \bm \delta} c_q^\dagger c_k \\\nonumber
+    &= t \sum_\delta \sum_k e^{-i q \cdot \delta} c_k^\dagger c_k \\\nonumber
+    &= t\sum_k \left[e^{-ik_x a} + e^{-ik_y a} + e^{ik_x a} + e^{ik_y a}\right]c_k^\dagger c_k \\\nonumber
+    &= 2V_{dd\pi} \sum_k \left[\cos(k_x a) + cos(k_y a)\right]c_k^\dagger c_k
 \end{align}
+\subsubsection{Next Nearest Neighbor Hopping}
+Now lets consider this one for the xy band. The hopping vector is now $(a \hat x + a \hat y)$. Our directional cosines are
+\begin{gather}
+    l = 1/\sqrt{2} \quad m = 1/\sqrt{2} \quad n = 0
+\end{gather}
+and the non zero integrals are
+\begin{gather}
+    t_{xy-xy} = \frac{3}{4} V_{dd\sigma} + \frac{1}{4} V_{dd\delta}
+\end{gather}
+it turns out this is the result for all directions i.e $(\pm a \hat x + \pm a \hat y)$ our
+tight binding hamiltonian can then be written as.
+\begin{align}
+    H &= t_{nnn} \sum_\delta \sum_k e^{-ik \cdot \delta} c_k^\dagger c_k \\\nonumber
+    &= t_{nnn} \sum_k \left[e^{-ia(k_x+k_y)}+e^{-ia(k_x-k_y)}+e^{-ia(-k_x+k_y)} + e^{-ia(-k_x-k_y)}\right] c_k^\dagger c_k \\\nonumber
+    &= t_{nnn} \sum_k \left[2\cos(k_xa + k_ya) + 2\cos(k_xa - k_ya)\right] c_k^\dagger c_k \\\nonumber
+    &= 4t_{nnn} \sum_k \cos(k_x a)\cos(k_y a) c_k^\dagger c_k \\\nonumber
+\end{align}
+Using the sum to product $\cos(A + B) + \cos(A - B) = 2\cos A \cos B$
+\subsection{yz band}
+To look at the yz band we apply the following permutation. Its helpful to look at this diagram
+\begin{figure}[H]
+    \includegraphics[width=0.5\textwidth]{images/xshift_xy_yz.png}
+\end{figure}
+From xy we get yz by permuting the axis like $x\xrightarrow{} y \xrightarrow{} z\xrightarrow{}x$, which means
+our direction cosines become $l\xrightarrow{} m \xrightarrow{} n\xrightarrow{}l$
 \end{document}

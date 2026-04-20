@@ -13,7 +13,7 @@ int main() {
     p.t_delta = 0.1;
     p.t2      = 0.1;
     p.lam     = 0.1;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
-    p.U       = 2;   // well into ferromagnetic phase
+    p.U       = 1.5;   // well into ferromagnetic phase
     p.t_perp  = 0.3;   // interlayer hopping (yz and xz only)
 
     const double S0       = 0.3;

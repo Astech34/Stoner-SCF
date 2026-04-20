@@ -26,7 +26,7 @@ def orbital(name, X, Y, Z, center=(0, 0, 0)):
 # Configuration
 # ---------------------------------------------------------------------------
 orbital_1 = 'xy'
-orbital_2 = 'yz'
+orbital_2 = 'xy'
 
 lattice_const = 20.0                    # square lattice constant (in same units as grid)
 shift = (0.0, lattice_const, 0.0)      # nearest-neighbour shift along x
@@ -142,7 +142,8 @@ fig.update_layout(
     )
 )
 shift_label = ''.join(
-    ax for ax, val in zip('xyz', shift) if val != 0.0
+    f"{ax}{'p' if val > 0 else 'm'}"
+    for ax, val in zip('xyz', shift) if val != 0.0
 ) + 'shift'
 filename = f"{shift_label}_{orbital_1}_{orbital_2}.png"
 
