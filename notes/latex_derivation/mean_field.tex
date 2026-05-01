@@ -225,4 +225,122 @@ potential by solving this equation.
 \begin{gather}
     N(\mu) - 10 = 0
 \end{gather}
+\section{Kanamori Hamiltonian}
+To capture the complete physics we extend out model to the Kanamori Hamiltonian
+\begin{gather}
+    H_K = U\sum_m \hat n_{m \uparrow} \hat n_{m \downarrow} 
+    + U' \sum_{m \neq m'} \hat n_{m \uparrow}  \hat n_{m' \downarrow} 
+    + (U'-J) \sum_{m < m', \sigma} \hat n_{m\sigma} \hat n_{m' \sigma} 
+    - J \sum_{m \neq m'} d^\dagger_{m\uparrow} d_{m \downarrow}d^\dagger_{m' \downarrow}d_{m'\uparrow}
+    + J \sum_{m \neq m'} d^\dagger_{m\uparrow} d^\dagger_{m \downarrow} d_{m' \downarrow} d_{m' \uparrow}
+\end{gather}
+We have already looked at the MF treatment of the first term above.
+\subsection{Onsite Repulsion}
+\begin{gather}
+        H = U \sum_i \langle n_{i\uparrow}\rangle \hat n_{i\downarrow} + \langle n_{i\downarrow}\rangle \hat n_{i\uparrow} - \langle n_{i\uparrow}\rangle \langle n_{i\downarrow}\rangle
+\end{gather}
+\subsection{Interorbital Repulsion}
+\subsubsection{Opposite Spin}
+\begin{gather}
+    H = U' \sum_{m \neq m'} \hat n_{m \uparrow}  \hat n_{m' \downarrow} 
+\end{gather}
+As before each operator is written as
+\begin{gather}
+    \hat n_{m\sigma} = \langle n_{m\sigma} \rangle + \delta n_{m \sigma}
+\end{gather}
+which allows us to write
+\begin{align}
+    H &= U' \sum_{m\neq m'} [\langle n_{m\uparrow} \rangle + \delta n_{m \uparrow}]
+    [\langle n_{m'\downarrow} \rangle + \delta n_{m' \downarrow}] \\\nonumber
+    &= U' \sum_{m \neq m'} \langle n_{m \uparrow}\rangle \langle n_{m' \downarrow}\rangle 
+    + \langle n_{m\uparrow}\rangle \delta n_{m' \downarrow} + \langle n_{m' \downarrow}\rangle \delta n_{m \uparrow}
+\end{align}
+with $\delta n_{m\sigma} = \hat n_{m\sigma} - \langle n_{m\sigma}\rangle$
+\begin{align}
+    H &= U' \sum_{m\neq m'} \langle n_{m \uparrow}\rangle \langle n_{m' \downarrow}\rangle
+    + \langle n_{m \uparrow}\rangle [\hat n_{m' \downarrow} - \langle n_{m'\downarrow}\rangle]
+    + \langle n_{m'\downarrow}\rangle [\hat n_{m\uparrow} - \langle n_{m\uparrow}\rangle] \\\nonumber
+    &= U' \sum_{m \neq m'} \langle n_{m\uparrow}\rangle \hat n_{m'\downarrow}
+    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow} 
+    -\langle n_{m \uparrow}\rangle \langle n_{m' \downarrow}\rangle
+\end{align}
+\subsubsection{Same Spin}
+The next term is
+\begin{align}
+    H &= (U'-J) \sum_{m < m', \sigma} \hat n_{m\sigma} \hat n_{m' \sigma} \\\nonumber
+      &= (U'-J) \sum_{m < m', \sigma} [\langle n_{m \sigma}\rangle + \delta n_{m\sigma}][\langle n_{m'\sigma}\rangle + \delta n_{m'\sigma}]\\\nonumber
+      &= (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma}\rangle\langle n_{m'\sigma}\rangle
+      + \langle n_{m\sigma}\rangle \delta n_{m' \sigma} + \langle n_{m'\sigma}\rangle\delta n_{m\sigma}
+\end{align}
+with $\delta n_{m\sigma} = \hat n_{m\sigma} - \langle n_{m\sigma}\rangle$
+\begin{align}
+    H &= (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma}\rangle\langle n_{m'\sigma}\rangle
+      + \langle n_{m\sigma}\rangle [\hat n_{m'\sigma} - \langle n_{m'\sigma}\rangle] 
+      + \langle n_{m'\sigma}\rangle[\hat n_{m\sigma} - \langle n_{m\sigma}\rangle] \\\nonumber
+      &= (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma} \rangle \hat n_{m'\sigma}
+      + \langle n_{m' \sigma} \rangle \hat n_{m \sigma}
+      - \langle n_{m\sigma} \rangle \langle n_{m' \sigma} \rangle
+\end{align}
+\subsection{Exchange/Pair-Hopping Term}
+The terms are
+\begin{align}
+    H &= -J \sum_{m \neq m'} d^\dagger_{m\uparrow} d_{m \downarrow}d^\dagger_{m' \downarrow}d_{m'\uparrow}
+    + J \sum_{m \neq m'} d^\dagger_{m\uparrow} d^\dagger_{m \downarrow} d_{m' \downarrow} d_{m' \uparrow}
+\end{align}
+We can normal order and get
+\begin{align}
+    H &= J \sum_{m \neq m'} \left[d^\dagger_{m\uparrow} d^\dagger_{m' \downarrow}d_{m \downarrow}d_{m'\uparrow}
+    + d^\dagger_{m\uparrow} d^\dagger_{m \downarrow} d_{m' \downarrow} d_{m' \uparrow}\right]
+\end{align}
+Here we expand with mean field
+\begin{align}
+    d^\dagger_1 d^\dagger_2 d_3 d_4 = 
+    -\langle d^\dagger_1 d_3 \rangle d^\dagger_2 d_4
+    +\langle d^\dagger_1 d_4 \rangle d_2^\dagger d_3
+    -\langle d^\dagger_2 d_4 \rangle d^\dagger_1 d_3
+    + \langle d^\dagger_2 d_3 \rangle d^\dagger_1 d_4 \\\nonumber
+    - DC
+\end{align}
+Where DC corrects for double counting and is
+\begin{gather}
+    DC = \langle d^\dagger_1 d_4\rangle\langle d^\dagger_2 d_3 \rangle 
+    - \langle d^\dagger_1 d_3 \rangle \langle d^\dagger_2 d_4 \rangle
+\end{gather}
+Where we drop the $\langle d d \rangle$ and the $\langle d^\dagger d^\dagger \rangle$ channels.
+Hence we can write
+\begin{gather}
+    H_{exc} = J\sum_{m\neq m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle d^\dagger_{m' \downarrow} d_{m\downarrow}
+    + \langle d^\dagger_{m' \downarrow} d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m' \uparrow}
+    - \langle d^\dagger_{m \uparrow} d_{m\downarrow}\rangle d^\dagger_{m'\downarrow}d_{m'\uparrow}
+    - \langle d^\dagger_{m'\downarrow} d_{m'\uparrow} \rangle d^\dagger_{m\uparrow} d_{m \downarrow}\right]
+\end{gather}
+with a correction to the energy shift given by
+\begin{gather}
+    \Delta E_{exc} = J\sum_{m\neq m'} \left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle \langle d^\dagger_{m'\downarrow} d_{m\downarrow}\rangle
+        -\langle d^\dagger_{m\uparrow} d_{m\downarrow}\rangle \langle d^\dagger_{m'\downarrow} d_{m'\uparrow}\rangle
+    \right]
+\end{gather}
+Likewise we can write
+\begin{gather}
+    H_{ph} = J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle d^\dagger_{m\downarrow} d_{m'\downarrow}
+        +\langle d^\dagger_{m\downarrow} d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\uparrow} d_{m'\downarrow}\rangle d^\dagger_{m\downarrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
+    \right]
+\end{gather}
+\begin{gather}
+    \Delta E_{ph} = J \sum_{m\neq m'}\left[ \langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle 
+    \langle d^\dagger_{m\downarrow} d_{m'\downarrow} \rangle
+    - \langle d^\dagger_{m\uparrow} d_{m' \downarrow} \rangle
+    \langle d^\dagger_{m\downarrow}d_{m'\uparrow}\rangle \right]
+\end{gather}
+\section{Complete Kanamori Hamiltonian}
+\begin{align}
+    H^k_{MF} &= U \sum_m \langle n_{m\uparrow}\rangle \hat n_{m\downarrow} + \langle n_{m\downarrow}\rangle \hat n_{m\uparrow} \\\nonumber
+    &+ U' \sum_{m \neq m'} \langle n_{m\uparrow}\rangle \hat n_{m'\downarrow}
+    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow} 
+\end{align}
+
 \end{document}
