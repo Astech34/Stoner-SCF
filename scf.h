@@ -35,8 +35,29 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size = 200, const Params
 double calculate_total_energy(const Eigensystem& sys, double mu, double T,
                               double S, double U);
 
+// Compute the full 12x12 density matrix: rho(a,b) = <c†_a c_b>
+// Averaged over the k-grid using Fermi-Dirac weights
+Mat12 compute_density_matrix(const Eigensystem& sys, double mu, double T);
+
 // Calculate Stoner parameter S for a given guess, and the corresponding chemical potential
 CalcResult  calculateS(double S, int grid_size, double T, double N_target, const Params& p);
 
 // Run the self-consistent loop with linear mixing
 CalcResult  runSelfCalc(double S0, double alpha, int grid_size, double T, double N_target, const Params& p);
+
+// ---- Kanamori SCF ----
+
+struct KanamoriResult { Mat12 rho; double mu; double E_total; };
+
+// Compute eigensystem with the full Kanamori MF Hamiltonian (density matrix input)
+Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
+                                         const Params& p = Params{},
+                                         const KanamoriParams& kp = KanamoriParams{});
+
+// Self-consistent loop converging the full 12x12 density matrix
+// rho0: initial guess (e.g. from a converged Stoner SCF)
+// Convergence criterion: Frobenius norm ||rho_new - rho||_F < tol
+KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
+                               double T, double N_target,
+                               const Params& p = Params{},
+                               const KanamoriParams& kp = KanamoriParams{});

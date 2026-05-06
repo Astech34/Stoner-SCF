@@ -237,7 +237,7 @@ To capture the complete physics we extend out model to the Kanamori Hamiltonian
 We have already looked at the MF treatment of the first term above.
 \subsection{Onsite Repulsion}
 \begin{gather}
-        H = U \sum_i \langle n_{i\uparrow}\rangle \hat n_{i\downarrow} + \langle n_{i\downarrow}\rangle \hat n_{i\uparrow} - \langle n_{i\uparrow}\rangle \langle n_{i\downarrow}\rangle
+        H = U \sum_m \langle n_{m\uparrow}\rangle \hat n_{m\downarrow} + \langle n_{m\downarrow}\rangle \hat n_{m\uparrow} - \langle n_{m\uparrow}\rangle \langle n_{m\downarrow}\rangle
 \end{gather}
 \subsection{Interorbital Repulsion}
 \subsubsection{Opposite Spin}
@@ -340,7 +340,62 @@ Likewise we can write
 \begin{align}
     H^k_{MF} &= U \sum_m \langle n_{m\uparrow}\rangle \hat n_{m\downarrow} + \langle n_{m\downarrow}\rangle \hat n_{m\uparrow} \\\nonumber
     &+ U' \sum_{m \neq m'} \langle n_{m\uparrow}\rangle \hat n_{m'\downarrow}
-    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow} 
+    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow}  \\\nonumber
+    &+ (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma} \rangle \hat n_{m'\sigma}
+    + \langle n_{m' \sigma} \rangle \hat n_{m\sigma} \\\nonumber
+    &+ J\sum_{m\neq m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle d^\dagger_{m' \downarrow} d_{m\downarrow}
+    + \langle d^\dagger_{m' \downarrow} d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m' \uparrow}
+    - \langle d^\dagger_{m \uparrow} d_{m\downarrow}\rangle d^\dagger_{m'\downarrow}d_{m'\uparrow}
+    - \langle d^\dagger_{m'\downarrow} d_{m'\uparrow} \rangle d^\dagger_{m\uparrow} d_{m \downarrow}\right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle d^\dagger_{m\downarrow} d_{m'\downarrow}
+        +\langle d^\dagger_{m\downarrow} d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\uparrow} d_{m'\downarrow}\rangle d^\dagger_{m\downarrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
+    \right]
 \end{align}
+Where we shift the energy by
+\begin{align}
+    \Delta E &= -U \sum_m \langle n_{m\uparrow}\rangle \langle n_{m\downarrow}\rangle
+    - U' \sum_{m\neq m'} \langle n_{m\uparrow}\rangle \langle n_{m'\downarrow}\rangle \\\nonumber
+    &- (U'-J) \sum_{m < m',\sigma} \langle n_{m\sigma} \rangle \langle n_{m'\sigma} \rangle \\\nonumber
+    &+ J\sum_{m\neq m'} \left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle 
+        \langle d^\dagger_{m'\downarrow} d_{m\downarrow}\rangle
+        -\langle d^\dagger_{m\uparrow} d_{m\downarrow}\rangle 
+        \langle d^\dagger_{m'\downarrow} d_{m'\uparrow}\rangle
+    \right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle 
+        \langle d^\dagger_{m\downarrow} d_{m'\downarrow} \rangle
+        - \langle d^\dagger_{m\uparrow} d_{m' \downarrow} \rangle
+        \langle d^\dagger_{m\downarrow}d_{m'\uparrow}\rangle
+    \right]
+\end{align}
+
+\section{Basis States Ordering}
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
+\hline
+\textbf{Index} & \textbf{Layer} & \textbf{Spin} & \textbf{Orbital} \\
+\hline
+0  & $L_1$ & $\uparrow$ & $d_{yz}$ \\
+1  & $L_1$ & $\uparrow$ & $d_{xz}$ \\
+2  & $L_1$ & $\uparrow$ & $d_{xy}$ \\
+3  & $L_1$ & $\downarrow$ & $d_{yz}$ \\
+4  & $L_1$ & $\downarrow$ & $d_{xz}$ \\
+5  & $L_1$ & $\downarrow$ & $d_{xy}$ \\
+6  & $L_2$ & $\uparrow$ & $d_{yz}$ \\
+7  & $L_2$ & $\uparrow$ & $d_{xz}$ \\
+8  & $L_2$ & $\uparrow$ & $d_{xy}$ \\
+9  & $L_2$ & $\downarrow$ & $d_{yz}$ \\
+10 & $L_2$ & $\downarrow$ & $d_{xz}$ \\
+11 & $L_2$ & $\downarrow$ & $d_{xy}$ \\
+\hline
+\end{tabular}
+\caption{Basis state ordering: layer-major $\to$ spin-major $\to$ orbital-minor.}
+\label{tab:basis_ordering}
+\end{table}
 
 \end{document}

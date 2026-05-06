@@ -16,8 +16,8 @@ Mat6 H0(double kx, double ky, const Params& p) {
     Mat6 H = Mat6::Zero();
 
     // Spin-major ordering: spin-up (0,1,2) = yz,xz,xy | spin-down (3,4,5) = yz,xz,xy
-    H(0,0) = e_yz;  H(1,1) = e_xz;  H(2,2) = e_xy;
-    H(3,3) = e_yz;  H(4,4) = e_xz;  H(5,5) = e_xy;
+    H(0,0) = e_yz;               H(1,1) = e_xz;               H(2,2) = e_xy + p.delta_cf;
+    H(3,3) = e_yz;               H(4,4) = e_xz;               H(5,5) = e_xy + p.delta_cf;
 
     return H;
 }
@@ -110,10 +110,11 @@ Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
 // Checked
 Mat6 T_perp_mat(const Params& p) {
     Mat6 T = Mat6::Zero();
-    // yz (0) and xz (1) hop between layers; xy (2) does not (lobes lie in-plane)
-    // Applied to both spin-up (0,1) and spin-down (3,4) blocks
-    T(0,0) = p.t_perp;  T(1,1) = p.t_perp;
-    T(3,3) = p.t_perp;  T(4,4) = p.t_perp;
+    // yz (0) and xz (1): out-of-plane lobes, standard interlayer hopping
+    // xy  (2): in-plane lobes, zero for ideal stacking; nonzero if t_perp_xy is set
+    // Applied to both spin-up (0,1,2) and spin-down (3,4,5) blocks
+    T(0,0) = p.t_perp;     T(1,1) = p.t_perp;     T(2,2) = p.t_perp_xy;
+    T(3,3) = p.t_perp;     T(4,4) = p.t_perp;     T(5,5) = p.t_perp_xy;
     return T;
 }
 
@@ -291,4 +292,81 @@ double calculate_total_energy(double S, int grid_size, double T, double N_target
 
     const double n_orb = N_bands / 2.0;
     return E_total / static_cast<double>(N_k) + p.U * S * S;
+}
+
+// -----------------------------------------------------------------------------
+// KanamoriMF — Kanamori mean-field Hamiltonian (12x12 bilayer)
+// rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
+// -----------------------------------------------------------------------------
+namespace {
+// Compute the 6x6 single-layer Kanamori MF block from the 6x6 density matrix.
+// Spin-major ordering: up = indices 0-2 (yz, xz, xy), down = indices 3-5.
+//
+// Three density-density terms (diagonal in orbital-spin):
+//   U    intraorbital:          <n_{m↑}> n̂_{m↓}  +  <n_{m↓}> n̂_{m↑}
+//   U'   interorbital opp-spin: <n_{m↑}> n̂_{m'↓} +  <n_{m'↓}> n̂_{m↑}   (m≠m')
+//   U'-J interorbital same-spin: <n_{mσ}> n̂_{m'σ} + <n_{m'σ}> n̂_{mσ}   (m<m')
+//
+// Two off-diagonal terms (exchange H_exc and pair-hopping H_ph), each summed
+// over all ordered pairs (m, m') with m≠m', coefficient J.
+Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
+    const double U  = kp.U;
+    const double Up = kp.U_prime;
+    const double J  = kp.J;
+
+    Mat6 H = Mat6::Zero();
+
+    double n_up = 0.0, n_dn = 0.0;
+    for (int m = 0; m < 3; m++) {
+        n_up += rho(m,   m  ).real();
+        n_dn += rho(m+3, m+3).real();
+    }
+
+    // Diagonal terms
+    for (int m = 0; m < 3; m++) {
+        const double n_up_m = rho(m,   m  ).real();
+        const double n_dn_m = rho(m+3, m+3).real();
+
+        H(m,   m  ) += U  * n_dn_m
+                     + Up * (n_dn - n_dn_m)
+                     + (Up - J) * (n_up - n_up_m);
+        H(m+3, m+3) += U  * n_up_m
+                     + Up * (n_up - n_up_m)
+                     + (Up - J) * (n_dn - n_dn_m);
+    }
+
+    // Off-diagonal terms: exchange (H_exc) and pair-hopping (H_ph)
+    for (int m = 0; m < 3; m++) {
+        for (int mp = 0; mp < 3; mp++) {
+            if (mp == m) continue;
+
+            // H_exc 1: <d†_{m↑} d_{m'↑}> d†_{m'↓} d_{m↓}
+            H(mp+3, m+3) += J * rho(m, mp);
+            // H_ph  1: <d†_{m↑} d_{m'↑}> d†_{m↓} d_{m'↓}
+            H(m+3, mp+3) += J * rho(m, mp);
+
+            // H_exc 2 + H_ph 2: (<d†_{m'↓}d_{m↓}> + <d†_{m↓}d_{m'↓}>) d†_{m↑}d_{m'↑}
+            H(m, mp) += J * (rho(mp+3, m+3) + rho(m+3, mp+3));
+
+            // H_exc 3: -<d†_{m↑} d_{m↓}> d†_{m'↓} d_{m'↑}
+            H(mp+3, mp) -= J * rho(m, m+3);
+            // H_ph  3: -<d†_{m↑} d_{m'↓}> d†_{m↓} d_{m'↑}
+            H(m+3, mp) -= J * rho(m, mp+3);
+
+            // H_exc 4: -<d†_{m'↓} d_{m'↑}> d†_{m↑} d_{m↓}
+            H(m, m+3) -= J * rho(mp+3, mp);
+            // H_ph  4: -<d†_{m↓} d_{m'↑}> d†_{m↑} d_{m'↓}
+            H(m, mp+3) -= J * rho(m+3, mp);
+        }
+    }
+
+    return H;
+}
+} // anonymous namespace
+
+Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp) {
+    Mat12 H = Mat12::Zero();
+    H.block<6,6>(0, 0) = kanamori_layer(rho.block<6,6>(0, 0), kp);
+    H.block<6,6>(6, 6) = kanamori_layer(rho.block<6,6>(6, 6), kp);
+    return H;
 }

@@ -17,7 +17,9 @@ struct Params {
     double U       = 2.0;
     double theta   = 0.0;  // polar angle of magnetisation direction (0 = z-axis)
     double phi     = 0.0;  // azimuthal angle of magnetisation direction
-    double t_perp  = 0.0;  // interlayer hopping for yz and xz orbitals (xy = 0 by symmetry)
+    double t_perp    = 0.0;  // interlayer hopping for yz and xz orbitals
+    double t_perp_xy = 0.0;  // interlayer hopping for xy orbital (zero by symmetry for ideal stacking)
+    double delta_cf  = 0.0;  // tetragonal crystal field: raises xy above yz/xz (positive = xy higher)
 };
 
 // Kinetic hopping term (k-dependent, real diagonal)
@@ -46,3 +48,15 @@ void save_band_structure(double S, int n_points, const Params& p,
 void save_dos(double S, int grid_size, double T, double N_target,
               const Params& p, const std::string& filename,
               int n_energy_points = 500, double sigma = 0.05);
+
+// Kanamori interaction parameters
+struct KanamoriParams {
+    double U       = 2.0;  // intraorbital Hubbard repulsion
+    double U_prime = 1.0;  // interorbital Hubbard repulsion
+    double J       = 0.3;  // Hund's coupling (spin-flip exchange + pair hopping)
+};
+
+// Kanamori mean-field Hamiltonian (12x12 bilayer)
+// rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
+// Acts within each layer independently (on-site interaction)
+Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp = KanamoriParams{});

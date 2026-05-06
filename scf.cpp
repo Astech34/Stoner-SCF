@@ -185,6 +185,37 @@ double calculate_total_energy(const Eigensystem& sys, double mu, double T,
     return E_total / static_cast<double>(N_k) + n_orb * U * S * S;
 }
 
+// -----------------------------------------------------------------------------
+// compute_density_matrix — rho(a,b) = (1/N_k) sum_{k,n} f(e_nk - mu) * v_nk(a)* * v_nk(b)
+// Each k-point contributes f_n * v.conjugate() * v.transpose() (outer product)
+// Uses thread-local accumulators reduced via a critical section
+// -----------------------------------------------------------------------------
+Mat12 compute_density_matrix(const Eigensystem& sys, double mu, double T) {
+    const int N_k = static_cast<int>(sys.evals.size());
+
+    Mat12 rho = Mat12::Zero();
+
+    #pragma omp parallel
+    {
+        Mat12 rho_local = Mat12::Zero();
+
+        #pragma omp for schedule(static)
+        for (int idx = 0; idx < N_k; idx++) {
+            for (int band = 0; band < 12; band++) {
+                const double x = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
+                const double f = 1.0 / (std::exp(x) + 1.0);
+                const Eigen::Vector<cd, 12> v = sys.evecs[idx].col(band);
+                rho_local.noalias() += f * v.conjugate() * v.transpose();
+            }
+        }
+
+        #pragma omp critical
+        rho += rho_local;
+    }
+
+    return rho / static_cast<double>(N_k);
+}
+
 // Layer-major ordering: L1↑(0-2), L1↓(3-5), L2↑(6-8), L2↓(9-11)
 // Gather spin-up and spin-down spinors across both layers from one eigenvector.
 cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
@@ -283,4 +314,133 @@ CalcResult runSelfCalc(double S0, double alpha, int grid_size,
 
     std::cout << "Final S: " << S_current << ", mu: " << mu_current << ", E_total: " << E_current << "\n";
     return {S_current, mu_current, E_current};
+}
+
+// -----------------------------------------------------------------------------
+// Kanamori SCF
+// -----------------------------------------------------------------------------
+
+// Double-counting correction to the total energy from the Kanamori MF decoupling.
+// Computed per single layer from the 6x6 density matrix block.
+// Matches the ΔE expression derived in the LaTeX notes (Section: Complete Kanamori Hamiltonian).
+namespace {
+double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
+    const double U  = kp.U;
+    const double Up = kp.U_prime;
+    const double J  = kp.J;
+
+    double dc = 0.0;
+
+    // -U intraorbital: -U sum_m <n_{m↑}><n_{m↓}>
+    for (int m = 0; m < 3; m++)
+        dc -= U * rho(m, m).real() * rho(m+3, m+3).real();
+
+    // -U' interorbital opposite-spin: -U' sum_{m≠m'} <n_{m↑}><n_{m'↓}>
+    for (int m = 0; m < 3; m++)
+        for (int mp = 0; mp < 3; mp++)
+            if (mp != m)
+                dc -= Up * rho(m, m).real() * rho(mp+3, mp+3).real();
+
+    // -(U'-J) same-spin: -(U'-J) sum_{m<m', σ} <n_{mσ}><n_{m'σ}>
+    for (int m = 0; m < 3; m++)
+        for (int mp = m+1; mp < 3; mp++) {
+            dc -= (Up - J) * rho(m,   m  ).real() * rho(mp,   mp  ).real();  // σ=↑
+            dc -= (Up - J) * rho(m+3, m+3).real() * rho(mp+3, mp+3).real(); // σ=↓
+        }
+
+    // J exchange + pair-hopping DC: sum over all ordered pairs m≠m'
+    for (int m = 0; m < 3; m++)
+        for (int mp = 0; mp < 3; mp++) {
+            if (mp == m) continue;
+            // Exchange: <d†_{m↑}d_{m'↑}><d†_{m'↓}d_{m↓}> - <d†_{m↑}d_{m↓}><d†_{m'↓}d_{m'↑}>
+            dc += J * (rho(m, mp) * rho(mp+3, m+3)
+                     - rho(m, m+3) * rho(mp+3, mp)).real();
+            // Pair-hopping: <d†_{m↑}d_{m'↑}><d†_{m↓}d_{m'↓}> - <d†_{m↑}d_{m'↓}><d†_{m↓}d_{m'↑}>
+            dc += J * (rho(m, mp) * rho(m+3, mp+3)
+                     - rho(m, mp+3) * rho(m+3, mp)).real();
+        }
+
+    return dc;
+}
+} // anonymous namespace
+
+// Eigensystem with Kanamori MF: replaces HubbardU(S) with KanamoriMF(rho).
+// k-independent pieces (SOC, T_perp, KanamoriMF) are precomputed outside the k-loop.
+Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
+                                          const Params& p, const KanamoriParams& kp) {
+    const int N = grid_size * grid_size;
+    Eigensystem result;
+    result.evals.resize(N);
+    result.evecs.resize(N);
+
+    std::vector<double> k_lin(grid_size);
+    for (int i = 0; i < grid_size; i++)
+        k_lin[i] = -M_PI + i * (2.0 * M_PI / grid_size);
+
+    // Precompute all k-independent contributions into a single 12x12 matrix
+    const Mat6 Hsoc  = SOC(p.lam);
+    const Mat6 Tperp = T_perp_mat(p);
+
+    Mat12 H_kfree = KanamoriMF(rho, kp);
+    H_kfree.block<6,6>(0, 0) += Hsoc;
+    H_kfree.block<6,6>(6, 6) += Hsoc;
+    H_kfree.block<6,6>(0, 6) += Tperp;
+    H_kfree.block<6,6>(6, 0) += Tperp;
+
+    #pragma omp parallel for schedule(static)
+    for (int idx = 0; idx < N; idx++) {
+        const double kx = k_lin[idx % grid_size];
+        const double ky = k_lin[idx / grid_size];
+
+        const Mat6 H0_k = H0(kx, ky, p);
+        Mat12 H = H_kfree;
+        H.block<6,6>(0, 0) += H0_k;
+        H.block<6,6>(6, 6) += H0_k;
+
+        Eigen::SelfAdjointEigenSolver<Mat12> solver(H);
+        result.evals[idx] = solver.eigenvalues();
+        result.evecs[idx] = solver.eigenvectors();
+    }
+
+    return result;
+}
+
+// Self-consistent loop converging the full density matrix.
+// Convergence: Frobenius norm ||rho_new - rho||_F < tol.
+// Total energy = band sum + double-counting correction from converged rho.
+KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
+                               double T, double N_target,
+                               const Params& p, const KanamoriParams& kp) {
+    constexpr int    max_iter = 5000;
+    constexpr double tol      = 1e-6;
+
+    Mat12 rho = rho0;
+
+    for (int i = 0; i < max_iter; i++) {
+        const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p, kp);
+        const double mu = find_mu(sys, T, N_target);
+        if (std::isnan(mu)) {
+            std::cout << "runKanamoriSCF: could not find mu at iteration " << i << "\n";
+            break;
+        }
+
+        const Mat12 rho_new = compute_density_matrix(sys, mu, T);
+        const double diff = (rho_new - rho).norm();
+
+        std::cout << "Iteration " << i
+                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff << "\n";
+
+        if (diff < tol) {
+            const double bandsum = calculate_total_energy(sys, mu, T, 0.0, 0.0);
+            const double dc = kanamori_dc_layer(rho.block<6,6>(0, 0), kp)
+                            + kanamori_dc_layer(rho.block<6,6>(6, 6), kp);
+            std::cout << "Kanamori SCF converged! mu = " << mu
+                      << ", E_total = " << bandsum + dc << "\n";
+            return {rho, mu, bandsum + dc};
+        }
+
+        rho = alpha * rho_new + (1.0 - alpha) * rho;
+    }
+
+    throw std::runtime_error("runKanamoriSCF: failed to converge within max_iter");
 }

@@ -7,20 +7,57 @@
 #include "scf.h"
 #include "sweep.h"
 
+// Internal spin-major orbital order per 6x6 layer block: yz=0, xz=1, xy=2 (up), yz=3, xz=4, xy=5 (dn)
+static void printKanamoriOccupations(const KanamoriResult& res) {
+    const Mat12& rho = res.rho;
+
+    struct OrbEntry { const char* name; int up; int dn; };
+    // Display in dxy/dxz/dyz order, mapped to internal indices
+    const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
+
+    double total_up = 0.0, total_dn = 0.0;
+
+    for (int layer = 0; layer < 2; layer++) {
+        const int base = layer * 6;
+        double layer_total = 0.0;
+
+        std::cout << "Layer " << (layer + 1) << "\n";
+        std::cout << " Orbital   Spin Up   Spin Dn\n";
+
+        for (const auto& o : orbs) {
+            const double up = rho(base + o.up, base + o.up).real();
+            const double dn = rho(base + o.dn, base + o.dn).real();
+            layer_total += up + dn;
+            total_up    += up;
+            total_dn    += dn;
+            std::cout << "   " << std::left  << std::setw(6) << o.name
+                      << "   " << std::right << std::fixed << std::setprecision(4)
+                      << up << "    " << dn << "\n";
+        }
+        std::cout << "   Total    " << layer_total << "\n\n";
+    }
+
+    std::cout << "Total e-    " << (total_up + total_dn) << "\n";
+    std::cout << "  Moment    " << (total_up - total_dn) << "\n\n";
+    std::cout << "Total energy (eV):    " << res.E_total << "\n";
+}
+
 int main() {
     Params p;
-    p.t1      = 1.0;
+    p.t1      = 1;
     p.t_delta = 0.1;
     p.t2      = 0.1;
-    p.lam     = 0.1;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
-    p.U       = 1.5;   // well into ferromagnetic phase
-    p.t_perp  = 0.3;   // interlayer hopping (yz and xz only)
+    p.lam     = 0.0;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
+    p.U       = 4;   // well into ferromagnetic phase
+    p.t_perp    = 0.3;   // interlayer hopping for yz and xz
+    p.t_perp_xy = 0;   // interlayer hopping for xy (set equal to t_perp per advisor)
+    p.delta_cf  = 0;   // tetragonal crystal field: raises xy above yz/xz
 
     const double S0       = 0.3;
     const double alpha    = 0.2;
     const double T        = 0.05;
     const double N_target = 10.0;  // 5 electrons per layer x 2 layers
-    const int    grid     = 200;
+    const int    grid     = 50;
 
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "=== Stoner-SCF: MCA energy ===\n";
@@ -30,15 +67,51 @@ int main() {
     std::cout << "  t2      = " << p.t2      << "\n";
     std::cout << "  lam     = " << p.lam     << "\n";
     std::cout << "  U       = " << p.U       << "\n";
-    std::cout << "  t_perp  = " << p.t_perp  << "\n";
+    std::cout << "  t_perp    = " << p.t_perp    << "\n";
+    std::cout << "  t_perp_xy = " << p.t_perp_xy << "\n";
+    std::cout << "  delta_cf  = " << p.delta_cf  << "\n";
     std::cout << "  S0      = " << S0        << "\n";
     std::cout << "  alpha   = " << alpha     << "\n";
     std::cout << "  T       = " << T         << "\n";
     std::cout << "  N       = " << N_target  << "\n";
     std::cout << "  grid    = " << grid << " x " << grid << "\n\n";
 
-    // run_U_sweep(S0, alpha, grid, T, N_target, 0.0, 4.0, 50, p);
-    run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.01, 0.5, 20, p);
+    // --- Stoner SCF bootstrap ---
+    std::cout << "=== Stage 1: Stoner SCF bootstrap ===\n";
+    const CalcResult stoner = runSelfCalc(S0, alpha, grid, T, N_target, p);
+    std::cout << "Stoner converged: S = " << stoner.S_new
+              << ", mu = " << stoner.mu
+              << ", E = " << stoner.E_total << "\n\n";
+
+    // Build rho0 from converged Stoner eigensystem
+    const Eigensystem sys0 = compute_eigensystem_grid(stoner.S_new, grid, p);
+    Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
+
+    // Break layer symmetry: shift spin-up on layer 1, spin-down on layer 2
+    // Internal order per layer block: yz=0,xz=1,xy=2 (up) | yz=3,xz=4,xy=5 (dn)
+    const double delta = 0.05;
+    for (int orb = 0; orb < 3; orb++) {
+        rho0(orb,     orb)     += delta;  // layer 1 spin-up
+        rho0(3+orb,   3+orb)   -= delta;  // layer 1 spin-dn
+        rho0(6+orb,   6+orb)   -= delta;  // layer 2 spin-up
+        rho0(9+orb,   9+orb)   += delta;  // layer 2 spin-dn
+    }
+
+    // --- Kanamori SCF ---
+    KanamoriParams kp;
+    kp.U       = p.U;
+    kp.J       = 0.8;
+    kp.U_prime = kp.U - 2*kp.J;  // enforce rotational invariance
+
+    std::cout << "=== Stage 2: Kanamori SCF ===\n";
+    std::cout << "KanamoriParams:\n";
+    std::cout << "  U       = " << kp.U       << "\n";
+    std::cout << "  U'      = " << kp.U_prime << "\n";
+    std::cout << "  J       = " << kp.J       << "\n\n";
+
+    const KanamoriResult kres = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
+    std::cout << "\n";
+    printKanamoriOccupations(kres);
 
     return 0;
 }
