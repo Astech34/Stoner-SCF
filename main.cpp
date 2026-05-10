@@ -44,12 +44,12 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
 
 int main() {
     Params p;
-    p.t1      = 1;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.t1      = 0;
+    p.t_delta = 0.0;
+    p.t2      = 0.0;
     p.lam     = 0.0;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
     p.U       = 4;   // well into ferromagnetic phase
-    p.t_perp    = 0.3;   // interlayer hopping for yz and xz
+    p.t_perp    = 0.0;   // interlayer hopping for yz and xz
     p.t_perp_xy = 0;   // interlayer hopping for xy (set equal to t_perp per advisor)
     p.delta_cf  = 0;   // tetragonal crystal field: raises xy above yz/xz
 
@@ -89,13 +89,21 @@ int main() {
 
     // Break layer symmetry: shift spin-up on layer 1, spin-down on layer 2
     // Internal order per layer block: yz=0,xz=1,xy=2 (up) | yz=3,xz=4,xy=5 (dn)
-    const double delta = 0.05;
-    for (int orb = 0; orb < 3; orb++) {
-        rho0(orb,     orb)     += delta;  // layer 1 spin-up
-        rho0(3+orb,   3+orb)   -= delta;  // layer 1 spin-dn
-        rho0(6+orb,   6+orb)   -= delta;  // layer 2 spin-up
-        rho0(9+orb,   9+orb)   += delta;  // layer 2 spin-dn
-    }
+    const double delta = 0.1;
+    // Break orbital symmetry differently for each orbital
+    // Layer 1
+    rho0(0, 0) += delta;      // dxy spin-up layer 1
+    rho0(1, 1) += 0.0;        // dxz spin-up layer 1
+    rho0(2, 2) -= delta;      // dyz spin-up layer 1
+    rho0(0, 1) += delta;      // dxy-dxz coherence layer 1
+    rho0(1, 0) += delta;      // keep hermitian layer 1
+
+    // Layer 2 (offset by 6)
+    rho0(6, 6)   += delta;    // dxy spin-up layer 2
+    rho0(7, 7)   += 0.0;      // dxz spin-up layer 2
+    rho0(8, 8)   -= delta;    // dyz spin-up layer 2
+    rho0(6, 7)   += delta;    // dxy-dxz coherence layer 2
+    rho0(7, 6)   += delta;    // keep hermitian layer 2
 
     // --- Kanamori SCF ---
     KanamoriParams kp;

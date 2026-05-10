@@ -327,12 +327,16 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
         const double n_up_m = rho(m,   m  ).real();
         const double n_dn_m = rho(m+3, m+3).real();
 
+        // 0.5 to avoid double counting for term 3
+        // Up Diagonal
         H(m,   m  ) += U  * n_dn_m
                      + Up * (n_dn - n_dn_m)
-                     + (Up - J) * (n_up - n_up_m);
+                     + 0.5 * (Up - J) * (n_up - n_up_m);
+        
+        // Down Diagonal
         H(m+3, m+3) += U  * n_up_m
                      + Up * (n_up - n_up_m)
-                     + (Up - J) * (n_dn - n_dn_m);
+                     + 0.5 * (Up - J) * (n_dn - n_dn_m);
     }
 
     // Off-diagonal terms: exchange (H_exc) and pair-hopping (H_ph)
