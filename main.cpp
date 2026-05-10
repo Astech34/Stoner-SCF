@@ -35,6 +35,8 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
                       << "   " << std::right << std::fixed << std::setprecision(4)
                       << up << "    " << dn << "\n";
         }
+        std::cout << "   Spin Up  " << layer_up << "\n";
+        std::cout << "   Spin Dn  " << layer_dn << "\n";
         std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
         std::cout << "   Moment   " << (layer_up - layer_dn) << "\n\n";
     }
