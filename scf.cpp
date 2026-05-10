@@ -130,7 +130,6 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
     for (int i = 0; i < grid_size; i++)
         k_lin[i] = -M_PI + i * (2.0 * M_PI / (grid_size));
 
-    // Precompute SOC once — it's k-independent
     // Precompute k-independent pieces once
     const Mat6 Hsoc = SOC(p.lam);
     const Mat6 Hhub = HubbardU(S, p);
@@ -386,6 +385,7 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
     H_kfree.block<6,6>(6, 6) += Hsoc;
     H_kfree.block<6,6>(0, 6) += Tperp;
     H_kfree.block<6,6>(6, 0) += Tperp;
+    H_kfree += staggered_potential(p);
 
     #pragma omp parallel for schedule(static)
     for (int idx = 0; idx < N; idx++) {

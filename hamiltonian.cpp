@@ -118,6 +118,15 @@ Mat6 T_perp_mat(const Params& p) {
     return T;
 }
 
+Mat12 staggered_potential(const Params& p) {
+    Mat12 V = Mat12::Zero();
+    for (int m = 0; m < 6; m++)
+        V(m, m) = -p.delta_V;   // layer 1: lower energy
+    for (int m = 6; m < 12; m++)
+        V(m, m) = +p.delta_V;   // layer 2: higher energy
+    return V;
+}
+
 Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p) {
     // Layer-major ordering:
     //   rows/cols 0-5:  layer 1 (spin-up yz,xz,xy | spin-down yz,xz,xy)

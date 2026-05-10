@@ -20,6 +20,7 @@ struct Params {
     double t_perp    = 0.0;  // interlayer hopping for yz and xz orbitals
     double t_perp_xy = 0.0;  // interlayer hopping for xy orbital (zero by symmetry for ideal stacking)
     double delta_cf  = 0.0;  // tetragonal crystal field: raises xy above yz/xz (positive = xy higher)
+    double delta_V   = 0.0;  // staggered layer potential: layer 1 shifts by -delta_V, layer 2 by +delta_V
 };
 
 // Kinetic hopping term (k-dependent, real diagonal)
@@ -36,6 +37,9 @@ Mat6 singleLayer(double kx, double ky, double S, const Params& p = Params{});
 
 // Interlayer hopping matrix (6x6, spin-major): t_perp on yz and xz, zero on xy
 Mat6 T_perp_mat(const Params& p = Params{});
+
+// Staggered layer potential: diagonal 12x12 with -delta_V on layer 1, +delta_V on layer 2
+Mat12 staggered_potential(const Params& p = Params{});
 
 // Full bilayer Hamiltonian (12x12, layer-major block structure)
 Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p = Params{});

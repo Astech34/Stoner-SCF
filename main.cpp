@@ -19,7 +19,7 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
 
     for (int layer = 0; layer < 2; layer++) {
         const int base = layer * 6;
-        double layer_total = 0.0;
+        double layer_up = 0.0, layer_dn = 0.0;
 
         std::cout << "Layer " << (layer + 1) << "\n";
         std::cout << " Orbital   Spin Up   Spin Dn\n";
@@ -27,14 +27,16 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
         for (const auto& o : orbs) {
             const double up = rho(base + o.up, base + o.up).real();
             const double dn = rho(base + o.dn, base + o.dn).real();
-            layer_total += up + dn;
-            total_up    += up;
-            total_dn    += dn;
+            layer_up += up;
+            layer_dn += dn;
+            total_up += up;
+            total_dn += dn;
             std::cout << "   " << std::left  << std::setw(6) << o.name
                       << "   " << std::right << std::fixed << std::setprecision(4)
                       << up << "    " << dn << "\n";
         }
-        std::cout << "   Total    " << layer_total << "\n\n";
+        std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
+        std::cout << "   Moment   " << (layer_up - layer_dn) << "\n\n";
     }
 
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
@@ -44,14 +46,15 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
 
 int main() {
     Params p;
-    p.t1      = 0;
-    p.t_delta = 0.0;
-    p.t2      = 0.0;
-    p.lam     = 0.0;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
+    p.t1      = 1;
+    p.t_delta = 0.1;
+    p.t2      = 0.1;
+    p.lam     = 0.08;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
     p.U       = 4;   // well into ferromagnetic phase
-    p.t_perp    = 0.0;   // interlayer hopping for yz and xz
-    p.t_perp_xy = 0;   // interlayer hopping for xy (set equal to t_perp per advisor)
-    p.delta_cf  = 0;   // tetragonal crystal field: raises xy above yz/xz
+    p.t_perp    = 0.8;   // interlayer hopping for yz and xz
+    p.t_perp_xy = 0.3;   // interlayer hopping for xy (set equal to t_perp per advisor)
+    p.delta_cf  = 0.2;   // tetragonal crystal field: raises xy above yz/xz
+    p.delta_V   = 2;   // staggered layer potential (Kanamori only)
 
     const double S0       = 0.3;
     const double alpha    = 0.2;
@@ -70,6 +73,7 @@ int main() {
     std::cout << "  t_perp    = " << p.t_perp    << "\n";
     std::cout << "  t_perp_xy = " << p.t_perp_xy << "\n";
     std::cout << "  delta_cf  = " << p.delta_cf  << "\n";
+    std::cout << "  delta_V   = " << p.delta_V   << "\n";
     std::cout << "  S0      = " << S0        << "\n";
     std::cout << "  alpha   = " << alpha     << "\n";
     std::cout << "  T       = " << T         << "\n";
@@ -89,7 +93,7 @@ int main() {
 
     // Break layer symmetry: shift spin-up on layer 1, spin-down on layer 2
     // Internal order per layer block: yz=0,xz=1,xy=2 (up) | yz=3,xz=4,xy=5 (dn)
-    const double delta = 0.1;
+    const double delta = 0.01;
     // Break orbital symmetry differently for each orbital
     // Layer 1
     rho0(0, 0) += delta;      // dxy spin-up layer 1
