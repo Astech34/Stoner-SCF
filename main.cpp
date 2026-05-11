@@ -48,15 +48,15 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
 
 int main() {
     Params p;
-    p.t1      = 1;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.t1      = 0.3;
+    p.t_delta = 0.05;
+    p.t2      = 0.03;
     p.lam     = 0.08;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
     p.U       = 4;   // well into ferromagnetic phase
-    p.t_perp    = 0.8;   // interlayer hopping for yz and xz
-    p.t_perp_xy = 0.3;   // interlayer hopping for xy (set equal to t_perp per advisor)
+    p.t_perp    = 0.2;   // interlayer hopping for yz and xz
+    p.t_perp_xy = 0.05;   // interlayer hopping for xy (set equal to t_perp per advisor)
     p.delta_cf  = 0.2;   // tetragonal crystal field: raises xy above yz/xz
-    p.delta_V   = 2;   // staggered layer potential (Kanamori only)
+    p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
 
     const double S0       = 0.3;
     const double alpha    = 0.2;
@@ -111,6 +111,16 @@ int main() {
     rho0(6, 7)   += delta;    // dxy-dxz coherence layer 2
     rho0(7, 6)   += delta;    // keep hermitian layer 2
 
+    // Layer 1 - add electrons to spin down channel
+    rho0(3, 3)  += delta;   // dxy spin-dn layer 1
+    rho0(4, 4)  += delta;   // dxz spin-dn layer 1
+    rho0(5, 5)  += delta;   // dyz spin-dn layer 1
+
+    // Layer 2 - remove electrons from spin down channel
+    rho0(9,  9)  -= delta;  // dxy spin-dn layer 2
+    rho0(10, 10) -= delta;  // dxz spin-dn layer 2
+    rho0(11, 11) -= delta;  // dyz spin-dn layer 2
+
     // --- Kanamori SCF ---
     KanamoriParams kp;
     kp.U       = p.U;
@@ -126,6 +136,10 @@ int main() {
     const KanamoriResult kres = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
     std::cout << "\n";
     printKanamoriOccupations(kres);
+
+    // --- delta_V sweep ---
+    //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";
+    //run_delta_V_sweep(S0, alpha, grid, T, N_target, 0.0, 0.1, 20, p, kp);
 
     return 0;
 }

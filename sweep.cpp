@@ -95,3 +95,46 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     outfile.close();
     std::cout << "Results saved to out/mca_lam_sweep.csv\n";
 }
+
+void run_delta_V_sweep(double S0, double alpha, int grid, double T, double N_target,
+                       double dV_min, double dV_max, int N_points,
+                       Params p, KanamoriParams kp) {
+
+    std::filesystem::create_directories("out");
+
+    // Stoner bootstrap — delta_V does not enter this path, so run once
+    std::cout << "=== delta_V sweep: Stoner bootstrap ===\n";
+    p.delta_V = 0.0;
+    const CalcResult stoner = runSelfCalc(S0, alpha, grid, T, N_target, p);
+    const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, grid, p);
+    const Mat12 rho_stoner  = compute_density_matrix(sys0, stoner.mu, T);
+    std::cout << "\n";
+
+    std::ofstream outfile("out/delta_V_sweep.csv");
+    outfile << std::fixed << std::setprecision(6);
+    outfile << "delta_V,n_layer1,n_layer2,delta_n\n";
+
+    for (int i = 0; i < N_points; i++) {
+        p.delta_V = dV_min + i * (dV_max - dV_min) / (N_points - 1);
+        std::cout << "--- delta_V = " << p.delta_V
+                  << " (" << i+1 << "/" << N_points << ") ---\n";
+
+        const KanamoriResult kres = runKanamoriSCF(rho_stoner, alpha, grid, T, N_target, p, kp);
+        const Mat12& rho = kres.rho;
+
+        double n1 = 0.0, n2 = 0.0;
+        for (int m = 0;  m < 6;  m++) n1 += rho(m, m).real();
+        for (int m = 6;  m < 12; m++) n2 += rho(m, m).real();
+        const double dn = n1 - n2;
+
+        std::cout << "  n_layer1 = " << n1
+                  << "  n_layer2 = " << n2
+                  << "  delta_n = "  << dn << "\n\n";
+
+        outfile << p.delta_V << "," << n1 << "," << n2 << "," << dn << "\n";
+        outfile.flush();
+    }
+
+    outfile.close();
+    std::cout << "Results saved to out/delta_V_sweep.csv\n";
+}
