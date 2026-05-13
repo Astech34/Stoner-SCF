@@ -8,6 +8,8 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \setcounter{MaxMatrixCols}{20}
 
@@ -136,7 +138,25 @@ do the diagonalization and calculate the new density matrix using the converganc
 \begin{gather}
     || \rho_{calc} - \rho_{old} || < \epsilon = 10^{-6}
 \end{gather}
-where this is the Frobenius norm. Flatten the matrix and take the norm.
+where this is the Frobenius norm. Flatten the matrix and take the norm. The whole process can be summarized
+\begin{algorithm}[h]
+\caption{Kanamori Self-Consistent Field}
+\label{alg:kanamori_scf}
+\begin{algorithmic}[1]
+\State $\rho \leftarrow \rho_0$ \Comment{Initial guess from converged Stoner SCF}
+\For{each iteration}
+    \State Build $H(\mathbf{k})$ from $\rho$ via \texttt{compute\_eigensystem\_kanamori}
+    \State Find $\mu$ via Brent's method on $N(\mu) = N_{\text{target}}$
+    \State Compute $\rho_{\text{new}}$ from eigensystem and Fermi-Dirac weights
+    \If{$\|\rho_{\text{new}} - \rho\|_F < 10^{-6}$}
+        \State Compute total energy and \Return
+    \EndIf
+    \State Mix: $\rho \leftarrow \alpha\, \rho_{\text{new}} + (1-\alpha)\, \rho$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+the alpha I have been using is $\alpha = 0.2$.
 
 \section{Results}
 \subsection{Hunds Rule}
@@ -235,6 +255,27 @@ $\delta_{cf}^{L2}$ & -0.16 eV \\
 
 These were just suggested from AI I need to go through on my own and think about
 if these are reasonable.
+\\\\
+These are the shared parameters between the Initial Hubabrd Loop and the Kanamori loop.
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\hline
+Parameter & Value & Description \\
+\hline
+$S_0$       & 0.3  & Initial magnetization \\
+$\alpha$    & 0.2  & Mixing parameter \\
+$T$         & 0.05 eV & Temperature \\
+$N_{\text{target}}$ & 10.0 & Target electron number (5 per layer $\times$ 2 layers) \\
+grid        & 50   & $k$-point grid size \\
+\hline
+\end{tabular}
+\caption{SCF numerical parameters.}
+\label{tab:scf_params}
+\end{table}
+
+$S0 = m/2$ and is the initial magnetization for hubbard loop.
+
 \section{Kanamori Hamiltonian}
 To capture the complete physics we extend out model to the Kanamori Hamiltonian
 \begin{align}
