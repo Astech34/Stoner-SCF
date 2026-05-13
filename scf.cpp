@@ -144,10 +144,9 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
         const double ky = k_lin[iy];
 
         // Assemble 12x12 bilayer Hamiltonian (layer-major block structure)
-        const Mat6 H_single = H0(kx, ky, p) + Hsoc + Hhub;
         Mat12 H = Mat12::Zero();
-        H.block<6,6>(0,0) = H_single;
-        H.block<6,6>(6,6) = H_single;
+        H.block<6,6>(0,0) = H0(kx, ky, p, p.delta_cf1) + Hsoc + Hhub;
+        H.block<6,6>(6,6) = H0(kx, ky, p, p.delta_cf2) + Hsoc + Hhub;
         H.block<6,6>(0,6) = T;
         H.block<6,6>(6,0) = T;
 
@@ -392,10 +391,9 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
         const double kx = k_lin[idx % grid_size];
         const double ky = k_lin[idx / grid_size];
 
-        const Mat6 H0_k = H0(kx, ky, p);
         Mat12 H = H_kfree;
-        H.block<6,6>(0, 0) += H0_k;
-        H.block<6,6>(6, 6) += H0_k;
+        H.block<6,6>(0, 0) += H0(kx, ky, p, p.delta_cf1);
+        H.block<6,6>(6, 6) += H0(kx, ky, p, p.delta_cf2);
 
         Eigen::SelfAdjointEigenSolver<Mat12> solver(H);
         result.evals[idx] = solver.eigenvalues();

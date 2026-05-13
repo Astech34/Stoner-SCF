@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-Mat6 H0(double kx, double ky, const Params& p) {
+Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
     const double e_xy = -2*p.t1*(std::cos(kx) + std::cos(ky)) - 4*p.t2*std::cos(kx)*std::cos(ky);
     const double e_xz = -2*p.t1*std::cos(kx) - 2*p.t_delta*std::cos(ky);
     const double e_yz = -2*p.t_delta*std::cos(kx) - 2*p.t1*std::cos(ky);
@@ -16,8 +16,8 @@ Mat6 H0(double kx, double ky, const Params& p) {
     Mat6 H = Mat6::Zero();
 
     // Spin-major ordering: spin-up (0,1,2) = yz,xz,xy | spin-down (3,4,5) = yz,xz,xy
-    H(0,0) = e_yz;               H(1,1) = e_xz;               H(2,2) = e_xy + p.delta_cf;
-    H(3,3) = e_yz;               H(4,4) = e_xz;               H(5,5) = e_xy + p.delta_cf;
+    H(0,0) = e_yz;               H(1,1) = e_xz;               H(2,2) = e_xy + delta_cf;
+    H(3,3) = e_yz;               H(4,4) = e_xz;               H(5,5) = e_xy + delta_cf;
 
     return H;
 }
@@ -104,7 +104,7 @@ Mat6 HubbardU(double S, const Params& p) {
 }
 
 Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
-    return H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p);
+    return H0(kx, ky, p, p.delta_cf1) + SOC(p.lam) + HubbardU(S, p);
 }
 
 // Checked
@@ -131,12 +131,13 @@ Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p) {
     // Layer-major ordering:
     //   rows/cols 0-5:  layer 1 (spin-up yz,xz,xy | spin-down yz,xz,xy)
     //   rows/cols 6-11: layer 2 (same ordering)
-    const Mat6 H_single = H0(kx, ky, p) + SOC(p.lam) + HubbardU(S, p);
-    const Mat6 T        = T_perp_mat(p);
+    const Mat6 Hsoc = SOC(p.lam);
+    const Mat6 Hhub = HubbardU(S, p);
+    const Mat6 T    = T_perp_mat(p);
 
     Mat12 H = Mat12::Zero();
-    H.block<6,6>(0,0) = H_single;
-    H.block<6,6>(6,6) = H_single;
+    H.block<6,6>(0,0) = H0(kx, ky, p, p.delta_cf1) + Hsoc + Hhub;
+    H.block<6,6>(6,6) = H0(kx, ky, p, p.delta_cf2) + Hsoc + Hhub;
     H.block<6,6>(0,6) = T;
     H.block<6,6>(6,0) = T;  // T is real and diagonal, so T† = T
     return H;
@@ -202,10 +203,9 @@ void save_band_structure(double S, int n_points, const Params& p,
     file << std::fixed << std::setprecision(8);
 
     for (const auto& pt : path) {
-        const Mat6  H_single = H0(pt.kx, pt.ky, p) + Hsoc + Hhub;
         Mat12 H = Mat12::Zero();
-        H.block<6,6>(0,0) = H_single;
-        H.block<6,6>(6,6) = H_single;
+        H.block<6,6>(0,0) = H0(pt.kx, pt.ky, p, p.delta_cf1) + Hsoc + Hhub;
+        H.block<6,6>(6,6) = H0(pt.kx, pt.ky, p, p.delta_cf2) + Hsoc + Hhub;
         H.block<6,6>(0,6) = T;
         H.block<6,6>(6,0) = T;
         Eigen::SelfAdjointEigenSolver<Mat12> solver(H);

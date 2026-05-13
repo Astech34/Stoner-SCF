@@ -19,12 +19,13 @@ struct Params {
     double phi     = 0.0;  // azimuthal angle of magnetisation direction
     double t_perp    = 0.0;  // interlayer hopping for yz and xz orbitals
     double t_perp_xy = 0.0;  // interlayer hopping for xy orbital (zero by symmetry for ideal stacking)
-    double delta_cf  = 0.0;  // tetragonal crystal field: raises xy above yz/xz (positive = xy higher)
+    double delta_cf1 = 0.0;  // tetragonal crystal field for layer 1 (positive = xy higher)
+    double delta_cf2 = 0.0;  // tetragonal crystal field for layer 2
     double delta_V   = 0.0;  // staggered layer potential: layer 1 shifts by -delta_V, layer 2 by +delta_V
 };
 
-// Kinetic hopping term (k-dependent, real diagonal)
-Mat6 H0(double kx, double ky, const Params& p = Params{});
+// Kinetic hopping term (k-dependent, real diagonal). delta_cf shifts the xy orbital energy.
+Mat6 H0(double kx, double ky, const Params& p = Params{}, double delta_cf = 0.0);
 
 // Spin-orbit coupling (k-independent, precompute once)
 Mat6 SOC(double lam = 0.1);

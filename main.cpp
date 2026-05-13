@@ -55,8 +55,10 @@ int main() {
     p.U       = 4;   // well into ferromagnetic phase
     p.t_perp    = 0.2;   // interlayer hopping for yz and xz
     p.t_perp_xy = 0.05;   // interlayer hopping for xy (set equal to t_perp per advisor)
-    p.delta_cf  = 0.2;   // tetragonal crystal field: raises xy above yz/xz
-    p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
+    p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
+    p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
+    //p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
+    p.delta_V   = 0.0;   // start with zero staggered layer potential, then sweep in stage 3
 
     const double S0       = 0.3;
     const double alpha    = 0.2;
@@ -74,7 +76,8 @@ int main() {
     std::cout << "  U       = " << p.U       << "\n";
     std::cout << "  t_perp    = " << p.t_perp    << "\n";
     std::cout << "  t_perp_xy = " << p.t_perp_xy << "\n";
-    std::cout << "  delta_cf  = " << p.delta_cf  << "\n";
+    std::cout << "  delta_cf1 = " << p.delta_cf1 << "\n";
+    std::cout << "  delta_cf2 = " << p.delta_cf2 << "\n";
     std::cout << "  delta_V   = " << p.delta_V   << "\n";
     std::cout << "  S0      = " << S0        << "\n";
     std::cout << "  alpha   = " << alpha     << "\n";
