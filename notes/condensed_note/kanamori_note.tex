@@ -1,0 +1,444 @@
+\documentclass[11pt]{article}
+
+\usepackage[left=1.5cm, right=1.5cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{bm}
+
+\setcounter{MaxMatrixCols}{20}
+
+\title{Kanamori Note}
+\author{Anderson Steckler}
+\date{}
+\begin{document}
+\maketitle
+\section{Hamiltonian}
+Our single layer Hamiltonian is given by the following:
+\begin{gather}
+    H = H_0 + H_{SOC} + H_{Kanamori}
+\end{gather}
+the tight binding part of the Hamiltonian is given by (yz, xz, xy) orbital basis
+\begin{gather}
+    e_{yz} = -2 t_1(\cos k_x + \cos k_y)-4 t_2 \cos k_x \cos k_y \\
+    e_{xz} = -2 t_1 \cos k_x - 2 t_{\delta} \cos k_y \\
+    e_{xy} = -2 t_\delta \cos k_x - 2 t_1 \cos k_y\\
+    \\
+    H_0(k) = \begin{pmatrix}
+        e_{yz} & 0 & 0 \\
+        0 & e_{xz} & 0 \\
+        0 & 0 & e_{xy} + \delta_{CF}
+    \end{pmatrix}
+\end{gather}
+where $\Delta_{CF}$ is the crystal field splitting. For the hoppings $t_1$ represents 
+the in plane $V_{dd\pi}$ overlap. $t_2$ represents the diagonal nearest neighbor hopping.
+$t_\delta$ represents a weak hopping which comes from the $V_{dd\delta}$ overlap.
+The spin orbit coupling term is given by
+\begin{gather}
+    H_{SOC} = \lambda \bm{L} \cdot \bm{S}
+\end{gather}
+where $\lambda$ is the strength of the spin orbit coupling. 
+The Kanamori interaction term is done in mean-field and derivation is given at the end. The result is this:
+\begin{align}
+    H^k_{MF} &= U \sum_m \langle n_{m\uparrow}\rangle \hat n_{m\downarrow} + \langle n_{m\downarrow}\rangle \hat n_{m\uparrow} \\\nonumber
+    &+ U' \sum_{m \neq m'} \langle n_{m\uparrow}\rangle \hat n_{m'\downarrow}
+    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow}  \\\nonumber
+    &+ (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma} \rangle \hat n_{m'\sigma}
+    + \langle n_{m' \sigma} \rangle \hat n_{m\sigma} \\\nonumber
+    &+ J\sum_{m\neq m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle d^\dagger_{m' \downarrow} d_{m\downarrow}
+    + \langle d^\dagger_{m' \downarrow} d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m' \uparrow}
+    - \langle d^\dagger_{m \uparrow} d_{m\downarrow}\rangle d^\dagger_{m'\downarrow}d_{m'\uparrow}
+    - \langle d^\dagger_{m'\downarrow} d_{m'\uparrow} \rangle d^\dagger_{m\uparrow} d_{m \downarrow}\right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle d^\dagger_{m\downarrow} d_{m'\downarrow}
+        +\langle d^\dagger_{m\downarrow} d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\uparrow} d_{m'\downarrow}\rangle d^\dagger_{m\downarrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
+    \right]
+\end{align}
+
+\section{Bilayer Hamiltonian}
+The bilayer Hamiltonian is given by
+\begin{gather}
+    H = \begin{pmatrix}
+        H_0 & H_\perp \\
+        H_\perp & H_0
+    \end{pmatrix}
+\end{gather}
+With the interlayer hoppings given by
+\begin{gather}
+    H_\perp = \begin{pmatrix}
+        t_{\perp} & 0 & 0 \\
+        0 & t_{\perp} & 0 \\
+        0 & 0 & t_{xy}
+    \end{pmatrix}
+\end{gather}
+
+\section{Basis Ordering}
+Our order is layer-\> spin -\> orbital. 
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
+\hline
+\textbf{Index} & \textbf{Layer} & \textbf{Spin} & \textbf{Orbital} \\
+\hline
+0  & $L_1$ & $\uparrow$ & $d_{yz}$ \\
+1  & $L_1$ & $\uparrow$ & $d_{xz}$ \\
+2  & $L_1$ & $\uparrow$ & $d_{xy}$ \\
+3  & $L_1$ & $\downarrow$ & $d_{yz}$ \\
+4  & $L_1$ & $\downarrow$ & $d_{xz}$ \\
+5  & $L_1$ & $\downarrow$ & $d_{xy}$ \\
+6  & $L_2$ & $\uparrow$ & $d_{yz}$ \\
+7  & $L_2$ & $\uparrow$ & $d_{xz}$ \\
+8  & $L_2$ & $\uparrow$ & $d_{xy}$ \\
+9  & $L_2$ & $\downarrow$ & $d_{yz}$ \\
+10 & $L_2$ & $\downarrow$ & $d_{xz}$ \\
+11 & $L_2$ & $\downarrow$ & $d_{xy}$ \\
+\hline
+\end{tabular}
+\caption{Basis state ordering: layer-major $\to$ spin-major $\to$ orbital-minor.}
+\label{tab:basis_ordering}
+\end{table}
+
+\section{Self Consistent Loop}
+Our order parameter is the density matrix
+\begin{gather}
+    \rho_{ab} = \langle c^\dagger_a c_b \rangle = \frac{1}{N_k} 
+    \sum_{\mathbf{k},n} f(\varepsilon_{n\mathbf{k}} - \mu)\, v_{n\mathbf{k},a}^* \, v_{n\mathbf{k},b}
+\end{gather}
+where a,b run over the 12 states. Wit our parameters we first run the SCF loop with 
+just the hubbard hamiltonian to get a diagonal initial guess for the density matrix.
+Then we break the symmetry. Doing this in different ways can converge on different
+results so you would have to take the one of lowest energy. For example I get interesting
+results comparable to the DFT with this.
+\begin{equation*}
+\delta\rho = \delta
+\begin{pmatrix}
+    +1 & +1 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 \\
+    +1 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 \\
+    0 &  0 & -1 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 \\
+    0 &  0 &  0 & +1 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 \\
+    0 &  0 &  0 &  0 & +1 &  0 &  0 &  0 &  0 &  0 &  0 &  0 \\
+    0 &  0 &  0 &  0 &  0 & +1 &  0 &  0 &  0 &  0 &  0 &  0 \\
+    0 &  0 &  0 &  0 &  0 &  0 & +1 & +1 &  0 &  0 &  0 &  0 \\
+    0 &  0 &  0 &  0 &  0 &  0 & +1 &  0 &  0 &  0 &  0 &  0 \\
+    0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 & -1 &  0 &  0 &  0 \\
+    0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 & -1 &  0 &  0 \\
+    0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 & -1 &  0 \\
+    0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 &  0 & -1 \\
+\end{pmatrix}
+\end{equation*}
+Which AI reccomended I need to think about the meaning of each of these and why. We then
+do the diagonalization and calculate the new density matrix using the convergance criteria as
+\begin{gather}
+    || \rho_{calc} - \rho_{old} || < \epsilon = 10^{-6}
+\end{gather}
+where this is the Frobenius norm. Flatten the matrix and take the norm.
+
+\section{Results}
+\subsection{Hunds Rule}
+We turn off hopping and SOC. With $U=4~eV$ and $J=0.8~eV$. We also set $t_\perp$ to zero
+so the layers are decoupled.
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+Orbital & Spin Up & Spin Down \\
+\hline
+$d_{xy}$ & 1.0000 & 0.6667 \\
+$d_{xz}$ & 1.0000 & 0.6667 \\
+$d_{yz}$ & 1.0000 & 0.6667 \\
+\hline
+Total & 5.0000 & \\
+\hline
+\end{tabular}
+\caption{Orbital occupancies.}
+\label{tab:occupancy}
+\end{table}
+this follows the first Hund's rule of maxamizing S. But does not maximize L. This is because
+the guess for $\rho_0$ was diagonal. Adding some shift (I didn't write down exactly what it was)
+we get
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+Orbital & Spin Up & Spin Down \\
+\hline
+dxy & 1.0000 & 1.0000 \\
+dxz & 1.0000 & 1.0000 \\
+dyz & 1.0000 & 0.0000 \\
+\hline
+Total & 5.0000 & \\
+\hline
+\end{tabular}
+\caption{Orbital occupancies.}
+\label{tab:occupancy}
+\end{table}
+Where now the yz is unoccupied which corresponds to angular of $m=-1$ in the TP equivelence.
+So now the second rule is satisfied of maximizing L.
+\\\\
+One more comment is that I tried some different shift and got that my code did not converge.
+Again I forgot to write it down which is too bad, but I can try to reproduce it later.
+I think in general the shift to the diagonal $\rho_0$ needs to align with the expected result.
+
+\subsection{Charge Disportion}
+I added a different splitting of the $xy$ orbital for each layer, one positive and one negative
+with slightly less absoulte value. Using the shift to the initial density matrix above (the big 12x12) one
+I get.
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\hline
+ & $n_{xz/yz\downarrow}$ & $n_{xy\downarrow}$ & $n_{\downarrow}$ (total t2g) \\
+\hline
+Co1 DFT   & 0.98 & 0.32 & 2.28 \\
+Co1 Model & 0.78 & 0.37 & 1.94 \\
+Co2 DFT   & 0.38 & 1.00 & 1.76 \\
+Co2 Model & 0.62 & 0.82 & 2.06 \\
+\hline
+\end{tabular}
+\caption{Comparison of Sr3Co2O7 DFT (table 2) and model orbital occupancies.}
+\label{tab:comparison}
+\end{table}
+If we sum the occupations and subtract each layer we get a similar value to the dft $0.13$ vs $0.14$,
+so these crystal field values capture this result. Likewise we see in one layer the $xy$
+orbital has the higher occupation which is reverse to the other layer. But the ratios are not exactly the same.
+This could be due to a mean field artifact, due to it following Hund's first rule it wants the occupations
+of the spin up channel to always be one. 
+\\\\
+We used the following parameters.
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\hline
+Parameter & Value \\
+\hline
+$t_1$              & 0.3 eV   \\
+$t_\delta$         & 0.05 eV  \\
+$t_2$              & 0.03 eV  \\
+$t_\perp$          & 0.2 eV   \\
+$t_\perp^{xy}$     & 0.05 eV  \\
+$\lambda$          & 0.1 eV   \\
+$U$                & 4.0 eV   \\
+$J$                & 0.8 eV   \\
+$U'$               & 2.4 eV   \\
+$\delta_{cf}^{L1}$ & +0.23 eV \\
+$\delta_{cf}^{L2}$ & -0.16 eV \\
+\hline
+\end{tabular}
+\caption{Model parameters.}
+\label{tab:parameters}
+\end{table}
+
+These were just suggested from AI I need to go through on my own and think about
+if these are reasonable.
+\section{Kanamori Hamiltonian}
+To capture the complete physics we extend out model to the Kanamori Hamiltonian
+\begin{align}
+    H_K &= U\sum_m \hat n_{m \uparrow} \hat n_{m \downarrow} 
+    + U' \sum_{m \neq m'} \hat n_{m \uparrow}  \hat n_{m' \downarrow} 
+    + (U'-J) \sum_{m < m', \sigma} \hat n_{m\sigma} \hat n_{m' \sigma} \\\nonumber
+    &- J \sum_{m \neq m'} d^\dagger_{m\uparrow} d_{m \downarrow}d^\dagger_{m' \downarrow}d_{m'\uparrow}
+    + J \sum_{m \neq m'} d^\dagger_{m\uparrow} d^\dagger_{m \downarrow} d_{m' \downarrow} d_{m' \uparrow}
+\end{align}
+We have already looked at the MF treatment of the first term above.
+
+\subsection{Onsite Repulsion}
+\begin{gather}
+        H = U \sum_m \langle n_{m\uparrow}\rangle \hat n_{m\downarrow} + \langle n_{m\downarrow}\rangle \hat n_{m\uparrow} - \langle n_{m\uparrow}\rangle \langle n_{m\downarrow}\rangle
+\end{gather}
+\subsection{Interorbital Repulsion}
+\subsubsection{Opposite Spin}
+\begin{gather}
+    H = U' \sum_{m \neq m'} \hat n_{m \uparrow}  \hat n_{m' \downarrow} 
+\end{gather}
+As before each operator is written as
+\begin{gather}
+    \hat n_{m\sigma} = \langle n_{m\sigma} \rangle + \delta n_{m \sigma}
+\end{gather}
+which allows us to write
+\begin{align}
+    H &= U' \sum_{m\neq m'} [\langle n_{m\uparrow} \rangle + \delta n_{m \uparrow}]
+    [\langle n_{m'\downarrow} \rangle + \delta n_{m' \downarrow}] \\\nonumber
+    &= U' \sum_{m \neq m'} \langle n_{m \uparrow}\rangle \langle n_{m' \downarrow}\rangle 
+    + \langle n_{m\uparrow}\rangle \delta n_{m' \downarrow} + \langle n_{m' \downarrow}\rangle \delta n_{m \uparrow}
+\end{align}
+with $\delta n_{m\sigma} = \hat n_{m\sigma} - \langle n_{m\sigma}\rangle$
+\begin{align}
+    H &= U' \sum_{m\neq m'} \langle n_{m \uparrow}\rangle \langle n_{m' \downarrow}\rangle
+    + \langle n_{m \uparrow}\rangle [\hat n_{m' \downarrow} - \langle n_{m'\downarrow}\rangle]
+    + \langle n_{m'\downarrow}\rangle [\hat n_{m\uparrow} - \langle n_{m\uparrow}\rangle] \\\nonumber
+    &= U' \sum_{m \neq m'} \langle n_{m\uparrow}\rangle \hat n_{m'\downarrow}
+    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow} 
+    -\langle n_{m \uparrow}\rangle \langle n_{m' \downarrow}\rangle
+\end{align}
+\subsubsection{Same Spin}
+The next term is
+\begin{align}
+    H &= (U'-J) \sum_{m < m', \sigma} \hat n_{m\sigma} \hat n_{m' \sigma} \\\nonumber
+      &= (U'-J) \sum_{m < m', \sigma} [\langle n_{m \sigma}\rangle + \delta n_{m\sigma}][\langle n_{m'\sigma}\rangle + \delta n_{m'\sigma}]\\\nonumber
+      &= (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma}\rangle\langle n_{m'\sigma}\rangle
+      + \langle n_{m\sigma}\rangle \delta n_{m' \sigma} + \langle n_{m'\sigma}\rangle\delta n_{m\sigma}
+\end{align}
+with $\delta n_{m\sigma} = \hat n_{m\sigma} - \langle n_{m\sigma}\rangle$
+\begin{align}
+    H &= (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma}\rangle\langle n_{m'\sigma}\rangle
+      + \langle n_{m\sigma}\rangle [\hat n_{m'\sigma} - \langle n_{m'\sigma}\rangle] 
+      + \langle n_{m'\sigma}\rangle[\hat n_{m\sigma} - \langle n_{m\sigma}\rangle] \\\nonumber
+      &= (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma} \rangle \hat n_{m'\sigma}
+      + \langle n_{m' \sigma} \rangle \hat n_{m \sigma}
+      - \langle n_{m\sigma} \rangle \langle n_{m' \sigma} \rangle
+\end{align}
+\subsection{Exchange/Pair-Hopping Term}
+The terms are
+\begin{align}
+    H &= -J \sum_{m \neq m'} d^\dagger_{m\uparrow} d_{m \downarrow}d^\dagger_{m' \downarrow}d_{m'\uparrow}
+    + J \sum_{m \neq m'} d^\dagger_{m\uparrow} d^\dagger_{m \downarrow} d_{m' \downarrow} d_{m' \uparrow}
+\end{align}
+We can normal order and get
+\begin{align}
+    H &= J \sum_{m \neq m'} \left[d^\dagger_{m\uparrow} d^\dagger_{m' \downarrow}d_{m \downarrow}d_{m'\uparrow}
+    + d^\dagger_{m\uparrow} d^\dagger_{m \downarrow} d_{m' \downarrow} d_{m' \uparrow}\right]
+\end{align}
+Here we expand with mean field
+\begin{align}
+    d^\dagger_1 d^\dagger_2 d_3 d_4 = 
+    -\langle d^\dagger_1 d_3 \rangle d^\dagger_2 d_4
+    +\langle d^\dagger_1 d_4 \rangle d_2^\dagger d_3
+    -\langle d^\dagger_2 d_4 \rangle d^\dagger_1 d_3
+    + \langle d^\dagger_2 d_3 \rangle d^\dagger_1 d_4 \\\nonumber
+    + DC
+\end{align}
+Where DC corrects for double counting and is
+\begin{gather}
+    DC = \langle d^\dagger_1 d_4\rangle\langle d^\dagger_2 d_3 \rangle 
+    - \langle d^\dagger_1 d_3 \rangle \langle d^\dagger_2 d_4 \rangle
+\end{gather}
+Where we drop the $\langle d d \rangle$ and the $\langle d^\dagger d^\dagger \rangle$ channels.
+Hence we can write
+\begin{gather}
+    H_{exc} = J\sum_{m\neq m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle d^\dagger_{m' \downarrow} d_{m\downarrow}
+    + \langle d^\dagger_{m' \downarrow} d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m' \uparrow}
+    - \langle d^\dagger_{m \uparrow} d_{m\downarrow}\rangle d^\dagger_{m'\downarrow}d_{m'\uparrow}
+    - \langle d^\dagger_{m'\downarrow} d_{m'\uparrow} \rangle d^\dagger_{m\uparrow} d_{m \downarrow}\right]
+\end{gather}
+with a correction to the energy shift given by the following
+\begin{gather}
+    \Delta E_{exc} = J\sum_{m\neq m'} \left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle \langle d^\dagger_{m'\downarrow} d_{m\downarrow}\rangle
+        -\langle d^\dagger_{m\uparrow} d_{m\downarrow}\rangle \langle d^\dagger_{m'\downarrow} d_{m'\uparrow}\rangle
+    \right]
+\end{gather}
+Likewise we can write
+\begin{gather}
+    H_{ph} = J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle d^\dagger_{m\downarrow} d_{m'\downarrow}
+        +\langle d^\dagger_{m\downarrow} d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\uparrow} d_{m'\downarrow}\rangle d^\dagger_{m\downarrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
+    \right]
+\end{gather}
+\begin{gather}
+    \Delta E_{ph} = J \sum_{m\neq m'}\left[ \langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle 
+    \langle d^\dagger_{m\downarrow} d_{m'\downarrow} \rangle
+    - \langle d^\dagger_{m\uparrow} d_{m' \downarrow} \rangle
+    \langle d^\dagger_{m\downarrow}d_{m'\uparrow}\rangle \right]
+\end{gather}
+\section{Complete Kanamori Hamiltonian}
+\begin{align}
+    H^k_{MF} &= U \sum_m \langle n_{m\uparrow}\rangle \hat n_{m\downarrow} + \langle n_{m\downarrow}\rangle \hat n_{m\uparrow} \\\nonumber
+    &+ U' \sum_{m \neq m'} \langle n_{m\uparrow}\rangle \hat n_{m'\downarrow}
+    + \langle n_{m' \downarrow}\rangle \hat n_{m\uparrow}  \\\nonumber
+    &+ (U'-J) \sum_{m < m', \sigma} \langle n_{m\sigma} \rangle \hat n_{m'\sigma}
+    + \langle n_{m' \sigma} \rangle \hat n_{m\sigma} \\\nonumber
+    &+ J\sum_{m\neq m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle d^\dagger_{m' \downarrow} d_{m\downarrow}
+    + \langle d^\dagger_{m' \downarrow} d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m' \uparrow}
+    - \langle d^\dagger_{m \uparrow} d_{m\downarrow}\rangle d^\dagger_{m'\downarrow}d_{m'\uparrow}
+    - \langle d^\dagger_{m'\downarrow} d_{m'\uparrow} \rangle d^\dagger_{m\uparrow} d_{m \downarrow}\right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle d^\dagger_{m\downarrow} d_{m'\downarrow}
+        +\langle d^\dagger_{m\downarrow} d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\uparrow} d_{m'\downarrow}\rangle d^\dagger_{m\downarrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
+    \right]
+\end{align}
+Where we shift the energy by
+\begin{align}
+    \Delta E &= -U \sum_m \langle n_{m\uparrow}\rangle \langle n_{m\downarrow}\rangle
+    - U' \sum_{m\neq m'} \langle n_{m\uparrow}\rangle \langle n_{m'\downarrow}\rangle \\\nonumber
+    &- (U'-J) \sum_{m < m',\sigma} \langle n_{m\sigma} \rangle \langle n_{m'\sigma} \rangle \\\nonumber
+    &+ J\sum_{m\neq m'} \left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle 
+        \langle d^\dagger_{m'\downarrow} d_{m\downarrow}\rangle
+        -\langle d^\dagger_{m\uparrow} d_{m\downarrow}\rangle 
+        \langle d^\dagger_{m'\downarrow} d_{m'\uparrow}\rangle
+    \right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle 
+        \langle d^\dagger_{m\downarrow} d_{m'\downarrow} \rangle
+        - \langle d^\dagger_{m\uparrow} d_{m' \downarrow} \rangle
+        \langle d^\dagger_{m\downarrow}d_{m'\uparrow}\rangle
+    \right]
+\end{align}
+\section{Density matrix}
+The density matrix for the grand canonical ensemble is
+\begin{gather}
+    \hat \rho = \frac{e^{-\beta(\hat H-\mu \hat N)}}{Z}
+\end{gather}
+with $Z = \text{Tr} ~e^{-\beta (H - \mu N)}$. The Hamiltonian is non-interacting so it can be written on the energy basis
+\begin{gather}
+    \hat H = \sum_n \varepsilon_n d_n^\dagger d_n 
+\end{gather}
+where the creation operator in this basis is defined by $d_n^{\dagger} = \sum_k \langle k|n\rangle c^\dagger_k$. Our fock space is defined by the occupation number in each energy state, for our fermion system this is either zero or one. We label the Fock state like $|\{n_k\}\rangle$. These are eigenstates of the Hamiltonian
+\begin{align}
+    \hat H|\{n_k\}\rangle = \sum_j \varepsilon_j \hat d_j^\dagger \hat d_j \left(\prod_k 
+    \left(d_k^\dagger\right)^{n_k}\right)
+\end{align}
+For $j\neq k$ the commutation is zero and we can flip the two to normal order which results in zero. The only non zero is for when $j=k$. Therefore for a single fock state we can write
+\begin{gather}
+    \hat H|\{n_k\}\rangle = \sum_j \varepsilon_j n_j |\{n_k\}\rangle
+\end{gather}
+the same reasoning allows us to write
+\begin{gather}
+    \hat N |\{n_k\}\rangle = \sum_jn_j|\{n_k\}\rangle
+\end{gather}
+using these results we find the partition function
+\begin{align}
+    Z &= \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}|\{n_k\}\rangle \\\nonumber
+    &=\sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\sum_j\beta(\varepsilon_j - \mu)n_j}|\{n_k\}\rangle \\\nonumber
+    &= \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \prod_j  \langle \{n_k\}|e^{-\beta(\varepsilon_j-\mu)n_j}|\{n_k\}\rangle
+\end{align}
+The sums out front go from 0, 1 since these are fermions. This means that the sums decouple and we can bring the product outside. Then we evaluate one sum from 0 to 1 and we get
+\begin{gather}
+    Z = \prod_j \left(1 + e^{-\beta(\varepsilon_j - \mu)}\right)
+\end{gather}
+Next we are interested in the density
+\begin{align}
+    \langle d^\dagger_m d_n \rangle &= \frac{\text{Tr}\left(e^{-\beta(\hat H - \mu \hat N)}\hat d_m^\dagger d_n\right)}{Z} \\\nonumber
+    &= \frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}\hat d_m^\dagger d_n|\{n_k\}\rangle
+\end{align}
+Since our $\hat H$ and $\hat N$ are diagonal the density matrix is diagonal in this basis and $m = n$.
+\begin{align}
+    \langle d^\dagger_n d_n \rangle &=\frac{1}{Z}\sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}\hat d_n^\dagger d_n|\{n_k\}\rangle \\\nonumber
+    &=\frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\beta(\hat H - \mu \hat N)}n_n|\{n_k\}\rangle \\\nonumber
+    &=\frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|e^{-\sum_j\beta(\varepsilon_j - \mu)n_j}n_n|\{n_k\}\rangle \\\nonumber
+    &=\frac{1}{Z} \sum_{n_0}\sum_{n_1}\ldots\sum_{n_N} \langle \{n_k\}|n_n \prod_je^{-\beta(\varepsilon_j - \mu)n_j}|\{n_k\}\rangle
+\end{align}
+We can cancel out all $j\ne n$ terms from the partition function in the denominator. Hence we will get
+\begin{align}
+      \langle d^\dagger_n d_n \rangle &=\frac{\sum_{n=0}^1n_ne^{-\beta(\varepsilon_n - \mu)n_n}}{1+e^{-\beta(\varepsilon_n-\mu)}} \\\nonumber
+      &= \frac{e^{-\beta(\varepsilon_n - \mu)}}{1+e^{-\beta(\varepsilon_n-\mu)}} \\\nonumber
+      &= f(\varepsilon_n-\mu )
+\end{align}
+where $f$ is the fermi dirac distribution. Now we perform a change of basis to the t2g basis. Recall $d_n^{\dagger} = \sum_k \langle k|n\rangle c^\dagger_k$. From the definition of the density matrix we can write
+\begin{align}
+    \rho_{ab} = \langle c_a^\dagger c_b\rangle &= \langle \left( \sum_k \langle a|k\rangle d_k^\dagger \right ) \left(\sum_q \langle q|b\rangle d_q \right) \rangle \\\nonumber
+    &= \sum_{kq}\langle a|k\rangle\langle q | b\rangle \langle d_k^\dagger d_q\rangle \\\nonumber
+    &= \sum_{kq} \langle a|l\rangle\langle q|b\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
+    &= \sum_n \langle a|n\rangle\langle n|b\rangle f(\varepsilon_k -\mu)
+\end{align}
+Where $|n\rangle$ labels the eigenstates and $a,b$ labels the t2g,spin band.
+\end{document}

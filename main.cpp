@@ -98,6 +98,9 @@ int main() {
 
     // Break layer symmetry: shift spin-up on layer 1, spin-down on layer 2
     // Internal order per layer block: yz=0,xz=1,xy=2 (up) | yz=3,xz=4,xy=5 (dn)
+
+    // This is the wrong orbital ordering, but I didn't catch it.
+    // it gives interesting results so I need to think about this.
     const double delta = 0.01;
     // Break orbital symmetry differently for each orbital
     // Layer 1
