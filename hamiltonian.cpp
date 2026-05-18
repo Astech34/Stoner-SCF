@@ -346,12 +346,28 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
         H(m+3, m+3) += U  * n_up_m
                      + Up * (n_up - n_up_m)
                      + 0.5 * (Up - J) * (n_dn - n_dn_m);
+        
+        // Hubbard U Off Diagonal Terms
+        H(m+3, m) -= U * rho(m, m+3); // -U <d†_{m↑} d_{m↓}> d†_{m↓} d_{m↑}
+        H(m, m+3) -= U * rho(m+3, m); // -U <d†_{m↓} d_{m↑}> d†_{m↑} d_{m↓}
     }
 
     // Off-diagonal terms: exchange (H_exc) and pair-hopping (H_ph)
     for (int m = 0; m < 3; m++) {
         for (int mp = 0; mp < 3; mp++) {
             if (mp == m) continue;
+
+            // U' off diagonal terms
+            H(mp+3, m) -= Up * rho(m, mp+3);
+            H(m, mp+3) -= Up * rho(mp+3, m);
+
+            // U'-J off diagonal
+            // Up Spin
+            H(mp, m) -= (Up - J) * rho(m, mp);
+            H(m, mp) -= (Up - J) * rho(mp, m);
+            // Down Spin
+            H(mp+3, m+3) -= (Up - J) * rho(m+3, mp+3);
+            H(m+3, mp+3) -= (Up - J) * rho(mp+3, m+3);
 
             // H_exc 1: <d†_{m↑} d_{m'↑}> d†_{m'↓} d_{m↓}
             H(mp+3, m+3) += J * rho(m, mp);
