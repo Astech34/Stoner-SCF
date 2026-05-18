@@ -373,6 +373,136 @@ Where we shift the energy by
     \right]
 \end{align}
 
+\section{Correct Kanamori}
+\subsection{Onsite Repulsion}
+The following term is
+\begin{align}
+    H &= U\sum_{m} \hat n_{m\uparrow} \hat n_{m\downarrow} \\\nonumber
+    &= U \sum_{m} d^\dagger_{m\uparrow} d_{m\uparrow} d^\dagger_{m\downarrow} d_{m\downarrow} \\\nonumber
+    &= -U \sum_{m} d^\dagger_{m\uparrow} d^\dagger_{m\downarrow} d_{m\uparrow} d_{m\downarrow} \\\nonumber
+\end{align}
+We then use the mean field expansion
+\begin{align}
+    d^\dagger_1 d^\dagger_2 d_3 d_4 = 
+    -\langle d^\dagger_1 d_3 \rangle d^\dagger_2 d_4
+    +\langle d^\dagger_1 d_4 \rangle d_2^\dagger d_3
+    -\langle d^\dagger_2 d_4 \rangle d^\dagger_1 d_3
+    + \langle d^\dagger_2 d_3 \rangle d^\dagger_1 d_4 \\\nonumber
+    + DC
+\end{align}
+to get
+\begin{align}
+    H_U = -U\sum_m \left[
+        \langle d^\dagger_{m\uparrow}d_{m\downarrow}\rangle d^\dagger_{m\downarrow}d_{m\uparrow}
+        + \langle d^\dagger_{m\downarrow}d_{m\uparrow}\rangle d^\dagger_{m\uparrow}d_{m\downarrow}
+        - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle d^\dagger_{m\downarrow}d_{m\downarrow}
+        - \langle d^\dagger_{m\downarrow}d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m\uparrow}
+    \right]
+\end{align}
+with DC correction
+\begin{gather}
+    DC = \langle d^\dagger_1 d_4\rangle\langle d^\dagger_2 d_3 \rangle 
+    - \langle d^\dagger_1 d_3 \rangle \langle d^\dagger_2 d_4 \rangle
+\end{gather}
+which gives
+\begin{align}
+    \Delta E_U = -U \sum_m \left[\langle d^\dagger_{m\uparrow}d_{m\downarrow}\rangle \langle d^\dagger_{m\downarrow}d_{m\uparrow} \rangle
+    - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle \langle d^\dagger_{m\downarrow}d_{m\downarrow} \rangle \right]
+\end{align}
+\subsection{Interorbital Repulsion}
+This term is
+\begin{align}
+    H &= U' \sum_{m \neq m'} \hat n_{m\uparrow}\hat n_{m'\downarrow} \\\nonumber
+    &= U' \sum_{m \neq m'} d^\dagger_{m\uparrow}d_{m\uparrow}d^\dagger_{m'\downarrow}d_{m'\downarrow} \\\nonumber
+    &= -U' \sum_{m \neq m'} d^\dagger_{m\uparrow}d^\dagger_{m'\downarrow}d_{m\uparrow}d_{m'\downarrow}
+\end{align}
+likewise we use
+\begin{align}
+    d^\dagger_1 d^\dagger_2 d_3 d_4 = 
+    -\langle d^\dagger_1 d_3 \rangle d^\dagger_2 d_4
+    +\langle d^\dagger_1 d_4 \rangle d_2^\dagger d_3
+    -\langle d^\dagger_2 d_4 \rangle d^\dagger_1 d_3
+    + \langle d^\dagger_2 d_3 \rangle d^\dagger_1 d_4 \\\nonumber
+    + DC
+\end{align}
+to get
+\begin{align}
+    H_{U'} = -U'\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\downarrow} \rangle d^\dagger_{m'\downarrow} d_{m\uparrow}
+        + \langle d^\dagger_{m'\downarrow}d_{m\uparrow}\rangle d^\dagger_{m\uparrow}d_{m'\downarrow}
+        - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle d^\dagger_{m'\downarrow} d_{m'\downarrow}
+        - \langle d^\dagger_{m'\downarrow}d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m\uparrow}
+    \right]
+\end{align}
+with DC correction
+\begin{gather}
+    \Delta E_{U'} = -U' \sum_{m < m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\downarrow} \rangle\langle d^\dagger_{m'\downarrow}d_{m\uparrow}\rangle
+    - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle \langle d^\dagger_{m'\downarrow}d_{m'\downarrow}\rangle\right]
+\end{gather}
+\subsubsection{Same Spin}
+The next term is
+\begin{align}
+    H &= (U'-J) \sum_{m < m', \sigma} \hat n_{m\sigma} \hat n_{m' \sigma} \\\nonumber
+    &= (U'-J) \sum_{m < m',\sigma} d^\dagger_{m\sigma}d_{m\sigma}d^\dagger_{m'\sigma}d_{m'\sigma} \\\nonumber
+    &= -(U'-J) \sum_{m < m',\sigma} d^\dagger_{m\sigma}d^\dagger_{m'\sigma}d_{m\sigma}d_{m'\sigma}
+\end{align}
+likeweise we use
+\begin{align}
+    d^\dagger_1 d^\dagger_2 d_3 d_4 = 
+    -\langle d^\dagger_1 d_3 \rangle d^\dagger_2 d_4
+    +\langle d^\dagger_1 d_4 \rangle d_2^\dagger d_3
+    -\langle d^\dagger_2 d_4 \rangle d^\dagger_1 d_3
+    + \langle d^\dagger_2 d_3 \rangle d^\dagger_1 d_4 \\\nonumber
+    + DC
+\end{align}
+hence
+\begin{align}
+    H_{U'-J} = -(U' - J) \sum_{m < m', \sigma} \left[
+        \langle d^\dagger_{m\sigma}d_{m'\sigma} \rangle d^\dagger_{m'\sigma}d_{m\sigma}
+        + \langle d^\dagger_{m' \sigma}d_{m\sigma} \rangle d^\dagger_{m\sigma}d_{m'\sigma}
+        - \langle d^\dagger_{m\sigma}d_{m\sigma}\rangle d^\dagger_{m'\sigma}d_{m'\sigma}
+        - \langle d^\dagger_{m'\sigma}d_{m'\sigma}\rangle d^\dagger_{m\sigma}d_{m\sigma}
+    \right]
+\end{align}
+with double counting
+\begin{gather}
+    \Delta H_{U'-J} = -(U'-J)\sum_{m < m', \sigma} \left[
+         \langle d^\dagger_{m\sigma}d_{m'\sigma} \rangle \langle d^\dagger_{m' \sigma}d_{m\sigma} \rangle
+         - \langle d^\dagger_{m\sigma}d_{m\sigma}\rangle \langle d^\dagger_{m'\sigma}d_{m'\sigma}\rangle
+        \right]
+\end{gather}
+\section{Corrected Complete Kanamori}
+\begin{align}
+    H^k_{MF} &= -U\sum_m \left[
+        \langle d^\dagger_{m\uparrow}d_{m\downarrow}\rangle d^\dagger_{m\downarrow}d_{m\uparrow}
+        + \langle d^\dagger_{m\downarrow}d_{m\uparrow}\rangle d^\dagger_{m\uparrow}d_{m\downarrow}
+        - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle d^\dagger_{m\downarrow}d_{m\downarrow}
+        - \langle d^\dagger_{m\downarrow}d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m\uparrow}
+        \right]\\\nonumber
+    &-U'\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\downarrow} \rangle d^\dagger_{m'\downarrow} d_{m\uparrow}
+        + \langle d^\dagger_{m'\downarrow}d_{m\uparrow}\rangle d^\dagger_{m\uparrow}d_{m'\downarrow}
+        - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle d^\dagger_{m'\downarrow} d_{m'\downarrow}
+        - \langle d^\dagger_{m'\downarrow}d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m\uparrow}
+    \right] \\\nonumber
+    -(U' -& J) \sum_{m < m', \sigma} \left[
+        \langle d^\dagger_{m\sigma}d_{m'\sigma} \rangle d^\dagger_{m'\sigma}d_{m\sigma}
+        + \langle d^\dagger_{m' \sigma}d_{m\sigma} \rangle d^\dagger_{m\sigma}d_{m'\sigma}
+        - \langle d^\dagger_{m\sigma}d_{m\sigma}\rangle d^\dagger_{m'\sigma}d_{m'\sigma}
+        - \langle d^\dagger_{m'\sigma}d_{m'\sigma}\rangle d^\dagger_{m\sigma}d_{m\sigma}
+    \right]\\\nonumber
+    &+ J\sum_{m\neq m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle d^\dagger_{m' \downarrow} d_{m\downarrow}
+    + \langle d^\dagger_{m' \downarrow} d_{m\downarrow}\rangle d^\dagger_{m\uparrow}d_{m' \uparrow}
+    - \langle d^\dagger_{m \uparrow} d_{m\downarrow}\rangle d^\dagger_{m'\downarrow}d_{m'\uparrow}
+    - \langle d^\dagger_{m'\downarrow} d_{m'\uparrow} \rangle d^\dagger_{m\uparrow} d_{m \downarrow}\right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle d^\dagger_{m\downarrow} d_{m'\downarrow}
+        +\langle d^\dagger_{m\downarrow} d_{m'\downarrow}\rangle d^\dagger_{m\uparrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\uparrow} d_{m'\downarrow}\rangle d^\dagger_{m\downarrow}d_{m'\uparrow}
+        - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
+    \right]
+\end{align}
+
 \section{Basis States Ordering}
 \begin{table}[h]
 \centering
