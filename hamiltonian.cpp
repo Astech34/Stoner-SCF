@@ -340,12 +340,12 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
         // Up Diagonal
         H(m,   m  ) += U  * n_dn_m
                      + Up * (n_dn - n_dn_m)
-                     + 0.5 * (Up - J) * (n_up - n_up_m);
+                     + (Up - J) * (n_up - n_up_m);
         
         // Down Diagonal
         H(m+3, m+3) += U  * n_up_m
                      + Up * (n_up - n_up_m)
-                     + 0.5 * (Up - J) * (n_dn - n_dn_m);
+                     + (Up - J) * (n_dn - n_dn_m);
         
         // Hubbard U Off Diagonal Terms
         H(m+3, m) -= U * rho(m, m+3); // -U <d†_{m↑} d_{m↓}> d†_{m↓} d_{m↑}
@@ -363,11 +363,11 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
 
             // U'-J off diagonal
             // Up Spin
-            H(mp, m) -= (Up - J) * rho(m, mp);
-            H(m, mp) -= (Up - J) * rho(mp, m);
+            H(mp, m) -= 0.5 * (Up - J) * rho(m, mp);
+            H(m, mp) -= 0.5 * (Up - J) * rho(mp, m);
             // Down Spin
-            H(mp+3, m+3) -= (Up - J) * rho(m+3, mp+3);
-            H(m+3, mp+3) -= (Up - J) * rho(mp+3, m+3);
+            H(mp+3, m+3) -= 0.5 * (Up - J) * rho(m+3, mp+3);
+            H(m+3, mp+3) -= 0.5 * (Up - J) * rho(mp+3, m+3);
 
             // H_exc 1: <d†_{m↑} d_{m'↑}> d†_{m'↓} d_{m↓}
             H(mp+3, m+3) += J * rho(m, mp);
