@@ -329,21 +329,25 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
 
     double dc = 0.0;
 
-    // -U intraorbital: -U sum_m <n_{m↑}><n_{m↓}>
+    // -U intraorbital:
     for (int m = 0; m < 3; m++)
-        dc -= U * rho(m, m).real() * rho(m+3, m+3).real();
+        dc -= U * (rho(m, m+3).real()*rho(m+3, m).real() - 
+                    rho(m,m).real()*rho(m+3,m+3).real());
 
     // -U' interorbital opposite-spin: -U' sum_{m≠m'} <n_{m↑}><n_{m'↓}>
     for (int m = 0; m < 3; m++)
         for (int mp = 0; mp < 3; mp++)
             if (mp != m)
-                dc -= Up * rho(m, m).real() * rho(mp+3, mp+3).real();
+                dc -= Up * (rho(m, mp+3).real() * rho(mp+3, m).real() - 
+                             rho(m,m).real() * rho(mp+3, mp+3).real());
 
     // -(U'-J) same-spin: -(U'-J) sum_{m<m', σ} <n_{mσ}><n_{m'σ}>
     for (int m = 0; m < 3; m++)
         for (int mp = m+1; mp < 3; mp++) {
-            dc -= (Up - J) * rho(m,   m  ).real() * rho(mp,   mp  ).real();  // σ=↑
-            dc -= (Up - J) * rho(m+3, m+3).real() * rho(mp+3, mp+3).real(); // σ=↓
+            dc -= (Up - J) * (rho(m, mp).real()*rho(mp,m).real()
+                            - rho(m,m).real()*rho(mp,mp).real());  // σ=↑
+            dc -= (Up - J) * (rho(m+3, mp+3).real()*rho(mp+3,m+3).real()
+                            - rho(m+3,m+3).real()*rho(mp+3,mp+3).real()); // σ=↓
         }
 
     // J exchange + pair-hopping DC: sum over all ordered pairs m≠m'

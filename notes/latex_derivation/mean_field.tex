@@ -502,6 +502,30 @@ with double counting
         - \langle d^\dagger_{m\downarrow} d_{m'\uparrow}\rangle d^\dagger_{m\uparrow} d_{m'\downarrow}
     \right]
 \end{align}
+With corrected energy shift is 
+\begin{align}
+    \Delta E &= -U \sum_m \left[\langle d^\dagger_{m\uparrow}d_{m\downarrow}\rangle \langle d^\dagger_{m\downarrow}d_{m\uparrow} \rangle
+    - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle \langle d^\dagger_{m\downarrow}d_{m\downarrow} \rangle \right]\\\nonumber
+    &-U' \sum_{m < m'}\left[\langle d^\dagger_{m\uparrow} d_{m'\downarrow} \rangle\langle d^\dagger_{m'\downarrow}d_{m\uparrow}\rangle
+    - \langle d^\dagger_{m\uparrow}d_{m\uparrow}\rangle \langle d^\dagger_{m'\downarrow}d_{m'\downarrow}\rangle\right] \\\nonumber
+    -(U'&-J)\sum_{m < m', \sigma} \left[
+         \langle d^\dagger_{m\sigma}d_{m'\sigma} \rangle \langle d^\dagger_{m' \sigma}d_{m\sigma} \rangle
+         - \langle d^\dagger_{m\sigma}d_{m\sigma}\rangle \langle d^\dagger_{m'\sigma}d_{m'\sigma}\rangle
+        \right] \\\nonumber
+    &+ J\sum_{m\neq m'} \left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow} \rangle 
+        \langle d^\dagger_{m'\downarrow} d_{m\downarrow}\rangle
+        -\langle d^\dagger_{m\uparrow} d_{m\downarrow}\rangle 
+        \langle d^\dagger_{m'\downarrow} d_{m'\uparrow}\rangle
+    \right] \\\nonumber
+    &+ J\sum_{m\neq m'}\left[
+        \langle d^\dagger_{m\uparrow} d_{m'\uparrow}\rangle 
+        \langle d^\dagger_{m\downarrow} d_{m'\downarrow} \rangle
+        - \langle d^\dagger_{m\uparrow} d_{m' \downarrow} \rangle
+        \langle d^\dagger_{m\downarrow}d_{m'\uparrow}\rangle
+    \right]
+\end{align}
+
 
 \section{Basis States Ordering}
 \begin{table}[h]
