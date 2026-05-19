@@ -134,5 +134,48 @@ our direction cosines become $l\xrightarrow{} m \xrightarrow{} n\xrightarrow{}l$
 \begin{gather}
     l = 0 \quad m = 1 \quad n = 0
 \end{gather}
+\begin{gather}
+    t_{yz,yz} = V_{dd\pi} \quad
+    t_{yz,xy} = 0 \quad
+    t_{yz,xz} = 0
+\end{gather}
+The hamiltonian is
+\begin{align}
+    H &= t\sum_\delta \sum_k e^{-ik\cdot \delta} c^\dagger_k c_k \\\nonumber
+    &= t \sum_k \left[e^{-ik_xa} + e^{ik_xa}\right] c^\dagger_k c_k \\\nonumber
+    &= 2V_{dd\pi} \sum_k \cos(k_x a) c^\dagger_k c_k
+\end{align}
+\subsubsection{y direction}
+\begin{gather}
+    l = 0 \quad m = 0 \quad n = 1
+\end{gather}
+\begin{gather}
+    t_{yz,yz} = V_{dd\delta} \quad
+    t_{yz,xy} = 0 \quad
+    t_{yz,xz} = 0
+\end{gather}
+The derivation for the energy is the same as above just in y direction.
+\subsection{Energy for band}
+Hence the total energy is
+\begin{gather}
+    \varepsilon_{yz} = -2t_1 \cos(k_x a) - 2 t_\delta \cos(k_y a)
+\end{gather}
+\subsection{xz band}
+The same formalism applies.
+\subsection{x dir}
+\begin{gather}
+    l = 0 \quad m = 0 \quad n = 1
+\end{gather}
+which gives the nonzero integral $V_{dd\delta}$
+\subsection{y dir}
+\begin{gather}
+    l= 1 \quad m= 0 \quad n=0
+\end{gather}
+which gives the nonzero integral $V_{dd\pi}$.
+\subsection{Energy For Band}
+\begin{gather}
+    \varepsilon_{xz} = -2t_\delta \cos(k_x a) - 2 t_1 \cos(k_y a)
+\end{gather}
+
 
 \end{document}

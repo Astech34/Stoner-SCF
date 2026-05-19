@@ -10,9 +10,9 @@
 
 Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
     const double e_xy = -2*p.t1*(std::cos(kx) + std::cos(ky)) - 4*p.t2*std::cos(kx)*std::cos(ky);
-    const double e_xz = -2*p.t1*std::cos(kx) - 2*p.t_delta*std::cos(ky);
-    const double e_yz = -2*p.t_delta*std::cos(kx) - 2*p.t1*std::cos(ky);
-
+    const double e_xz = -2*p.t_delta*std::cos(kx) - 2*p.t1*std::cos(ky);
+    const double e_yz = -2*p.t1*std::cos(kx) - 2*p.t_delta*std::cos(ky);
+    
     Mat6 H = Mat6::Zero();
 
     // Spin-major ordering: spin-up (0,1,2) = yz,xz,xy | spin-down (3,4,5) = yz,xz,xy
