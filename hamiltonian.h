@@ -54,6 +54,10 @@ void save_dos(double S, int grid_size, double T, double N_target,
               const Params& p, const std::string& filename,
               int n_energy_points = 500, double sigma = 0.05);
 
+// Band energy + Hubbard DC correction (+6·U·S²) for a given Stoner parameter S
+double calculate_hubbard_energy(double S, int grid_size, double T, double N_target,
+                                const Params& p);
+
 // Kanamori interaction parameters
 struct KanamoriParams {
     double U       = 2.0;  // intraorbital Hubbard repulsion

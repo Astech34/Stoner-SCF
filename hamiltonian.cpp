@@ -276,31 +276,19 @@ void save_dos(double S, int grid_size, double T, double N_target,
     std::cout << "DOS written to " << filename << "\n";
 }
 // -----------------------------------------------------------------------------
-// calculate total energy at given S (for convergence checks or plotting E vs S)
-double calculate_total_energy(double S, int grid_size, double T, double N_target,
-                               const Params& p) {
-    const int N_bands = 12;
-
+// calculate_hubbard_energy — band energy + Hubbard DC correction for a given S
+// (convenience wrapper used for convergence checks or E-vs-S plots)
+double calculate_hubbard_energy(double S, int grid_size, double T, double N_target,
+                                const Params& p) {
     const Eigensystem sys = compute_eigensystem_grid(S, grid_size, p);
-    const int N_k = static_cast<int>(sys.evals.size());
     const double mu = find_mu(sys, T, N_target);
 
     if (std::isnan(mu)) {
-        std::cout << "calculate_total_energy: could not find mu, returning NaN.\n";
+        std::cout << "calculate_hubbard_energy: could not find mu, returning NaN.\n";
         return std::numeric_limits<double>::quiet_NaN();
     }
 
-    double E_total = 0.0;
-    for (const auto& ev : sys.evals) {
-        for (int b = 0; b < N_bands; b++) {
-            const double x = std::clamp((ev[b] - mu) / T, -500.0, 500.0);
-            const double f = 1.0 / (std::exp(x) + 1.0);
-            E_total += ev[b] * f;
-        }
-    }
-
-    const double n_orb = N_bands / 2.0;
-    return E_total / static_cast<double>(N_k) + p.U * S * S;
+    return calculate_band_energy(sys, mu, T) + 6.0 * p.U * S * S;
 }
 
 // -----------------------------------------------------------------------------

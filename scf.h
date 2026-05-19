@@ -31,9 +31,8 @@ double find_mu(const Eigensystem& sys, double T = 0.05, double N_target = 5.0);
 // Compute the eigensystem on a k-grid for a given Stoner parameter S
 Eigensystem compute_eigensystem_grid(double S, int grid_size = 200, const Params& p = Params{});
 
-// Calculate total energy per unit cell
-double calculate_total_energy(const Eigensystem& sys, double mu, double T,
-                              double S, double U);
+// Sum of occupied eigenvalues per unit cell (no double-counting correction)
+double calculate_band_energy(const Eigensystem& sys, double mu, double T);
 
 // Compute the full 12x12 density matrix: rho(a,b) = <c†_a c_b>
 // Averaged over the k-grid using Fermi-Dirac weights

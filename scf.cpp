@@ -160,27 +160,21 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
 }
 
 // -----------------------------------------------------------------------------
-// calculate_total_energy — compute total energy per unit cell for given S
-// Includes the double-counting correction from the Hubbard mean-field decoupling:
-//   the constant C = -U<n↑><n↓> dropped from H_MF contributes +U*S² per orbital.
-//   With 6 orbitals (3 t2g × 2 layers) the correction is +6*U*S².
+// calculate_band_energy — sum of occupied eigenvalues per unit cell (no DC correction)
 // -----------------------------------------------------------------------------
-double calculate_total_energy(const Eigensystem& sys, double mu, double T,
-                              double S, double U) {
+double calculate_band_energy(const Eigensystem& sys, double mu, double T) {
     const int N_k     = static_cast<int>(sys.evals.size());
     const int N_bands = 12;
 
-    double E_total = 0.0;
+    double E = 0.0;
     for (const auto& ev : sys.evals) {
         for (int b = 0; b < N_bands; b++) {
             const double x = std::clamp((ev[b] - mu) / T, -500.0, 500.0);
             const double f = 1.0 / (std::exp(x) + 1.0);
-            E_total += ev[b] * f;
+            E += ev[b] * f;
         }
     }
-
-    const double n_orb = N_bands / 2.0;  // 6: per-orbital Hubbard sites (3 t2g × 2 layers)
-    return E_total / static_cast<double>(N_k) + n_orb * U * S * S;
+    return E / static_cast<double>(N_k);
 }
 
 // -----------------------------------------------------------------------------
@@ -268,7 +262,8 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
         }
     }
 
-    const double E_total = calculate_total_energy(sys, mu, T, S, p.U);
+    // Hubbard DC correction: +n_orb * U * S² (6 orbitals × 2 layers = 6 sites total)
+    const double E_total = calculate_band_energy(sys, mu, T) + 6.0 * p.U * S * S;
     return {spin_sum / (2.0 * N_k), mu, E_total};
 }
 
@@ -433,12 +428,12 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                   << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff << std::endl;
 
         if (diff < tol) {
-            const double bandsum = calculate_total_energy(sys, mu, T, 0.0, 0.0);
+            const double bandsum = calculate_band_energy(sys, mu, T);
             const double dc = kanamori_dc_layer(rho.block<6,6>(0, 0), kp)
                             + kanamori_dc_layer(rho.block<6,6>(6, 6), kp);
             std::cout << "Kanamori SCF converged! mu = " << mu
-                      << ", E_total = " << bandsum + dc << std::endl;
-            return {rho, mu, bandsum + dc};
+                      << ", E_total = " << bandsum - dc << std::endl;
+            return {rho, mu, bandsum - dc};
         }
 
         rho = alpha * rho_new + (1.0 - alpha) * rho;

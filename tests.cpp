@@ -398,7 +398,7 @@ TEST(SCF, TotalEnergy){
     double T = 0.05;
     double E1 = 0.000045397868796;
 
-    double E_total = calculate_total_energy(sys, mu, T, 0.0, 0.0);
+    double E_total = calculate_band_energy(sys, mu, T);
 
     //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
     //std::cout << std::setprecision(17) << "E expected = " << (E1) << "\n";
@@ -420,7 +420,7 @@ TEST(SCF, TotalEnergyTwoK){
     double mu = 0.5;
     double T = 0.05;
 
-    double E_total = calculate_total_energy(sys, mu, T, 0.0, 0.0);
+    double E_total = calculate_band_energy(sys, mu, T);
     //std::cout << std::setprecision(17) << "E_total = " << E_total << "\n";
     //std::cout << std::setprecision(17) << "E expected = " << (E1 + E2)/2.0 << "\n";
     EXPECT_NEAR(E_total, (E1 + E2)/(2.0), 1e-12);
