@@ -143,9 +143,11 @@ int main() {
     std::cout << "  U'      = " << kp.U_prime << "\n";
     std::cout << "  J       = " << kp.J       << "\n\n";
 
-    const KanamoriResult kres = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
-    std::cout << "\n";
-    printKanamoriOccupations(kres);
+    //const KanamoriResult kres = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
+    //std::cout << "\n";
+    //printKanamoriOccupations(kres);
+
+    run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.0, 0.2, 10, p, kp);
 
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";

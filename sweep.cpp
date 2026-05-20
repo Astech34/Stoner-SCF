@@ -52,21 +52,31 @@ void run_U_sweep(double S0, double alpha, int grid, double T, double N_target,
 }
 
 void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_target,
-                       double lam_min, double lam_max, int N_points, Params p) {
+                       double lam_min, double lam_max, int N_points, Params p, KanamoriParams kp) {
 
     std::filesystem::create_directories("out");
 
     std::ofstream outfile("out/mca_lam_sweep.csv");
     outfile << std::fixed << std::setprecision(6);
 
-    // Write parameters as comments so the plot script can annotate the figure
-    outfile << "# t1      = " << p.t1      << "\n";
-    outfile << "# t_delta = " << p.t_delta << "\n";
-    outfile << "# t2      = " << p.t2      << "\n";
-    outfile << "# U       = " << p.U       << "\n";
-    outfile << "# t_perp  = " << p.t_perp  << "\n";
+    outfile << "# t1      = " << p.t1        << "\n";
+    outfile << "# t_delta = " << p.t_delta   << "\n";
+    outfile << "# t2      = " << p.t2        << "\n";
+    outfile << "# U       = " << kp.U        << "\n";
+    outfile << "# U'      = " << kp.U_prime  << "\n";
+    outfile << "# J       = " << kp.J        << "\n";
+    outfile << "# t_perp  = " << p.t_perp    << "\n";
 
-    outfile << "lam,S_110,E_110,S_001,E_001,E_MCA\n";
+    outfile << "lam,moment_110,E_110,moment_001,E_001,E_MCA\n";
+
+    auto kanamori_moment = [](const KanamoriResult& kres) {
+        double up = 0.0, dn = 0.0;
+        for (int m = 0; m < 3; m++) {
+            up += kres.rho(m,   m  ).real() + kres.rho(m+6,   m+6  ).real();
+            dn += kres.rho(m+3, m+3).real() + kres.rho(m+9, m+9).real();
+        }
+        return up - dn;
+    };
 
     for (int i = 0; i < N_points; i++) {
         p.lam = lam_min + i * (lam_max - lam_min) / (N_points - 1);
@@ -75,19 +85,25 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
         // [0,0,1]: theta=0, phi=0
         p.theta = 0.0;
         p.phi   = 0.0;
-        auto res_001 = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        const CalcResult stoner_001 = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        const Eigensystem sys_001   = compute_eigensystem_grid(stoner_001.S_new, grid, p);
+        const Mat12 rho0_001        = compute_density_matrix(sys_001, stoner_001.mu, T);
+        const KanamoriResult kres_001 = runKanamoriSCF(rho0_001, alpha, grid, T, N_target, p, kp);
 
         // [1,1,0]: theta=pi/2, phi=pi/4
         p.theta = M_PI / 2.0;
         p.phi   = M_PI / 4.0;
-        auto res_110 = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        const CalcResult stoner_110 = runSelfCalc(S0, alpha, grid, T, N_target, p);
+        const Eigensystem sys_110   = compute_eigensystem_grid(stoner_110.S_new, grid, p);
+        const Mat12 rho0_110        = compute_density_matrix(sys_110, stoner_110.mu, T);
+        const KanamoriResult kres_110 = runKanamoriSCF(rho0_110, alpha, grid, T, N_target, p, kp);
 
-        const double E_MCA = res_110.E_total - res_001.E_total;
+        const double E_MCA = kres_110.E_total - kres_001.E_total;
         std::cout << "E_MCA = " << E_MCA << "\n\n";
 
         outfile << p.lam << ","
-                << res_110.S_new << "," << res_110.E_total << ","
-                << res_001.S_new << "," << res_001.E_total << ","
+                << kanamori_moment(kres_110) << "," << kres_110.E_total << ","
+                << kanamori_moment(kres_001) << "," << kres_001.E_total << ","
                 << E_MCA << "\n";
         outfile.flush();
     }
