@@ -27,8 +27,9 @@ struct Params {
 // Kinetic hopping term (k-dependent, real diagonal). delta_cf shifts the xy orbital energy.
 Mat6 H0(double kx, double ky, const Params& p = Params{}, double delta_cf = 0.0);
 
-// Spin-orbit coupling (k-independent, precompute once)
-Mat6 SOC(double lam = 0.1);
+// Spin-orbit coupling (k-independent, precompute once).
+// theta/phi rotate the spin quantization axis via U†(θ,φ)·s·U(θ,φ) on each spin operator.
+Mat6 SOC(double lam = 0.1, double theta = 0.0, double phi = 0.0);
 
 // Hubbard mean-field term (k-independent, off-diagonal in spin for general n̂)
 Mat6 HubbardU(double S, const Params& p = Params{});

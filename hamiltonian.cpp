@@ -22,7 +22,7 @@ Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
     return H;
 }
 // Checked
-Mat6 SOC(double lam) {
+Mat6 SOC(double lam, double theta, double phi) {
     // Orbital angular momentum matrices in t2g basis (yz, xz, xy)
     Eigen::Matrix<cd, 3, 3> Lx, Ly, Lz;
 
@@ -38,41 +38,47 @@ Mat6 SOC(double lam) {
           cd(0,-1), cd(0,0),  cd(0,0),
           cd(0,0),  cd(0,0),  cd(0,0);
 
-    // Spin-1/2 matrices
+    // Spin-1/2 matrices in z-quantization basis
     Eigen::Matrix<cd, 2, 2> sx, sy, sz;
 
-    sx << cd(0,0), cd(0.5,0),
+    sx << cd(0,0),   cd(0.5,0),
           cd(0.5,0), cd(0,0);
 
-    sy << cd(0,0),    cd(0,-0.5),
-          cd(0,0.5),  cd(0,0);
+    sy << cd(0,0),   cd(0,-0.5),
+          cd(0,0.5), cd(0,0);
 
-    sz << cd(0.5,0),  cd(0,0),
-          cd(0,0),    cd(-0.5,0);
+    sz << cd(0.5,0), cd(0,0),
+          cd(0,0),   cd(-0.5,0);
 
-    // Kronecker products: kron(L, s) gives spin-major 6x6
+    // Rotate spin quantization axis to n̂(θ,φ): s' = U†·s·U
+    // U(θ,φ) = [[ cos(θ/2),       -sin(θ/2)·e^{-iφ} ],
+    //            [ sin(θ/2)·e^{iφ}, cos(θ/2)          ]]
+    // At θ=φ=0, U=I and s'=s (no change).
+    if (theta != 0.0 || phi != 0.0) {
+        const double c  = std::cos(theta / 2.0);
+        const double s  = std::sin(theta / 2.0);
+        const cd     ep = std::exp(cd(0,  phi));
+        const cd     em = std::exp(cd(0, -phi));
+
+        Eigen::Matrix<cd, 2, 2> U;
+        U << cd(c, 0),  -s * em,
+              s * ep,   cd(c, 0);
+
+        sx = U.adjoint() * sx * U;
+        sy = U.adjoint() * sy * U;
+        sz = U.adjoint() * sz * U;
+    }
+
+    // Kronecker products: kron(L, s') gives spin-major 6x6
     Mat6 Hsoc = Mat6::Zero();
 
-    // kron(Lx, sx)
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
             for (int si = 0; si < 2; si++)
                 for (int sj = 0; sj < 2; sj++)
-                    Hsoc(3*si+i, 3*sj+j) += lam * Lx(i,j) * sx(si,sj);
-
-    // kron(Ly, sy)
-    for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-            for (int si = 0; si < 2; si++)
-                for (int sj = 0; sj < 2; sj++)
-                    Hsoc(3*si+i, 3*sj+j) += lam * Ly(i,j) * sy(si,sj);
-
-    // kron(Lz, sz)
-    for (int i = 0; i < 3; i++)
-        for (int j = 0; j < 3; j++)
-            for (int si = 0; si < 2; si++)
-                for (int sj = 0; sj < 2; sj++)
-                    Hsoc(3*si+i, 3*sj+j) += lam * Lz(i,j) * sz(si,sj);
+                    Hsoc(3*si+i, 3*sj+j) += lam * (Lx(i,j) * sx(si,sj)
+                                                   + Ly(i,j) * sy(si,sj)
+                                                   + Lz(i,j) * sz(si,sj));
 
     return Hsoc;
 }

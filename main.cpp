@@ -59,6 +59,8 @@ int main() {
     p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
     //p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
     p.delta_V   = 0.0;   // start with zero staggered layer potential, then sweep in stage 3
+    p.theta     = M_PI / 2.0;   // polar angle of spin quantization axis (0 = z-axis / out-of-plane)
+    p.phi       = M_PI / 4.0;   // azimuthal angle of spin quantization axis
 
     const double S0       = 0.3;
     const double alpha    = 0.2;
@@ -79,6 +81,8 @@ int main() {
     std::cout << "  delta_cf1 = " << p.delta_cf1 << "\n";
     std::cout << "  delta_cf2 = " << p.delta_cf2 << "\n";
     std::cout << "  delta_V   = " << p.delta_V   << "\n";
+    std::cout << "  theta     = " << p.theta     << " rad\n";
+    std::cout << "  phi       = " << p.phi       << " rad\n";
     std::cout << "  S0      = " << S0        << "\n";
     std::cout << "  alpha   = " << alpha     << "\n";
     std::cout << "  T       = " << T         << "\n";

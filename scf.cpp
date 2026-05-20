@@ -375,7 +375,7 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
         k_lin[i] = -M_PI + i * (2.0 * M_PI / grid_size);
 
     // Precompute all k-independent contributions into a single 12x12 matrix
-    const Mat6 Hsoc  = SOC(p.lam);
+    const Mat6 Hsoc  = SOC(p.lam, p.theta, p.phi);
     const Mat6 Tperp = T_perp_mat(p);
 
     Mat12 H_kfree = KanamoriMF(rho, kp);
@@ -408,7 +408,7 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
 KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
                                const Params& p, const KanamoriParams& kp) {
-    constexpr int    max_iter = 5000;
+    constexpr int    max_iter = 99999;
     constexpr double tol      = 1e-6;
 
     Mat12 rho = rho0;
