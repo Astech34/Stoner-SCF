@@ -139,10 +139,10 @@ We can cancel out all $j\ne n$ terms from the partition function in the denomina
 \end{align}
 where $f$ is the fermi dirac distribution. Now we perform a change of basis to the t2g basis. Recall $d_n^{\dagger} = \sum_k \langle k|n\rangle c^\dagger_k$. From the definition of the density matrix we can write
 \begin{align}
-    \rho_{ab} = \langle c_a^\dagger c_b\rangle &= \langle \left( \sum_k \langle a|k\rangle d_k^\dagger \right ) \left(\sum_q \langle q|b\rangle d_q \right) \rangle \\\nonumber
-    &= \sum_{kq}\langle a|k\rangle\langle q | b\rangle \langle d_k^\dagger d_q\rangle \\\nonumber
-    &= \sum_{kq} \langle a|l\rangle\langle q|b\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
-    &= \sum_n \langle a|n\rangle\langle n|b\rangle f(\varepsilon_k -\mu)
+    \rho_{ab} = \langle c_a^\dagger c_b\rangle &= \langle \left( \sum_k \langle k|a\rangle d_k^\dagger \right ) \left(\sum_q \langle b|q\rangle d_q \right) \rangle \\\nonumber
+    &= \sum_{kq}\langle k|a\rangle\langle b | q\rangle \langle d_k^\dagger d_q\rangle \\\nonumber
+    &= \sum_{kq} \langle b|q\rangle\langle k|a\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
+    &= \sum_n \langle b|n\rangle\langle n|a\rangle f(\varepsilon_n -\mu)
 \end{align}
 Where $|n\rangle$ labels the eigenstates and $a,b$ labels the t2g,spin band.
 \subsection{Magnetization}

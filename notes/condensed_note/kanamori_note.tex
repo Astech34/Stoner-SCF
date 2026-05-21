@@ -23,11 +23,11 @@ Our single layer Hamiltonian is given by the following:
 \begin{gather}
     H = H_0 + H_{SOC} + H_{Kanamori}
 \end{gather}
-the tight binding part of the Hamiltonian is given by (yz, xz, xy) orbital basis (CHECK THIS NOT CONSISTENT WITH BASIS)
+the tight binding part of the Hamiltonian is given by (yz, xz, xy) orbital basis.
 \begin{gather}
-    e_{yz} = -2 t_1(\cos k_x + \cos k_y)-4 t_2 \cos k_x \cos k_y \\
-    e_{xz} = -2 t_1 \cos k_x - 2 t_{\delta} \cos k_y \\
-    e_{xy} = -2 t_\delta \cos k_x - 2 t_1 \cos k_y\\
+    e_{xy} = -2 t_1(\cos k_x + \cos k_y)-4 t_2 \cos k_x \cos k_y \\
+    e_{yz} = -2 t_1 \cos k_x - 2 t_{\delta} \cos k_y \\
+    e_{zx} = -2 t_\delta \cos k_x - 2 t_1 \cos k_y\\
     \\
     H_0(k) = \begin{pmatrix}
         e_{yz} & 0 & 0 \\
@@ -474,12 +474,23 @@ We can cancel out all $j\ne n$ terms from the partition function in the denomina
       &= \frac{e^{-\beta(\varepsilon_n - \mu)}}{1+e^{-\beta(\varepsilon_n-\mu)}} \\\nonumber
       &= f(\varepsilon_n-\mu )
 \end{align}
-where $f$ is the fermi dirac distribution. Now we perform a change of basis to the t2g basis. Recall $d_n^{\dagger} = \sum_k \langle k|n\rangle c^\dagger_k$. From the definition of the density matrix we can write
+where $f$ is the fermi dirac distribution. We wish to write our density matrix in terms of the eigenstates. (diagonal operators d). To derive this
+we can use bra-ket.
 \begin{align}
-    \rho_{ab} = \langle c_a^\dagger c_b\rangle &= \langle \left( \sum_k \langle a|k\rangle d_k^\dagger \right ) \left(\sum_q \langle q|b\rangle d_q \right) \rangle \\\nonumber
-    &= \sum_{kq}\langle a|k\rangle\langle q | b\rangle \langle d_k^\dagger d_q\rangle \\\nonumber
-    &= \sum_{kq} \langle a|l\rangle\langle q|b\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
-    &= \sum_n \langle a|n\rangle\langle n|b\rangle f(\varepsilon_k -\mu)
+    | c_a \rangle &= \sum_k |d_k\rangle \langle d_k | a \rangle \\\nonumber
+    c^\dagger_a &= \sum_k \langle k | a \rangle d^\dagger_k
 \end{align}
-Where $|n\rangle$ labels the eigenstates and $a,b$ labels the t2g,spin band.
+likewise
+\begin{align}
+    \langle c_b | &= \sum_q \langle c_q | d_q \rangle \langle d_q | \\\nonumber
+    c_q &= \sum_q \langle b | q \rangle d_q
+\end{align}
+From the definition of the density matrix we can write
+\begin{align}
+    \rho_{ab} = \langle c_a^\dagger c_b\rangle &= \langle \left( \sum_k \langle k|a\rangle d_k^\dagger \right ) \left(\sum_q \langle b|q\rangle d_q \right) \rangle \\\nonumber
+    &= \sum_{kq}\langle k|a\rangle\langle b | q\rangle \langle d_k^\dagger d_q\rangle \\\nonumber
+    &= \sum_{kq} \langle b|q\rangle\langle k|a\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
+    &= \sum_n \langle b|n\rangle\langle n|a\rangle f(\varepsilon_n -\mu)
+\end{align}
+Where $|n\rangle$ labels the eigenstates in our diagonal basis and $a,b$ labels the t2g,spin band.
 \end{document}
