@@ -158,7 +158,7 @@ Now we evaluate the magnetization
 \end{align}
 This allows us to write the components of m as
 \begin{align}
-    m_i &= \sum_{ba}\rho_{ab}\sigma^i_{ba} = \sum_{ba}\sum_n f(\varepsilon_n - \mu) \langle a |n \rangle \langle n | b \rangle \sigma^i_{ba} \\\nonumber
+    m_i &= \sum_{ba}\rho_{ab}\sigma^i_{ba} = \sum_{ba}\sum_n f(\varepsilon_n - \mu) \langle b |n \rangle \langle n | a \rangle \sigma^i_{ba} \\\nonumber
 \end{align}
 Where again $n$ are the energy eigenstates and $a,b$ are the t2g,spin basis. When we diagonalize we get eigenvectors like
 \begin{align}
@@ -166,11 +166,11 @@ Where again $n$ are the energy eigenstates and $a,b$ are the t2g,spin basis. Whe
 \end{align}
 Hence we can rewrite the magnetization as
 \begin{align}
-    m_i &= \sum_{ba}\sum_n f(\varepsilon_n - \mu) c_a c_b^* \sigma^i_{ba}
+    m_i &= \sum_{ba}\sum_n f(\varepsilon_n - \mu) c_b c_a^* \sigma^i_{ba}
 \end{align}
 To simplify each of the cases further we can plug in the corresponding pauli matrix.
 \begin{align}
-    m_x = \sum_n \sum_{ab} f(\varepsilon_n - \mu) c_a c_b^* \sigma^x_{ba} &= \sum_n f(\varepsilon_n - \mu) (c_1 c_2^* + c_2 c_1^*)
+    m_x = \sum_n \sum_{ab} f(\varepsilon_n - \mu) c_b c_a^* \sigma^x_{ba} &= \sum_n f(\varepsilon_n - \mu) (c_1 c_2^* + c_2 c_1^*)
 \end{align}
 Where we can use the fact that with $z = a+bi$ and $y = c+di$ and  $z^*y = (a-bi)(c+di) = ac + bd + adi - bci$
 \begin{align}
@@ -184,17 +184,18 @@ hence with $1=\uparrow$ and $2=\downarrow$ we can write
 \end{align}
 Likewise for $m_y$ we can write
 \begin{align}
-    m_y &= \sum_n f(\varepsilon_n - \mu) (c_1 c_2^* - c_2c_1^*) i
+    m_y &= \sum_n f(\varepsilon_n - \mu) (c_2 c_1^* - c_1c_2^*) i \\\nonumber
+    &= -\sum_n f(\varepsilon_n - \mu) (c_1 c_2^* - c_2c_1^*) i
 \end{align}
 Where
 \begin{align}
-   -(yz^* - zy^*) &= -((c+di)(a-bi) - (a+bi)(c-di)) \\\nonumber
-    &= -(ca - bci + dai + db - (ac - adi + bci + bd)) \\\nonumber
-    &= -2(ad - bc)i = -2\text{Im}(z^*y)i
+   (yz^* - zy^*) &= ((c+di)(a-bi) - (a+bi)(c-di)) \\\nonumber
+    &= (ca - bci + dai + db - (ac - adi + bci + bd)) \\\nonumber
+    &= 2(ad - bc)i = 2\text{Im}(z^*y)i
 \end{align}
 Likewise we can write
 \begin{align}
-    m_y &= 2\sum_n f(\varepsilon_n - \mu) \text{Im}(c_\uparrow^* c_\downarrow)
+    m_y &= 2\sum_n f(\varepsilon_n - \mu) \text{Im}(c_\downarrow^* c_\uparrow)
 \end{align}
 Lastly for $m_z$ we can write
 \begin{align}
