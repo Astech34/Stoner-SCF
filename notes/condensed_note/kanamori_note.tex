@@ -492,5 +492,26 @@ From the definition of the density matrix we can write
     &= \sum_{kq} \langle b|q\rangle\langle k|a\rangle f(\varepsilon_k - \mu)\delta_{kq} \\\nonumber
     &= \sum_n \langle b|n\rangle\langle n|a\rangle f(\varepsilon_n -\mu)
 \end{align}
-Where $|n\rangle$ labels the eigenstates in our diagonal basis and $a,b$ labels the t2g,spin band.
+Where $|n\rangle$ labels the eigenstates in our diagonal basis and $a,b$ labels the t2g,spin band. To implement
+this in code it is nice to write this as an outer product recall
+\begin{gather}
+    \bm u_i \otimes \bm v_j =\bm u \cdot \bm v^T= \bm u_i \bm v_j
+\end{gather}
+where T is just the transpose not adjoint. For one energy slice $n$ elementwise we can write
+\begin{align}
+    \rho_{ab} = f_n \langle b | n \rangle \langle n | a \rangle = f_n v_b v_a^* = f_n v_a^* v_b
+\end{align}
+to get the index correct we write the outer product like
+\begin{gather}
+    \bm v_a \otimes \bm v_b
+\end{gather}
+which gives us the correct index structure but we need the conjugate
+\begin{gather}
+    \bm v_a^* \otimes \bm v_b
+\end{gather}
+hence in code we implement like
+\begin{gather}
+    \rho = \sum_n f_n \bm v_n^* \cdot \bm v_n^T
+\end{gather}
+which a standard matrix library can handle (I'm using eigen c++)
 \end{document}

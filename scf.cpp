@@ -218,7 +218,7 @@ cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
     psi_up.segment<3>(3) = col.segment<3>(6);  // L2 spin-up
     psi_dn.segment<3>(0) = col.segment<3>(3);  // L1 spin-down
     psi_dn.segment<3>(3) = col.segment<3>(9);  // L2 spin-down
-    return psi_dn.dot(psi_up);                 //  ψ↓·ψ↑† 
+    return psi_dn.dot(psi_up);                 //  ψ↓† · ψ↑
 }
 
 // -----------------------------------------------------------------------------
