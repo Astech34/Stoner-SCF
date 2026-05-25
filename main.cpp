@@ -89,60 +89,26 @@ int main() {
     std::cout << "  N       = " << N_target  << "\n";
     std::cout << "  grid    = " << grid << " x " << grid << "\n\n";
 
-    // --- Stoner SCF bootstrap ---
-    std::cout << "=== Stage 1: Stoner SCF bootstrap ===\n";
-    const CalcResult stoner = runSelfCalc(S0, alpha, grid, T, N_target, p);
-    std::cout << "Stoner converged: S = " << stoner.S_new
-              << ", mu = " << stoner.mu
-              << ", E = " << stoner.E_total << "\n\n";
-
-    // Build rho0 from converged Stoner eigensystem
-    const Eigensystem sys0 = compute_eigensystem_grid(stoner.S_new, grid, p);
-    Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
-
-    // Break symmetry: orbital polarization (spin-up) + layer-AF imbalance (spin-down)
-    // Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
-    const double delta = 0.01;
-
-    // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
-    rho0(2, 2) += delta;      // dxy spin-up layer 1
-    rho0(0, 0) -= delta;      // dyz spin-up layer 1
-    rho0(2, 1) += delta;      // dxy-dxz coherence layer 1
-    rho0(1, 2) += delta;      // hermitian conjugate
-
-    // Layer 2 spin-up: same orbital breaking
-    rho0(8, 8)   += delta;    // dxy spin-up layer 2
-    rho0(6, 6)   -= delta;    // dyz spin-up layer 2
-    rho0(8, 7)   += delta;    // dxy-dxz coherence layer 2
-    rho0(7, 8)   += delta;    // hermitian conjugate
-
-    // Layer 1 spin-down: add electrons (layer-AF seed)
-    rho0(3, 3)  += delta;     // dyz spin-dn layer 1
-    rho0(4, 4)  += delta;     // dxz spin-dn layer 1
-    rho0(5, 5)  += delta;     // dxy spin-dn layer 1
-
-    // Layer 2 spin-down: remove electrons (layer-AF seed)
-    rho0(9,  9)  -= delta;    // dyz spin-dn layer 2
-    rho0(10, 10) -= delta;    // dxz spin-dn layer 2
-    rho0(11, 11) -= delta;    // dxy spin-dn layer 2
-
-    // --- Kanamori SCF ---
     KanamoriParams kp;
     kp.U       = p.U;
     kp.J       = 0.8;
     kp.U_prime = kp.U - 2*kp.J;  // enforce rotational invariance
 
-    std::cout << "=== Stage 2: Kanamori SCF ===\n";
     std::cout << "KanamoriParams:\n";
     std::cout << "  U       = " << kp.U       << "\n";
     std::cout << "  U'      = " << kp.U_prime << "\n";
     std::cout << "  J       = " << kp.J       << "\n\n";
 
-    const KanamoriResult kres = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
-    std::cout << "\n";
-    printKanamoriOccupations(kres);
+    const double delta = 0.01;
+    const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
 
-    //run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.0, 0.2, 10, p, kp);
+    std::cout << "\n=== [001] Occupations ===\n";
+    printKanamoriOccupations(mca.res_001);
+    std::cout << "=== [110] Occupations ===\n";
+    printKanamoriOccupations(mca.res_110);
+    std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
+
+    //run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.0, 0.2, 10, delta, p, kp);
 
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";

@@ -278,12 +278,12 @@ CalcResult runSelfCalc(double S0, double alpha, int grid_size,
 
         const double diff = std::abs(S_calc - S_current);
 
-        std::cout << "Iteration " << i
+        std::cout << "\rIteration " << i
                   << ", S = "    << std::fixed << std::setprecision(6) << S_current
-                  << ", Difference: " << diff << std::endl;
+                  << ", Difference: " << diff << "   " << std::flush;
 
         if (diff < tol) {
-            std::cout << "Self-consistency reached!\n";
+            std::cout << "\nSelf-consistency reached!\n";
             converged = true;
             break;
         }
@@ -413,15 +413,15 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         const Mat12 rho_new = compute_density_matrix(sys, mu, T);
         const double diff = (rho_new - rho).norm();
 
-        std::cout << "Iteration " << i
-                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff << std::endl;
+        std::cout << "\rIteration " << i
+                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff << "   " << std::flush;
 
         if (diff < tol) {
             const double bandsum = calculate_band_energy(sys, mu, T);
             const double dc = kanamori_dc_layer(rho.block<6,6>(0, 0), kp)
                             + kanamori_dc_layer(rho.block<6,6>(6, 6), kp);
-            std::cout << "Kanamori SCF converged! mu = " << mu
-                      << ", E_total = " << bandsum - dc << std::endl;
+            std::cout << "\nKanamori SCF converged! mu = " << mu
+                      << ", E_total = " << bandsum - dc << "\n";
             return {rho, mu, bandsum - dc};
         }
 

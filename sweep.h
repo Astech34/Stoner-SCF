@@ -5,10 +5,22 @@
 void run_U_sweep(double S0, double alpha, int grid, double T, double N_target,
                  double U_min, double U_max, int N_points, Params p);
 
-// Sweep SOC strength lambda and compute MCA energy E([110]) - E([001]) at each value
-// using Kanamori SCF. Stoner SCF seeds each direction independently.
+struct MCAResult {
+    KanamoriResult res_001;
+    KanamoriResult res_110;
+    double E_MCA;
+};
+
+// Compute MCA energy E([110]) - E([001]).
+// Converges Kanamori at [001] first (with symmetry-breaking seed delta),
+// then seeds [110] from the converged [001] rho to ensure both axes are in the same phase.
+MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_target,
+                      double delta, Params p, KanamoriParams kp);
+
+// Sweep SOC strength lambda and compute MCA energy E([110]) - E([001]) at each value.
 void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_target,
-                       double lam_min, double lam_max, int N_points, Params p, KanamoriParams kp);
+                       double lam_min, double lam_max, int N_points, double delta,
+                       Params p, KanamoriParams kp);
 
 // Sweep staggered layer potential delta_V and record layer occupation difference.
 // Stoner bootstrap runs once (delta_V does not enter that path); Kanamori SCF

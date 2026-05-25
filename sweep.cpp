@@ -7,6 +7,47 @@
 #include <sstream>
 #include <filesystem>
 
+// Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
+static void apply_symmetry_breaking(Mat12& rho, double delta) {
+    // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
+    rho(2, 2) += delta;   rho(0, 0) -= delta;
+    rho(2, 1) += delta;   rho(1, 2) += delta;
+    // Layer 2 spin-up: same orbital breaking
+    rho(8, 8) += delta;   rho(6, 6) -= delta;
+    rho(8, 7) += delta;   rho(7, 8) += delta;
+    // Layer 1 spin-down: add electrons (layer-AF seed)
+    rho(3, 3) += delta;   rho(4, 4) += delta;   rho(5, 5) += delta;
+    // Layer 2 spin-down: remove electrons (layer-AF seed)
+    rho(9,  9)  -= delta; rho(10, 10) -= delta; rho(11, 11) -= delta;
+}
+
+MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_target,
+                      double delta, Params p, KanamoriParams kp) {
+    // Stoner bootstrap at [001] — exchange field always along z
+    p.theta = 0.0;
+    p.phi   = 0.0;
+    std::cout << "=== Stoner bootstrap ===\n";
+    const CalcResult stoner = runSelfCalc(S0, alpha, grid, T, N_target, p);
+    const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, grid, p);
+    Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
+    apply_symmetry_breaking(rho0, delta);
+
+    // Kanamori at [001]
+    std::cout << "\n=== Kanamori SCF: [001] ===\n";
+    const KanamoriResult res_001 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
+
+    // Kanamori at [110], seeded from converged [001] rho
+    p.theta = M_PI / 2.0;
+    p.phi   = M_PI / 4.0;
+    std::cout << "\n=== Kanamori SCF: [110] (seeded from [001]) ===\n";
+    const KanamoriResult res_110 = runKanamoriSCF(res_001.rho, alpha, grid, T, N_target, p, kp);
+
+    const double E_MCA = res_110.E_total - res_001.E_total;
+    std::cout << "\nE_MCA = E[110] - E[001] = " << E_MCA << " eV\n";
+
+    return {res_001, res_110, E_MCA};
+}
+
 void run_U_sweep(double S0, double alpha, int grid, double T, double N_target,
                  double U_min, double U_max, int N_points, Params p) {
 
@@ -52,7 +93,8 @@ void run_U_sweep(double S0, double alpha, int grid, double T, double N_target,
 }
 
 void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_target,
-                       double lam_min, double lam_max, int N_points, Params p, KanamoriParams kp) {
+                       double lam_min, double lam_max, int N_points, double delta,
+                       Params p, KanamoriParams kp) {
 
     std::filesystem::create_directories("out");
 
@@ -72,7 +114,7 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     auto kanamori_moment = [](const KanamoriResult& kres) {
         double up = 0.0, dn = 0.0;
         for (int m = 0; m < 3; m++) {
-            up += kres.rho(m,   m  ).real() + kres.rho(m+6,   m+6  ).real();
+            up += kres.rho(m,   m  ).real() + kres.rho(m+6, m+6).real();
             dn += kres.rho(m+3, m+3).real() + kres.rho(m+9, m+9).real();
         }
         return up - dn;
@@ -82,29 +124,12 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
         p.lam = lam_min + i * (lam_max - lam_min) / (N_points - 1);
         std::cout << "--- lam = " << p.lam << " (" << i+1 << "/" << N_points << ") ---\n";
 
-        // [0,0,1]: theta=0, phi=0
-        p.theta = 0.0;
-        p.phi   = 0.0;
-        const CalcResult stoner_001 = runSelfCalc(S0, alpha, grid, T, N_target, p);
-        const Eigensystem sys_001   = compute_eigensystem_grid(stoner_001.S_new, grid, p);
-        const Mat12 rho0_001        = compute_density_matrix(sys_001, stoner_001.mu, T);
-        const KanamoriResult kres_001 = runKanamoriSCF(rho0_001, alpha, grid, T, N_target, p, kp);
-
-        // [1,1,0]: theta=pi/2, phi=pi/4
-        p.theta = M_PI / 2.0;
-        p.phi   = M_PI / 4.0;
-        const CalcResult stoner_110 = runSelfCalc(S0, alpha, grid, T, N_target, p);
-        const Eigensystem sys_110   = compute_eigensystem_grid(stoner_110.S_new, grid, p);
-        const Mat12 rho0_110        = compute_density_matrix(sys_110, stoner_110.mu, T);
-        const KanamoriResult kres_110 = runKanamoriSCF(rho0_110, alpha, grid, T, N_target, p, kp);
-
-        const double E_MCA = kres_110.E_total - kres_001.E_total;
-        std::cout << "E_MCA = " << E_MCA << "\n\n";
+        const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
 
         outfile << p.lam << ","
-                << kanamori_moment(kres_110) << "," << kres_110.E_total << ","
-                << kanamori_moment(kres_001) << "," << kres_001.E_total << ","
-                << E_MCA << "\n";
+                << kanamori_moment(mca.res_110) << "," << mca.res_110.E_total << ","
+                << kanamori_moment(mca.res_001) << "," << mca.res_001.E_total << ","
+                << mca.E_MCA << "\n";
         outfile.flush();
     }
 
