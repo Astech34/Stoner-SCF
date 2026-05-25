@@ -43,6 +43,12 @@ static void printKanamoriOccupations(const KanamoriResult& res) {
 
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
     std::cout << "  Moment    " << (total_up - total_dn) << "\n\n";
+
+    const auto [lz1, lz2] = compute_Lz_moments(rho);
+    std::cout << "Lz Layer 1  " << lz1 << "\n";
+    std::cout << "Lz Layer 2  " << lz2 << "\n";
+    std::cout << "Lz Total    " << (lz1 + lz2) << "\n\n";
+
     std::cout << "Total energy (eV):    " << res.E_total << "\n";
 }
 
@@ -63,7 +69,7 @@ int main() {
     p.phi       = M_PI / 4.0;  // azimuthal angle of spin quantization axis
 
     const double S0       = 0.3;
-    const double alpha    = 0.2;
+    const double alpha    = 0.3;
     const double T        = 0.05;
     const double N_target = 10.0;  // 5 electrons per layer x 2 layers
     const int    grid     = 50;
@@ -107,8 +113,10 @@ int main() {
     std::cout << "=== [110] Occupations ===\n";
     printKanamoriOccupations(mca.res_110);
     std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
+    
 
-    //run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.0, 0.2, 10, delta, p, kp);
+    //const double delta = 0.01;
+    //run_MCA_lam_sweep(S0, alpha, grid, T, N_target, 0.01, 0.1, 10, delta, p, kp);
 
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";

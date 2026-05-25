@@ -44,6 +44,10 @@ CalcResult  calculateS(double S, int grid_size, double T, double N_target, const
 // Run the self-consistent loop with linear mixing
 CalcResult  runSelfCalc(double S0, double alpha, int grid_size, double T, double N_target, const Params& p);
 
+// Orbital Lz moment per layer: <Lz>_layer = Tr(rho_layer * (Lz ⊗ I_spin))
+// Returns {Lz_layer1, Lz_layer2}. Uses t2g Lz: Lz(yz,xz)=i, Lz(xz,yz)=-i.
+std::pair<double, double> compute_Lz_moments(const Mat12& rho);
+
 // ---- Kanamori SCF ----
 
 struct KanamoriResult { Mat12 rho; double mu; double E_total; };

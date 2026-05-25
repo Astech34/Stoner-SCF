@@ -222,6 +222,18 @@ cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
 }
 
 // -----------------------------------------------------------------------------
+// compute_Lz_moments — <Lz> per layer from the 12x12 density matrix
+// Lz acts on t2g orbitals as: Lz(yz,xz)=i, Lz(xz,yz)=-i, xy diagonal = 0
+// <Lz>_layer = -2 * (Im[rho(xz↑,yz↑)] + Im[rho(xz↓,yz↓)])
+// -----------------------------------------------------------------------------
+std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
+    auto lz_layer = [&](int base) {
+        return -2.0 * (rho(base+1, base+0).imag() + rho(base+4, base+3).imag());
+    };
+    return {lz_layer(0), lz_layer(6)};
+}
+
+// -----------------------------------------------------------------------------
 // calculateS — one SCF step: diagonalise, find mu, compute new magnetisation
 // mirrors the Python calculateS function
 // -----------------------------------------------------------------------------
@@ -397,7 +409,7 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
 KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
                                const Params& p, const KanamoriParams& kp) {
-    constexpr int    max_iter = 99999;
+    constexpr int    max_iter = 999999;
     constexpr double tol      = 1e-6;
 
     Mat12 rho = rho0;
