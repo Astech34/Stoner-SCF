@@ -84,33 +84,19 @@ Mat6 SOC(double lam, double theta, double phi) {
 }
 // Checked
 Mat6 HubbardU(double S, const Params& p) {
-    // Magnetisation direction n̂ = (sin θ cos φ, sin θ sin φ, cos θ)
-    const double nx = std::sin(p.theta) * std::cos(p.phi);
-    const double ny = std::sin(p.theta) * std::sin(p.phi);
-    const double nz = std::cos(p.theta);
-
-    // H = -U*S * (n̂·σ) ⊗ I₃
-    // (n̂·σ) = [ nz·I₃,        (nx-i·ny)·I₃ ]
-    //          [ (nx+i·ny)·I₃,  -nz·I₃       ]
+    // Exchange field always along z: H = -U*S * σ_z ⊗ I₃
+    // Angles enter only through the SOC rotation, not the exchange field.
     const double scale = -p.U * S;
 
     Mat6 H = Mat6::Zero();
-
-    // Diagonal spin blocks
-    H(0,0) = scale * nz;   H(1,1) = scale * nz;   H(2,2) = scale * nz;
-    H(3,3) = -scale * nz;  H(4,4) = -scale * nz;  H(5,5) = -scale * nz;
-
-    // Off-diagonal spin blocks (only non-zero when n̂ has x or y component)
-    const cd off_up   = scale * cd(nx, -ny);  // spin-up row, spin-down col
-    const cd off_down = scale * cd(nx,  ny);  // spin-down row, spin-up col
-    H(0,3) = off_up;   H(1,4) = off_up;   H(2,5) = off_up;
-    H(3,0) = off_down; H(4,1) = off_down; H(5,2) = off_down;
+    H(0,0) = scale;   H(1,1) = scale;   H(2,2) = scale;
+    H(3,3) = -scale;  H(4,4) = -scale;  H(5,5) = -scale;
 
     return H;
 }
 
 Mat6 singleLayer(double kx, double ky, double S, const Params& p) {
-    return H0(kx, ky, p, p.delta_cf1) + SOC(p.lam) + HubbardU(S, p);
+    return H0(kx, ky, p, p.delta_cf1) + SOC(p.lam, p.theta, p.phi) + HubbardU(S, p);
 }
 
 // Checked
@@ -137,7 +123,7 @@ Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p) {
     // Layer-major ordering:
     //   rows/cols 0-5:  layer 1 (spin-up yz,xz,xy | spin-down yz,xz,xy)
     //   rows/cols 6-11: layer 2 (same ordering)
-    const Mat6 Hsoc = SOC(p.lam);
+    const Mat6 Hsoc = SOC(p.lam, p.theta, p.phi);
     const Mat6 Hhub = HubbardU(S, p);
     const Mat6 T    = T_perp_mat(p);
 
@@ -192,7 +178,7 @@ void save_band_structure(double S, int n_points, const Params& p,
     // Add the final Γ point
     path.push_back({corners.back().kx, corners.back().ky, path_coord, corners.back().label});
 
-    const Mat6 Hsoc = SOC(p.lam);
+    const Mat6 Hsoc = SOC(p.lam, p.theta, p.phi);
     const Mat6 Hhub = HubbardU(S, p);
     const Mat6 T    = T_perp_mat(p);
 

@@ -15,8 +15,8 @@ struct Params {
     double t2      = 0.1;
     double lam     = 0.1;
     double U       = 2.0;
-    double theta   = 0.0;  // polar angle of magnetisation direction (0 = z-axis)
-    double phi     = 0.0;  // azimuthal angle of magnetisation direction
+    double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)
+    double phi     = 0.0;  // azimuthal angle of SOC spin quantization axis
     double t_perp    = 0.0;  // interlayer hopping for yz and xz orbitals
     double t_perp_xy = 0.0;  // interlayer hopping for xy orbital (zero by symmetry for ideal stacking)
     double delta_cf1 = 0.0;  // tetragonal crystal field for layer 1 (positive = xy higher)

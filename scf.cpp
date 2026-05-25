@@ -131,7 +131,7 @@ Eigensystem compute_eigensystem_grid(double S, int grid_size, const Params& p) {
         k_lin[i] = -M_PI + i * (2.0 * M_PI / (grid_size));
 
     // Precompute k-independent pieces once
-    const Mat6 Hsoc = SOC(p.lam);
+    const Mat6 Hsoc = SOC(p.lam, p.theta, p.phi);
     const Mat6 Hhub = HubbardU(S, p);
     const Mat6 T    = T_perp_mat(p);
 
@@ -236,15 +236,8 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
         return {S, std::numeric_limits<double>::quiet_NaN()};
     }
 
-    // Magnetisation direction n̂ = (sin θ cos φ, sin θ sin φ, cos θ)
-    const double nx = std::sin(p.theta) * std::cos(p.phi);
-    const double ny = std::sin(p.theta) * std::sin(p.phi);
-    const double nz = std::cos(p.theta);
-
-    // Project the density matrix onto n̂: M = Tr(ρ (n̂·σ)) summed over orbitals and k
-    // For each eigenstate: ⟨n̂·σ⟩ = nz(|ψ↑|²-|ψ↓|²) + 2·nx·Re[ψ↑†ψ↓] + 2·ny·Im[ψ↑†ψ↓]
-    // spin_sum is actually definition for magnetization
-    // to return Stoner S we divide by two (in return statment)
+    // Exchange field is always along z, so S = (1/2)(n_up - n_dn) in the z basis.
+    // Angles enter only through SOC; the self-consistency condition is always z-axis.
     double spin_sum = 0.0;
     for (int idx = 0; idx < N_k; idx++) {
         for (int band = 0; band < N_bands; band++) {
@@ -252,13 +245,9 @@ CalcResult calculateS(double S, int grid_size, double T, double N_target, const 
             const double f = 1.0 / (std::exp(x) + 1.0);
 
             Eigen::Vector<cd, 6> psi_up, psi_dn;
-            const cd cross = spin_cross(sys.evecs[idx].col(band), psi_up, psi_dn);
+            spin_cross(sys.evecs[idx].col(band), psi_up, psi_dn);
 
-            const double proj = nz * (psi_up.squaredNorm() - psi_dn.squaredNorm())
-                              + 2.0 * nx * cross.real()
-                              + 2.0 * ny * cross.imag();
-
-            spin_sum += f * proj;
+            spin_sum += f * (psi_up.squaredNorm() - psi_dn.squaredNorm());
         }
     }
 
