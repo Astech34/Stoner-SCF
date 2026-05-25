@@ -327,7 +327,7 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
                      + (Up - J) * (n_dn - n_dn_m);
         
         // Hubbard U Off Diagonal Terms
-        H(m+3, m) -= U * rho(m, m+3).real(); // -U <d†_{m↑} d_{m↓}> d†_{m↓} d_{m↑}
+        H(m+3, m) -= U * rho(m, m+3); // -U <d†_{m↑} d_{m↓}> d†_{m↓} d_{m↑}
         H(m, m+3) -= U * rho(m+3, m); // -U <d†_{m↓} d_{m↑}> d†_{m↑} d_{m↓}
     }
 
