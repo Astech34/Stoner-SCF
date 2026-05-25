@@ -100,36 +100,31 @@ int main() {
     const Eigensystem sys0 = compute_eigensystem_grid(stoner.S_new, grid, p);
     Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
 
-    // Break layer symmetry: shift spin-up on layer 1, spin-down on layer 2
-    // Internal order per layer block: yz=0,xz=1,xy=2 (up) | yz=3,xz=4,xy=5 (dn)
-
-    // This is the wrong orbital ordering, but I didn't catch it.
-    // it gives interesting results so I need to think about this.
+    // Break symmetry: orbital polarization (spin-up) + layer-AF imbalance (spin-down)
+    // Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
     const double delta = 0.01;
-    // Break orbital symmetry differently for each orbital
-    // Layer 1
-    rho0(0, 0) += delta;      // dxy spin-up layer 1
-    rho0(1, 1) += 0.0;        // dxz spin-up layer 1
-    rho0(2, 2) -= delta;      // dyz spin-up layer 1
-    rho0(0, 1) += delta;      // dxy-dxz coherence layer 1
-    rho0(1, 0) += delta;      // keep hermitian layer 1
 
-    // Layer 2 (offset by 6)
-    rho0(6, 6)   += delta;    // dxy spin-up layer 2
-    rho0(7, 7)   += 0.0;      // dxz spin-up layer 2
-    rho0(8, 8)   -= delta;    // dyz spin-up layer 2
-    rho0(6, 7)   += delta;    // dxy-dxz coherence layer 2
-    rho0(7, 6)   += delta;    // keep hermitian layer 2
+    // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
+    rho0(2, 2) += delta;      // dxy spin-up layer 1
+    rho0(0, 0) -= delta;      // dyz spin-up layer 1
+    rho0(2, 1) += delta;      // dxy-dxz coherence layer 1
+    rho0(1, 2) += delta;      // hermitian conjugate
 
-    // Layer 1 - add electrons to spin down channel
-    rho0(3, 3)  += delta;   // dxy spin-dn layer 1
-    rho0(4, 4)  += delta;   // dxz spin-dn layer 1
-    rho0(5, 5)  += delta;   // dyz spin-dn layer 1
+    // Layer 2 spin-up: same orbital breaking
+    rho0(8, 8)   += delta;    // dxy spin-up layer 2
+    rho0(6, 6)   -= delta;    // dyz spin-up layer 2
+    rho0(8, 7)   += delta;    // dxy-dxz coherence layer 2
+    rho0(7, 8)   += delta;    // hermitian conjugate
 
-    // Layer 2 - remove electrons from spin down channel
-    rho0(9,  9)  -= delta;  // dxy spin-dn layer 2
-    rho0(10, 10) -= delta;  // dxz spin-dn layer 2
-    rho0(11, 11) -= delta;  // dyz spin-dn layer 2
+    // Layer 1 spin-down: add electrons (layer-AF seed)
+    rho0(3, 3)  += delta;     // dyz spin-dn layer 1
+    rho0(4, 4)  += delta;     // dxz spin-dn layer 1
+    rho0(5, 5)  += delta;     // dxy spin-dn layer 1
+
+    // Layer 2 spin-down: remove electrons (layer-AF seed)
+    rho0(9,  9)  -= delta;    // dyz spin-dn layer 2
+    rho0(10, 10) -= delta;    // dxz spin-dn layer 2
+    rho0(11, 11) -= delta;    // dxy spin-dn layer 2
 
     // --- Kanamori SCF ---
     KanamoriParams kp;
