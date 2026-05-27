@@ -1,0 +1,131 @@
+\documentclass[11pt]{article}
+
+\usepackage[left=1.5cm, right=1.5cm, top=2cm, bottom=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{bm}
+
+\title{t2g square lattice tight-binding derivation}
+\author{Anderson Steckler}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Nearest Neighbor}
+ 
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & $l=1,\,m=0,\,n=0$ & $l=0,\,m=1,\,n=0$ & $l=0,\,m=0,\,n=1$ \\
+\midrule
+$E_{xy,xy}$ & $V_\pi$  & $V_\pi$  & $V_\delta$ \\
+$E_{xy,yz}$ & $0$      & $0$      & $0$ \\
+$E_{xy,zx}$ & $0$      & $0$      & $0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is for hopping in the x and y directions. The integrals all have the same sign,
+hence the Hamiltonian becomes.
+Using the Fourier transformation
+$c_i = \frac{1}{\sqrt{N}} \sum_k e^{i \bm k \cdot \bm R_i} c_{\bm k}$
+\begin{align}
+    H &= t \sum_{R, \delta} c_{i+\delta}^\dagger c_i \\\nonumber
+    &= \frac{t}{N} \sum_{R, \delta} \sum_{q, k} e^{-i \bm q \cdot (\bm R_i + \bm \delta)} e^{i \bm k \cdot \bm R_i} c_{\bm q}^\dagger c_{\bm k} \\\nonumber
+    &= \frac{t}{N} \sum_\delta \sum_{q, k} \delta_{qk} e^{-i \bm q \cdot \bm \delta} c_q^\dagger c_k \\\nonumber
+    &= t \sum_\delta \sum_k e^{-i q \cdot \delta} c_k^\dagger c_k \\\nonumber
+    &= t\sum_k \left[e^{-ik_x a} + e^{-ik_y a} + e^{ik_x a} + e^{ik_y a}\right]c_k^\dagger c_k \\\nonumber
+    &= 2t \sum_k \left[\cos(k_x a) + cos(k_y a)\right]c_k^\dagger c_k
+\end{align}
+ 
+\section*{Next Nearest Neighbor}
+ 
+$\xi = \pm 1$ and $\xi' = \pm 1$
+ 
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & $l=\xi/\sqrt{2},\,m=\xi'/\sqrt{2},\,n=0$
+ & $l=0,\,m=\xi/\sqrt{2},\,n=\xi'/\sqrt{2}$
+ & $l=\xi'/\sqrt{2},\,m=0,\,n=\xi/\sqrt{2}$ \\
+\midrule
+$E_{xy,xy}$ & $\tfrac{3}{4}V'_\sigma + \tfrac{1}{4}V'_\delta$
+            & $\tfrac{1}{2}V'_\pi + \tfrac{1}{2}V'_\delta$
+            & $\tfrac{1}{2}V'_\pi + \tfrac{1}{2}V'_\delta$ \\[6pt]
+$E_{xy,yz}$ & $0$
+            & $0$
+            & $\dfrac{\xi\xi'}{4}\left(V'_\pi - V'_\delta\right)$ \\[8pt]
+$E_{xy,zx}$ & $0$
+            & $\dfrac{\xi\xi'}{4}\left(V'_\pi - V'_\delta\right)$
+            & $0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The diagonal terms do not depend on the sign so we get.
+\begin{align}
+    H &= t \sum_\delta \sum_k e^{-ik \cdot \delta} c_k^\dagger c_k \\\nonumber
+    &= t \sum_k \left[e^{-ia(k_x+k_y)}+e^{-ia(k_x-k_y)}+e^{-ia(-k_x+k_y)} + e^{-ia(-k_x-k_y)}\right] c_k^\dagger c_k \\\nonumber
+    &= t \sum_k \left[2\cos(k_xa + k_ya) + 2\cos(k_xa - k_ya)\right] c_k^\dagger c_k \\\nonumber
+    &= 4t \sum_k \cos(k_x a)\cos(k_y a) c_k^\dagger c_k \\\nonumber
+\end{align}
+for the off diagonal terms we get a minus sign for $a(-\hat x, \hat y)$ and $a(\hat x, -\hat y)$.
+\begin{align}
+    H &= t \sum_\delta \sum_k e^{-ik \cdot \delta} c_k^\dagger c_k \\\nonumber
+    &= t \sum_k \left[e^{-ia(k_x+k_y)}-e^{-ia(k_x-k_y)}-e^{-ia(-k_x+k_y)} + e^{-ia(-k_x-k_y)}\right] c_k^\dagger c_k \\\nonumber
+    &= t \sum_k \left[(e^{-iak_x} - e^{iak_x})(e^{-iak_y}-e^{iak_y})\right] c_k^\dagger c_k \\\nonumber
+    &= t \sum_k \left[(2i\sin(k_x a))(2i\sin(k_y a))\right] c_k^\dagger c_k \\\nonumber
+    &= -4t \sum_k \sin(k_x a)\sin(k_y a) c_k^\dagger c_k \\\nonumber
+\end{align}
+
+\section*{Single Layer Hamiltonian}
+Our matrix elements can be represented by the following functions
+\begin{align}
+    \varepsilon_{xy} &= -2t_\pi \left[\cos(k_x a) + \cos(k_y a)\right] - 4t_{2xy} \cos(k_x a)\cos(k_y a) \\\nonumber
+    \varepsilon_{yz} &= -2t_\pi \cos(k_x a) - 2t_\delta \cos(k_y a) - 4t_{2yzzx} \cos(k_x a)\cos(k_y a) \\\nonumber
+    \varepsilon_{zx} &= -2t_\delta \cos(k_x a) - 2t_\pi \cos(k_y a) - 4t_{2yzzx} \cos(k_x a)\cos(k_y a) \\\nonumber
+    g &= +4t_{g} \sin(k_x a)\sin(k_y a)
+\end{align}
+and the matrix is in our basis of $yz, xz, xy$
+\begin{gather}
+    H_0 = \begin{pmatrix}
+        \varepsilon_{yz} & g & 0 \\
+        g & \varepsilon_{xz} & 0 \\
+        0 & 0 & \varepsilon_{xy}
+    \end{pmatrix}
+\end{gather}
+
+\section*{Interlayer Hoppings}
+ 
+Label the interlayer integrals as $U$.
+ 
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & $l=0,\,m=0,\,n=1$ & $l=1,\,m=0,\,n=0$ & $l=0,\,m=1,\,n=0$ \\
+\midrule
+$E_{xy,xy}$ & $U_\delta$ & $U_\pi$ & $U_\pi$ \\
+$E_{xy,yz}$ & $0$        & $0$     & $0$ \\
+$E_{xy,zx}$ & $0$        & $0$     & $0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+our interlayer hopping hamiltonian is then in $yz, xz, xy$
+\begin{gather}
+    H_\perp = \begin{pmatrix}
+        t_\perp & 0 & 0 \\
+        0 & t_\perp & 0 \\
+        0 & 0 & t_{\perp xy}
+    \end{pmatrix}
+\end{gather}
+\end{document}

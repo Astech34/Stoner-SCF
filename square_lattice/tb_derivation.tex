@@ -112,9 +112,9 @@ Now lets consider this one for the xy band. The hopping vector is now $(a \hat x
 \end{gather}
 and the non zero integrals are
 \begin{gather}
-    t_{xy-xy} = \frac{3}{4} V_{dd\sigma} + \frac{1}{4} V_{dd\delta}
+    t_{xy-xy} = \frac{3}{4} V'_{dd\sigma} + \frac{1}{4} V'_{dd\delta}
 \end{gather}
-it turns out this is the result for all directions i.e $(\pm a \hat x + \pm a \hat y)$ our
+where the primes denote NNN integrals. It turns out this is the result for all directions i.e $(\pm a \hat x + \pm a \hat y)$ our
 tight binding hamiltonian can then be written as.
 \begin{align}
     H &= t_{nnn} \sum_\delta \sum_k e^{-ik \cdot \delta} c_k^\dagger c_k \\\nonumber
@@ -123,6 +123,11 @@ tight binding hamiltonian can then be written as.
     &= 4t_{nnn} \sum_k \cos(k_x a)\cos(k_y a) c_k^\dagger c_k \\\nonumber
 \end{align}
 Using the sum to product $\cos(A + B) + \cos(A - B) = 2\cos A \cos B$
+\subsubsection{Energy for Band}
+Hence the total energy for the xy band is
+\begin{gather}
+    \varepsilon_{xy} = -2t_1 \left[\cos(k_x a) + \cos(k_y a)\right] - 4 t_2 \cos(k_x a)\cos(k_y a)
+\end{gather}
 \subsection{yz band}
 To look at the yz band we apply the following permutation. Its helpful to look at this diagram
 \begin{figure}[H]
@@ -155,10 +160,36 @@ The hamiltonian is
     t_{yz,xz} = 0
 \end{gather}
 The derivation for the energy is the same as above just in y direction.
+\subsubsection{Next Nearest Neighbor Hopping}
+We do the permutation to the directional cosines in the xy case to get
+\begin{gather}
+    l = 0 \quad m = \pm 1/\sqrt{2} \quad n = \pm 1/\sqrt{2}
+\end{gather}
+the diagonal hopping term is
+\begin{gather}
+    t_{yz,yz} = \frac{1}{2} V'_{dd\pi} + \frac{1}{2} V'_{dd\delta}
+\end{gather}
+which is the same for all diagonal directions so this gives us an additional diagonal term
+\begin{gather}
+    \varepsilon_{yz, nnn} = -4t_{yz,yz} \cos(k_x a)\cos(k_y a)
+\end{gather}
+Now the off diagonal gives us $t_{yz, xz} = 0$ but a nonzero
+\begin{gather}
+    t_{yz, xy} = \pm \frac{1}{2} \left[V'_{dd\pi} - V'_{dd\delta}\right]
+\end{gather}
+where it is plus/minus depending on the product of the direction cosines, i.e in our
+hopping hamiltonian we see
+\begin{align}
+    H &= t_{yz,xy} \sum_\delta \sum_k e^{-ik \cdot \delta} c_k^\dagger c_k \\\nonumber
+    &= t_{yz,xy} \sum_k \left[e^{-ia(k_x+k_y)}-e^{-ia(k_x-k_y)}-e^{-ia(-k_x+k_y)} + e^{-ia(-k_x-k_y)}\right] c_k^\dagger c_k \\\nonumber
+    &= t_{yz,xy} \sum_k 2i \left[\sin(k_x + k_y) + \sin(k_x - k_y)\right] c_k^\dagger c_k \\\nonumber
+    &= 4i t_{yz,xy} \sum_k \sin(k_x a) \cos(k_y a) c_k^\dagger c_k
+\end{align}
 \subsection{Energy for band}
 Hence the total energy is
 \begin{gather}
-    \varepsilon_{yz} = -2t_1 \cos(k_x a) - 2 t_\delta \cos(k_y a)
+    \varepsilon_{yz} = -2t_1 \cos(k_x a) - 2 t_\delta \cos(k_y a) \\
+    \langle yz| H_0 | xy \rangle = -4i t_{yz,xy} \sin(k_x a) \cos(k_y a)
 \end{gather}
 \subsection{xz band}
 The same formalism applies.
@@ -172,10 +203,19 @@ which gives the nonzero integral $V_{dd\delta}$
     l= 1 \quad m= 0 \quad n=0
 \end{gather}
 which gives the nonzero integral $V_{dd\pi}$.
+\subsection{Next Nearest Neighbor Hopping}
+The directional cosines are
+\begin{gather}
+    l= 1/\sqrt{2} \quad m = 0 \quad n = 1/\sqrt{2}
+\end{gather}
 \subsection{Energy For Band}
 \begin{gather}
     \varepsilon_{xz} = -2t_\delta \cos(k_x a) - 2 t_1 \cos(k_y a)
 \end{gather}
-
-
+\subsection{Summary}
+\begin{align*}
+    \varepsilon_{xy} &= -2t_1 \left[\cos(k_x a) + \cos(k_y a)\right] - 4 t_2 \cos(k_x a)\cos(k_y a) \\
+    \varepsilon_{yz} &= -2t_1 \cos(k_x a) - 2 t_\delta \cos(k_y a) \\
+    \varepsilon_{xz} &= -2t_\delta \cos(k_x a) - 2 t_1 \cos(k_y a)
+\end{align*}    
 \end{document}
