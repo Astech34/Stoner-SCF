@@ -52,6 +52,9 @@ std::pair<double, double> compute_Lz_moments(const Mat12& rho);
 
 struct KanamoriResult { Mat12 rho; double mu; double E_total; };
 
+// Print orbital occupations, spin moments, Lz moments, and total energy.
+void printKanamoriOccupations(const KanamoriResult& res);
+
 // Compute eigensystem with the full Kanamori MF Hamiltonian (density matrix input)
 Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
                                          const Params& p = Params{},

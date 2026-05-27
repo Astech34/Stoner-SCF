@@ -35,12 +35,16 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     // Kanamori at [001]
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
     const KanamoriResult res_001 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
+    std::cout << "\n=== [001] Occupations ===\n";
+    printKanamoriOccupations(res_001);
 
     // Kanamori at [110], seeded from converged [001] rho
     p.theta = M_PI / 2.0;
     p.phi   = M_PI / 4.0;
     std::cout << "\n=== Kanamori SCF: [110] (seeded from [001]) ===\n";
     const KanamoriResult res_110 = runKanamoriSCF(res_001.rho, alpha, grid, T, N_target, p, kp);
+    std::cout << "\n=== [110] Occupations ===\n";
+    printKanamoriOccupations(res_110);
 
     const double E_MCA = res_110.E_total - res_001.E_total;
     std::cout << "\nE_MCA = E[110] - E[001] = " << E_MCA << " eV\n";

@@ -234,6 +234,52 @@ std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
 }
 
 // -----------------------------------------------------------------------------
+// printKanamoriOccupations — orbital occupations, spin/Lz moments, total energy
+// -----------------------------------------------------------------------------
+void printKanamoriOccupations(const KanamoriResult& res) {
+    const Mat12& rho = res.rho;
+
+    struct OrbEntry { const char* name; int up; int dn; };
+    const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
+
+    double total_up = 0.0, total_dn = 0.0;
+
+    for (int layer = 0; layer < 2; layer++) {
+        const int base = layer * 6;
+        double layer_up = 0.0, layer_dn = 0.0;
+
+        std::cout << "Layer " << (layer + 1) << "\n";
+        std::cout << " Orbital   Spin Up   Spin Dn\n";
+
+        for (const auto& o : orbs) {
+            const double up = rho(base + o.up, base + o.up).real();
+            const double dn = rho(base + o.dn, base + o.dn).real();
+            layer_up += up;
+            layer_dn += dn;
+            total_up += up;
+            total_dn += dn;
+            std::cout << "   " << std::left  << std::setw(6) << o.name
+                      << "   " << std::right << std::fixed << std::setprecision(4)
+                      << up << "    " << dn << "\n";
+        }
+        std::cout << "   Spin Up  " << layer_up << "\n";
+        std::cout << "   Spin Dn  " << layer_dn << "\n";
+        std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
+        std::cout << "   Moment   " << (layer_up - layer_dn) << "\n\n";
+    }
+
+    std::cout << "Total e-    " << (total_up + total_dn) << "\n";
+    std::cout << "  Moment    " << (total_up - total_dn) << "\n\n";
+
+    const auto [lz1, lz2] = compute_Lz_moments(rho);
+    std::cout << "Lz Layer 1  " << lz1 << "\n";
+    std::cout << "Lz Layer 2  " << lz2 << "\n";
+    std::cout << "Lz Total    " << (lz1 + lz2) << "\n\n";
+
+    std::cout << "Total energy (eV):    " << res.E_total << "\n";
+}
+
+// -----------------------------------------------------------------------------
 // calculateS — one SCF step: diagonalise, find mu, compute new magnetisation
 // mirrors the Python calculateS function
 // -----------------------------------------------------------------------------
