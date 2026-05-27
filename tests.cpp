@@ -17,17 +17,19 @@
 //                                (3,4,5) = spin-down (yz, xz, xy)
 TEST(Hamiltonian, H0GammaPointDiagonal) {
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.tpi      = 1.0;
+    p.tdelta = 0.1;
+    p.t2xy      = 0.1;
+    p.t2yzxz      = 0.0;
+    p.tg = 0.0;
     p.lam     = 0.0;
     p.U       = 0.0;
 
     const Mat6 H = H0(0.0, 0.0, p);
 
-    const double e_yz = -2*p.t_delta - 2*p.t1;  // -2.2
-    const double e_xz = -2*p.t1     - 2*p.t_delta;  // -2.2
-    const double e_xy = -4*p.t1     - 4*p.t2;   // -4.4
+    const double e_yz = -2*p.tdelta - 2*p.tpi;  // -2.2
+    const double e_xz = -2*p.tpi     - 2*p.tdelta;  // -2.2
+    const double e_xy = -4*p.tpi     - 4*p.t2xy;   // -4.4
 
     const double tol = 1e-12;
 
@@ -53,9 +55,11 @@ TEST(Hamiltonian, H0GammaPointDiagonal) {
 // The full Hamiltonian must be Hermitian for any k and parameters.
 TEST(Hamiltonian, FullHamiltonianIsHermitian) {
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.tpi      = 1.0;
+    p.tdelta = 0.1;
+    p.t2xy      = 0.1;
+    p.t2yzxz      = 0.0;
+    p.tg = 0.0;
     p.lam     = 0.3;
     p.U       = 2.0;
 
@@ -154,9 +158,11 @@ TEST(Hamiltonian, HubbardAngles) {
 
 TEST(Hamiltonian, BiLayerSimple){
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0;
-    p.t2      = 0;
+    p.tpi      = 1.0;
+    p.tdelta = 0;
+    p.t2xy      = 0;
+    p.t2yzxz      = 0;
+    p.tg = 0;
     p.lam     = 0;
     p.U       = 2.0;
     p.t_perp  = 0.3;
@@ -182,9 +188,11 @@ TEST(Hamiltonian, BiLayerSimple){
 // For printing Hamiltonian for testing
 TEST(Hamiltonian, PrintBiLayerH){
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.tpi      = 1.0;
+    p.tdelta = 0.1;
+    p.t2xy      = 0.1;
+    p.t2yzxz      = 0.1;
+    p.tg = 0.1;
     p.lam     = 0.1;
     p.U       = 2.0;
     p.t_perp  = 0.3;
@@ -369,9 +377,9 @@ TEST(Brent, BadBracketAsserts) {
 // Compute eigensystem
 TEST(SCF, BilayerEigenSystem){
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0;
-    p.t2      = 0;
+    p.tpi      = 1.0;
+    p.tdelta = 0;
+    p.t2xy      = 0;
     p.lam     = 0;
     p.U       = 0;
     p.t_perp  = 0.3;
@@ -445,9 +453,9 @@ TEST(SCF, TestNTotal){
 
 TEST(SCF, CheckMu){
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.tpi      = 1.0;
+    p.tdelta = 0.1;
+    p.t2xy      = 0.1;
     p.lam     = 0.3;
     p.U       = 2.0;
 
@@ -489,9 +497,9 @@ TEST(SCF, SpinCross){
 // of the initial guess S or the chosen direction n̂.
 TEST(SCF, CalculateS_ZeroExchangeGivesZeroMagnetization) {
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.tpi      = 1.0;
+    p.tdelta = 0.1;
+    p.t2xy      = 0.1;
     p.lam     = 0.0;   // no SOC
     p.U       = 0.0;   // no exchange
     p.t_perp  = 0.1;
@@ -509,9 +517,9 @@ TEST(SCF, CalculateS_ZeroExchangeGivesZeroMagnetization) {
 // S_new must therefore be independent of (theta, phi).
 TEST(SCF, CalculateS_RotationalSymmetryNoSOC) {
     Params p;
-    p.t1      = 1.0;
-    p.t_delta = 0.1;
-    p.t2      = 0.1;
+    p.tpi      = 1.0;
+    p.tdelta = 0.1;
+    p.t2xy      = 0.1;
     p.lam     = 0.0;   // no SOC → exact spin-rotation symmetry
     p.U       = 2.0;
     p.t_perp  = 0.0;

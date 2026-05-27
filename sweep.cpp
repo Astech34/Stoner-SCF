@@ -105,9 +105,11 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     std::ofstream outfile("out/mca_lam_sweep.csv");
     outfile << std::fixed << std::setprecision(6);
 
-    outfile << "# t1      = " << p.t1        << "\n";
-    outfile << "# t_delta = " << p.t_delta   << "\n";
-    outfile << "# t2      = " << p.t2        << "\n";
+    outfile << "# tpi      = " << p.tpi        << "\n";
+    outfile << "# tdelta = " << p.tdelta   << "\n";
+    outfile << "# t2xy      = " << p.t2xy        << "\n";
+    outfile << "# t2yzxz      = " << p.t2yzxz        << "\n";
+    outfile << "# tg = " << p.tg << "\n";
     outfile << "# U       = " << kp.U        << "\n";
     outfile << "# U'      = " << kp.U_prime  << "\n";
     outfile << "# J       = " << kp.J        << "\n";

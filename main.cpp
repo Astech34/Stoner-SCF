@@ -10,17 +10,19 @@
 
 int main() {
     Params p;
-    p.t1      = 0.3;
-    p.t_delta = 0.05;
-    p.t2      = 0.03;
+    p.tpi      = 0.3;
+    p.tdelta = 0.03;
+    p.t2xy      = 0.08;
+    p.t2yzxz      = 0.04;
+    p.tg = 0.05;
     p.lam     = 0.08;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
     p.U       = 4;   // well into ferromagnetic phase
     p.t_perp    = 0.2;   // interlayer hopping for yz and xz
     p.t_perp_xy = 0.05;   // interlayer hopping for xy (set equal to t_perp per advisor)
     //p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
     //p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
-    p.delta_cf1 = 0.1;   // tetragonal crystal field layer 1: raises xy above yz/xz
-    p.delta_cf2 = 0.1;   // tetragonal crystal field layer 2
+    p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
+    p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
     //p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
     p.delta_V   = 0.0;   // start with zero staggered layer potential, then sweep in stage 3
     p.theta     = M_PI / 2.0;  // polar angle of spin quantization axis (0 = z-axis / out-of-plane)
@@ -35,9 +37,11 @@ int main() {
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "=== Stoner-SCF: MCA energy ===\n";
     std::cout << "Parameters:\n";
-    std::cout << "  t1      = " << p.t1      << "\n";
-    std::cout << "  t_delta = " << p.t_delta << "\n";
-    std::cout << "  t2      = " << p.t2      << "\n";
+    std::cout << "  tpi      = " << p.tpi      << "\n";
+    std::cout << "  tdelta = " << p.tdelta << "\n";
+    std::cout << "  t2xy      = " << p.t2xy      << "\n";
+    std::cout << "  t2yzxz      = " << p.t2yzxz      << "\n";
+    std::cout << "  tg = " << p.tg << "\n";
     std::cout << "  lam     = " << p.lam     << "\n";
     std::cout << "  U       = " << p.U       << "\n";
     std::cout << "  t_perp    = " << p.t_perp    << "\n";

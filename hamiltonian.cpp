@@ -9,9 +9,12 @@
 #include <vector>
 
 Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
-    const double e_xy = -2*p.t1*(std::cos(kx) + std::cos(ky)) - 4*p.t2*std::cos(kx)*std::cos(ky);
-    const double e_xz = -2*p.t_delta*std::cos(kx) - 2*p.t1*std::cos(ky);
-    const double e_yz = -2*p.t1*std::cos(kx) - 2*p.t_delta*std::cos(ky);
+
+    const double e_xy = -2*p.tpi*(std::cos(kx) + std::cos(ky)) - 4*p.t2xy * std::cos(kx)*std::cos(ky);
+    const double e_yz = -2*p.tpi*std::cos(kx) - 2*p.tdelta*std::cos(ky) - 4*p.t2yzxz * std::cos(kx)*std::cos(ky);
+    const double e_xz = -2*p.tdelta*std::cos(kx) - 2*p.tpi*std::cos(ky) - 4*p.t2yzxz * std::cos(kx)*std::cos(ky);
+
+    const double g = 4*p.tg * std::sin(kx) * std::sin(ky);
     
     Mat6 H = Mat6::Zero();
 

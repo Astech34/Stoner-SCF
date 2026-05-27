@@ -10,11 +10,13 @@ using cd    = std::complex<double>;
 
 // Model parameters with sensible defaults
 struct Params {
-    double t1      = 1.0;
-    double t_delta = 0.1;
-    double t2      = 0.1;
+    double tpi      = 1.0;
+    double tdelta = 0;
+    double t2xy      = 0;
+    double t2yzxz      = 0;
+    double tg = 0;
     double lam     = 0.1;
-    double U       = 2.0;
+    double U       = 0.0;
     double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)
     double phi     = 0.0;  // azimuthal angle of SOC spin quantization axis
     double t_perp    = 0.0;  // interlayer hopping for yz and xz orbitals
