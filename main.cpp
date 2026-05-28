@@ -22,7 +22,7 @@ int main() {
     //p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
     //p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
     p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
-    p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
+    p.delta_cf2 = -0.16;   // tetragonal crystal field layer 2
     //p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
     p.delta_V   = 0.0;   // start with zero staggered layer potential, then sweep in stage 3
     p.theta     = 0.0;  // polar angle of spin quantization axis (0 = z-axis / out-of-plane)

@@ -54,25 +54,22 @@ Mat6 SOC(double lam, double theta, double phi) {
           cd(0,0),   cd(-0.5,0);
 
     // Rotate spin quantization axis to n̂(θ,φ): s' = U†·s·U
-    // U(θ,φ) = [[ cos(θ/2),       -sin(θ/2)·e^{-iφ} ],
-    //            [ sin(θ/2)·e^{iφ}, cos(θ/2)          ]]
-    // At θ=φ=0, U=I and s'=s (no change).
     if (theta != 0.0 || phi != 0.0) {
         const double c  = std::cos(theta / 2.0);
         const double s  = std::sin(theta / 2.0);
-        const cd     ep = std::exp(cd(0,  phi));
-        const cd     em = std::exp(cd(0, -phi));
+        const cd     ep = std::exp(cd(0,  phi/2));
+        const cd     em = std::exp(cd(0, -phi/2));
 
         Eigen::Matrix<cd, 2, 2> U;
-        U << cd(c, 0),  -s * em,
-              s * ep,   cd(c, 0);
+        U << em * cd(c, 0),  -s * em,
+              s * ep,   ep * cd(c, 0);
 
         sx = U.adjoint() * sx * U;
         sy = U.adjoint() * sy * U;
         sz = U.adjoint() * sz * U;
     }
 
-    // Kronecker products: kron(L, s') gives spin-major 6x6
+    // Kronecker products: kron(s', L) gives spin-major 6x6
     Mat6 Hsoc = Mat6::Zero();
 
     for (int i = 0; i < 3; i++)
@@ -301,6 +298,8 @@ namespace {
 //
 // Two off-diagonal terms (exchange H_exc and pair-hopping H_ph), each summed
 // over all ordered pairs (m, m') with m≠m', coefficient J.
+//
+// This is well checked!
 Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
     const double U  = kp.U;
     const double Up = kp.U_prime;

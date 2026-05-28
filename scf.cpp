@@ -403,6 +403,7 @@ CalcResult runSelfCalc(double S0, double alpha, int grid_size,
 // Double-counting correction to the total energy from the Kanamori MF decoupling.
 // Computed per single layer from the 6x6 density matrix block.
 // Matches the ΔE expression derived in the LaTeX notes (Section: Complete Kanamori Hamiltonian).
+// Make test DC should be only real
 namespace {
 double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
     const double U  = kp.U;
@@ -413,23 +414,23 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
 
     // -U intraorbital:
     for (int m = 0; m < 3; m++)
-        dc -= U * (rho(m, m+3).real()*rho(m+3, m).real() - 
-                    rho(m,m).real()*rho(m+3,m+3).real());
+        dc -= U * (rho(m, m+3)*rho(m+3, m) - 
+                    rho(m,m)*rho(m+3,m+3)).real();
 
     // -U' interorbital opposite-spin: -U' sum_{m≠m'} <n_{m↑}><n_{m'↓}>
     for (int m = 0; m < 3; m++)
         for (int mp = 0; mp < 3; mp++)
             if (mp != m)
-                dc -= Up * (rho(m, mp+3).real() * rho(mp+3, m).real() - 
-                             rho(m,m).real() * rho(mp+3, mp+3).real());
+                dc -= Up * (rho(m, mp+3) * rho(mp+3, m) - 
+                             rho(m,m) * rho(mp+3, mp+3)).real();
 
     // -(U'-J) same-spin: -(U'-J) sum_{m<m', σ} <n_{mσ}><n_{m'σ}>
     for (int m = 0; m < 3; m++)
         for (int mp = m+1; mp < 3; mp++) {
-            dc -= (Up - J) * (rho(m, mp).real()*rho(mp,m).real()
-                            - rho(m,m).real()*rho(mp,mp).real());  // σ=↑
-            dc -= (Up - J) * (rho(m+3, mp+3).real()*rho(mp+3,m+3).real()
-                            - rho(m+3,m+3).real()*rho(mp+3,mp+3).real()); // σ=↓
+            dc -= (Up - J) * (rho(m, mp)*rho(mp,m)
+                            - rho(m,m)*rho(mp,mp)).real();  // σ=↑
+            dc -= (Up - J) * (rho(m+3, mp+3)*rho(mp+3,m+3)
+                            - rho(m+3,m+3)*rho(mp+3,mp+3)).real(); // σ=↓
         }
 
     // J exchange + pair-hopping DC: sum over all ordered pairs m≠m'
@@ -519,8 +520,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             const double dc = kanamori_dc_layer(rho.block<6,6>(0, 0), kp)
                             + kanamori_dc_layer(rho.block<6,6>(6, 6), kp);
             std::cout << "\nKanamori SCF converged! mu = " << mu
-                      << ", E_total = " << bandsum - dc << "\n";
-            return {rho0, rho, mu, bandsum - dc};
+                      << ", E_total = " << bandsum + dc << "\n";
+            return {rho0, rho, mu, bandsum + dc};
         }
 
         rho = alpha * rho_new + (1.0 - alpha) * rho;

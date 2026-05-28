@@ -556,5 +556,25 @@ With corrected energy shift is
 \caption{Basis state ordering: layer-major $\to$ spin-major $\to$ orbital-minor.}
 \label{tab:basis_ordering}
 \end{table}
+\section{Spin Quantization Axis}
+We start with spin quantized in z. To rotate to an arbitrary axis we first rotate by $\theta$ about the y-axis 
+and then by $\phi$ about the z-axis. This is given by
+
+\begin{align}
+    U(\theta, \phi) &= R_z(\phi) R_y(\theta) = 
+    \begin{bmatrix}
+        e^{-i\phi/2} & 0 \\
+        0 & e^{i\phi/2}
+    \end{bmatrix}
+    \begin{bmatrix}
+        \cos{\frac{\theta}{2}} & -\sin{\frac{\theta}{2}} \\
+        \sin{\frac{\theta}{2}} & \cos{\frac{\theta}{2}}
+    \end{bmatrix}
+    \\\nonumber
+    &= \begin{bmatrix}
+        e^{-i\phi/2}\cos{\frac{\theta}{2}} & -e^{-i\phi/2}\sin{\frac{\theta}{2}} \\
+        e^{i\phi/2}\sin{\frac{\theta}{2}} & e^{i\phi/2}\cos{\frac{\theta}{2}}
+    \end{bmatrix}
+\end{align}
 
 \end{document}

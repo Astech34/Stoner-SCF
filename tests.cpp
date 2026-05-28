@@ -334,6 +334,40 @@ TEST(SOC, ScalesWithLambda) {
     EXPECT_NEAR((H2 - 2.0*H1).norm(), 0.0, 1e-12);
 }
 
+// We rotate the quantization axis by applying rotation operators
+// on our spin matrices. We test this here
+TEST(SOC, SOCAngles) {
+    const Mat6   HS   = SOC(1.0, M_PI/2, M_PI/4);
+    const double tol = 1e-12;
+
+    const double s = std::sqrt(2.0) / 4.0;  // 1/(2√2) = √2/4
+    const double h = 0.5;                    // 1/2
+
+    Mat6 H = Mat6::Zero();
+
+    // Row 0
+    H(0,2) = cd( 0, -s);  H(0,4) = cd( 0, -h);  H(0,5) = cd(-s,  0);
+
+    // Row 1
+    H(1,2) = cd( 0,  s);  H(1,3) = cd( 0,  h);  H(1,5) = cd(-s,  0);
+
+    // Row 2
+    H(2,0) = cd( 0,  s);  H(2,1) = cd( 0, -s);
+    H(2,3) = cd( s,  0);  H(2,4) = cd( s,  0);
+
+    // Row 3
+    H(3,1) = cd( 0, -h);  H(3,2) = cd( s,  0);  H(3,5) = cd( 0,  s);
+
+    // Row 4
+    H(4,0) = cd( 0,  h);  H(4,2) = cd( s,  0);  H(4,5) = cd( 0, -s);
+
+    // Row 5
+    H(5,0) = cd(-s,  0);  H(5,1) = cd(-s,  0);
+    H(5,3) = cd( 0, -s);  H(5,4) = cd( 0,  s);
+
+    EXPECT_NEAR((H - HS).norm(), 0.0, tol);
+}
+
 // -----------------------------------------------------------------------------
 // Testing SCF.h functions
 // -----------------------------------------------------------------------------
