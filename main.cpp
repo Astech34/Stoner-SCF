@@ -81,7 +81,7 @@ int main() {
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";
     //run_delta_V_sweep(S0, alpha, grid, T, N_target, 0.0, 0.1, 20, p, kp);
 
-    const KanamoriResult res = runKanamoriSCF_random(1, S0, alpha, grid, T, N_target, p, kp, 0.001);
+    const KanamoriResult res = runKanamoriSCF_random(2, S0, alpha, grid, T, N_target, p, kp, 0.001);
     std::cout << "\n=== Random-seed result ===\n";
     printKanamoriOccupations(res);
 

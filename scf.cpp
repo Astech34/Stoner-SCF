@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <utility>
 #include <stdexcept>
+#include <sstream>
 #include <omp.h>
 
 // -----------------------------------------------------------------------------
@@ -236,8 +237,41 @@ std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
 // -----------------------------------------------------------------------------
 // printKanamoriOccupations — orbital occupations, spin/Lz moments, total energy
 // -----------------------------------------------------------------------------
+static void print_density_matrix(const Mat12& rho) {
+    constexpr double tol = 5e-5;
+
+    auto fmt = [&](cd v) -> std::string {
+        const bool re_zero = std::abs(v.real()) < tol;
+        const bool im_zero = std::abs(v.imag()) < tol;
+        if (re_zero && im_zero) return "0";
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(4);
+        if (re_zero) {
+            ss << v.imag() << "i";
+        } else if (im_zero) {
+            ss << v.real();
+        } else {
+            ss << v.real();
+            if (v.imag() >= 0.0) ss << "+";
+            ss << v.imag() << "i";
+        }
+        return ss.str();
+    };
+
+    for (int i = 0; i < 12; i++) {
+        for (int j = 0; j < 12; j++) {
+            if (j > 0) std::cout << "  ";
+            std::cout << std::setw(15) << std::right << fmt(rho(i, j));
+        }
+        std::cout << "\n";
+    }
+}
+
 void printKanamoriOccupations(const KanamoriResult& res) {
     const Mat12& rho = res.rho;
+
+    // Orbital Moments
+    const auto [lz1, lz2] = compute_Lz_moments(rho);
 
     struct OrbEntry { const char* name; int up; int dn; };
     const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
@@ -266,17 +300,23 @@ void printKanamoriOccupations(const KanamoriResult& res) {
         std::cout << "   Spin Dn  " << layer_dn << "\n";
         std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
         std::cout << "   Moment   " << (layer_up - layer_dn) << "\n\n";
+        if (layer == 0)
+            std::cout << "Lz Layer 1  " << lz1 << "\n\n";
+        if (layer == 1)
+            std::cout << "Lz Layer 2  " << lz2 << "\n\n";
     }
 
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
     std::cout << "  Moment    " << (total_up - total_dn) << "\n\n";
-
-    const auto [lz1, lz2] = compute_Lz_moments(rho);
-    std::cout << "Lz Layer 1  " << lz1 << "\n";
-    std::cout << "Lz Layer 2  " << lz2 << "\n";
     std::cout << "Lz Total    " << (lz1 + lz2) << "\n\n";
 
-    std::cout << "Total energy (eV):    " << res.E_total << "\n";
+    std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
+
+    std::cout << "--- Initial density matrix (rho0) ---\n";
+    print_density_matrix(res.rho0);
+    std::cout << "\n--- Final density matrix (rho) ---\n";
+    print_density_matrix(res.rho);
+    std::cout << "\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -480,7 +520,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                             + kanamori_dc_layer(rho.block<6,6>(6, 6), kp);
             std::cout << "\nKanamori SCF converged! mu = " << mu
                       << ", E_total = " << bandsum - dc << "\n";
-            return {rho, mu, bandsum - dc};
+            return {rho0, rho, mu, bandsum - dc};
         }
 
         rho = alpha * rho_new + (1.0 - alpha) * rho;

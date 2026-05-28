@@ -50,7 +50,7 @@ std::pair<double, double> compute_Lz_moments(const Mat12& rho);
 
 // ---- Kanamori SCF ----
 
-struct KanamoriResult { Mat12 rho; double mu; double E_total; };
+struct KanamoriResult { Mat12 rho0; Mat12 rho; double mu; double E_total; };
 
 // Print orbital occupations, spin moments, Lz moments, and total energy.
 void printKanamoriOccupations(const KanamoriResult& res);
