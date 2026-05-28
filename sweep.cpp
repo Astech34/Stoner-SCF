@@ -6,6 +6,22 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <random>
+
+// Random Hermitian perturbation with Frobenius norm = epsilon.
+static Mat12 random_hermitian_perturbation(double epsilon, unsigned seed) {
+    std::mt19937 rng(seed);
+    std::normal_distribution<double> dist(0.0, 1.0);
+
+    Mat12 B;
+    for (int i = 0; i < 12; i++)
+        for (int j = 0; j < 12; j++)
+            B(i, j) = cd(dist(rng), dist(rng));
+
+    Mat12 H = (B + B.adjoint()) / 2.0;
+    H *= epsilon / H.norm();
+    return H;
+}
 
 // Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
 static void apply_symmetry_breaking(Mat12& rho, double delta) {
@@ -184,4 +200,21 @@ void run_delta_V_sweep(double S0, double alpha, int grid, double T, double N_tar
 
     outfile.close();
     std::cout << "Results saved to out/delta_V_sweep.csv\n";
+}
+
+KanamoriResult runKanamoriSCF_random(unsigned seed, double S0, double alpha, int grid_size,
+                                     double T, double N_target,
+                                     const Params& p, const KanamoriParams& kp,
+                                     double epsilon) {
+    // Stoner bootstrap along z for a physically valid starting density matrix
+    std::cout << "=== Stoner bootstrap ===\n";
+    const CalcResult stoner = runSelfCalc(S0, alpha, grid_size, T, N_target, p);
+    const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, grid_size, p);
+    Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
+
+    rho0 += random_hermitian_perturbation(epsilon, seed);
+
+    std::cout << "=== Kanamori SCF (random seed=" << seed
+              << ", epsilon=" << epsilon << ") ===\n";
+    return runKanamoriSCF(rho0, alpha, grid_size, T, N_target, p, kp);
 }

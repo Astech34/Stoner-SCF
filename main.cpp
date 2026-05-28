@@ -15,18 +15,18 @@ int main() {
     p.t2xy      = 0.08;
     p.t2yzxz      = 0.04;
     p.tg = 0.05;
-    p.lam     = 0.08;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
+    p.lam     = 0.05;   // typical upper-end 3d SOC (~50-100 meV for Co/Ni with t1~0.5 eV)
     p.U       = 4;   // well into ferromagnetic phase
-    p.t_perp    = 0.2;   // interlayer hopping for yz and xz
-    p.t_perp_xy = 0.05;   // interlayer hopping for xy (set equal to t_perp per advisor)
+    p.t_perp    = 0.06;   // interlayer hopping for yz and xz
+    p.t_perp_xy = 0.005;   // interlayer hopping for xy (set equal to t_perp per advisor)
     //p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
     //p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
     p.delta_cf1 = 0.23;   // tetragonal crystal field layer 1: raises xy above yz/xz
     p.delta_cf2 = -0.25;   // tetragonal crystal field layer 2
     //p.delta_V   = 0.073684;   // staggered layer potential (Kanamori only)
     p.delta_V   = 0.0;   // start with zero staggered layer potential, then sweep in stage 3
-    p.theta     = M_PI / 2.0;  // polar angle of spin quantization axis (0 = z-axis / out-of-plane)
-    p.phi       = M_PI / 4.0;  // azimuthal angle of spin quantization axis
+    p.theta     = 0.0;  // polar angle of spin quantization axis (0 = z-axis / out-of-plane)
+    p.phi       = 0.0;  // azimuthal angle of spin quantization axis
 
     const double S0       = 0.3;
     const double alpha    = 0.2;
@@ -68,10 +68,10 @@ int main() {
     std::cout << "  J       = " << kp.J       << "\n\n";
 
 
-    const double delta = 0.00;
-    const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
+    //const double delta = 0.00;
+    //const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
 
-    std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
+    //std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
 
 
     //const double delta = 0.01;
@@ -80,6 +80,10 @@ int main() {
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";
     //run_delta_V_sweep(S0, alpha, grid, T, N_target, 0.0, 0.1, 20, p, kp);
+
+    const KanamoriResult res = runKanamoriSCF_random(1, S0, alpha, grid, T, N_target, p, kp, 0.001);
+    std::cout << "\n=== Random-seed result ===\n";
+    printKanamoriOccupations(res);
 
     return 0;
 }
