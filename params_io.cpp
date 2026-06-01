@@ -1,0 +1,71 @@
+#include "params_io.h"
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+AllParams load_params(const std::string& filename) {
+    AllParams ap;
+    bool U_prime_explicit = false;
+    bool kp_U_explicit    = false;
+
+    std::ifstream file(filename);
+    if (!file.is_open())
+        throw std::runtime_error("load_params: cannot open '" + filename + "'");
+
+    auto trim = [](std::string& s) {
+        const auto start = s.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) { s.clear(); return; }
+        s = s.substr(start, s.find_last_not_of(" \t\r\n") - start + 1);
+    };
+
+    std::string line;
+    while (std::getline(file, line)) {
+        auto hash = line.find('#');
+        if (hash != std::string::npos) line = line.substr(0, hash);
+
+        auto eq = line.find('=');
+        if (eq == std::string::npos) continue;
+
+        std::string key = line.substr(0, eq);
+        std::string val = line.substr(eq + 1);
+        trim(key); trim(val);
+        if (key.empty() || val.empty()) continue;
+
+        const double v = std::stod(val);
+
+        // Params
+        if      (key == "tpi")       ap.p.tpi       = v;
+        else if (key == "tdelta")    ap.p.tdelta    = v;
+        else if (key == "t2xy")      ap.p.t2xy      = v;
+        else if (key == "t2yzxz")    ap.p.t2yzxz    = v;
+        else if (key == "tg")        ap.p.tg        = v;
+        else if (key == "lam")       ap.p.lam       = v;
+        else if (key == "U")         { ap.p.U = v; if (!kp_U_explicit) ap.kp.U = v; }
+        else if (key == "theta")     ap.p.theta     = v;
+        else if (key == "phi")       ap.p.phi       = v;
+        else if (key == "t_perp")    ap.p.t_perp    = v;
+        else if (key == "t_perp_xy") ap.p.t_perp_xy = v;
+        else if (key == "delta_cf1") ap.p.delta_cf1 = v;
+        else if (key == "delta_cf2") ap.p.delta_cf2 = v;
+        else if (key == "delta_V")   ap.p.delta_V   = v;
+        // KanamoriParams (K_U overrides the U→kp.U default)
+        else if (key == "K_U")       { ap.kp.U = v; kp_U_explicit = true; }
+        else if (key == "J")         ap.kp.J        = v;
+        else if (key == "U_prime")   { ap.kp.U_prime = v; U_prime_explicit = true; }
+        // SCFParams
+        else if (key == "S0")        ap.scf.S0       = v;
+        else if (key == "alpha")     ap.scf.alpha    = v;
+        else if (key == "T")         ap.scf.T        = v;
+        else if (key == "N_target")  ap.scf.N_target = v;
+        else if (key == "grid")      ap.scf.grid     = static_cast<int>(v);
+        else
+            std::cerr << "load_params: unknown key '" << key << "', skipping\n";
+    }
+
+    // Enforce U' = U - 2J (rotational invariance) unless explicitly set
+    if (!U_prime_explicit)
+        ap.kp.U_prime = ap.kp.U - 2.0 * ap.kp.J;
+
+    return ap;
+}

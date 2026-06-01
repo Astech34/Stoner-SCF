@@ -24,7 +24,7 @@ static Mat12 random_hermitian_perturbation(double epsilon, unsigned seed) {
 }
 
 // Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
-static void apply_symmetry_breaking(Mat12& rho, double delta) {
+void apply_symmetry_breaking(Mat12& rho, double delta) {
     // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
     rho(2, 2) += delta;   rho(0, 0) -= delta;
     rho(2, 1) += delta;   rho(1, 2) += delta;

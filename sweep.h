@@ -11,6 +11,8 @@ struct MCAResult {
     double E_MCA;
 };
 
+void apply_symmetry_breaking(Mat12& rho, double delta);
+
 // Compute MCA energy E([110]) - E([001]).
 // Converges Kanamori at [001] first (with symmetry-breaking seed delta),
 // then seeds [110] from the converged [001] rho to ensure both axes are in the same phase.

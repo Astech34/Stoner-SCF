@@ -97,6 +97,9 @@ double NTotal(const Eigensystem& sys, double mu, double T) {
 // -----------------------------------------------------------------------------
 // Check normalization over k vs N particles
 double find_mu(const Eigensystem& sys, double T, double N_target) {
+
+    // Find the lowest and highest energy along k points
+    // to bound the chemical potential.
     double e_min =  std::numeric_limits<double>::infinity();
     double e_max = -std::numeric_limits<double>::infinity();
 
@@ -105,6 +108,7 @@ double find_mu(const Eigensystem& sys, double T, double N_target) {
         e_max = std::max(e_max, ev.maxCoeff());
     }
 
+    // Add some padding to either end 
     const double mu_min = e_min - 5.0 * T;
     const double mu_max = e_max + 5.0 * T;
 
@@ -299,15 +303,15 @@ void printKanamoriOccupations(const KanamoriResult& res) {
         std::cout << "   Spin Up  " << layer_up << "\n";
         std::cout << "   Spin Dn  " << layer_dn << "\n";
         std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
-        std::cout << "   Moment   " << (layer_up - layer_dn) << "\n\n";
+        std::cout << "   Moment   " << (layer_up - layer_dn) << "\n";
         if (layer == 0)
-            std::cout << "Lz Layer 1  " << lz1 << "\n\n";
+            std::cout << "   Lz      " << lz1 << "\n\n";
         if (layer == 1)
-            std::cout << "Lz Layer 2  " << lz2 << "\n\n";
+            std::cout << "   Lz      " << lz2 << "\n\n";
     }
 
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
-    std::cout << "  Moment    " << (total_up - total_dn) << "\n\n";
+    std::cout << "  Moment    " << (total_up - total_dn) << "\n";
     std::cout << "Lz Total    " << (lz1 + lz2) << "\n\n";
 
     std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
@@ -453,11 +457,16 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
 // k-independent pieces (SOC, T_perp, KanamoriMF) are precomputed outside the k-loop.
 Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
                                           const Params& p, const KanamoriParams& kp) {
+    
+    // Initalizing eigensystem result structure and allocating sizes
     const int N = grid_size * grid_size;
     Eigensystem result;
     result.evals.resize(N);
     result.evecs.resize(N);
 
+    // Linspace for k grid from -pi to pi
+    // First Brillioun zone of square lattice
+    // Will leave out M_PI which is already counted in -M_PI
     std::vector<double> k_lin(grid_size);
     for (int i = 0; i < grid_size; i++)
         k_lin[i] = -M_PI + i * (2.0 * M_PI / grid_size);
