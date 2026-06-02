@@ -579,7 +579,19 @@ and then by $\phi$ about the z-axis. This is given by
 \section{Orbital Moment}
 To calculate the orbital moment we take
 \begin{gather}
-    \langle L_z \rangle = \text{Tr \rho L_z}
+    \langle L_z \rangle = \text{Tr} \rho L_z
 \end{gather}
+the only non zero matrix elements for $L_z$ are:
+\begin{gather}
+    \langle yz | L_z | xz \rangle = -i \\
+    \langle xz | L_z | yz \rangle = i
+\end{gather}
+hence
+\begin{align}
+    \langle L_z \rangle &= \sum_{l, \sigma, a} \langle l, \sigma, a | \rho L_z | l, \sigma, a \rangle \\\nonumber
+    &= \sum_{l \sigma, a} \sum_{l', \sigma', a'} \langle l, \sigma, a | \rho |l' \sigma', a' \rangle \langle l' \sigma', a' | L_z | l, \sigma, a \rangle \\\nonumber
+    &= \sum_{l,\sigma} \rho_{xz, yz}(-i) + \rho_{yz, xz}(i) \\\nonumber
+    &= \sum_{l,\sigma} i(\rho_{yz, xz} - \rho_{xz, yz})
+\end{align}
 
 \end{document}

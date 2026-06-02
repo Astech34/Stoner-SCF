@@ -233,9 +233,10 @@ cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
 // -----------------------------------------------------------------------------
 std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
     auto lz_layer = [&](int base) {
-        return -2.0 * (rho(base+1, base+0).imag() + rho(base+4, base+3).imag());
+        return cd(0, 1) * (rho(base + 0, base + 1) - rho(base + 1, base + 0)  // xz↑,yz↑
+                         + rho(base + 3, base + 4) - rho(base + 4, base + 3)); // xz↓,yz↓
     };
-    return {lz_layer(0), lz_layer(6)};
+    return {lz_layer(0).real(), lz_layer(6).real()};
 }
 
 // -----------------------------------------------------------------------------
