@@ -19,8 +19,8 @@ Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
     Mat6 H = Mat6::Zero();
 
     // Spin-major ordering: spin-up (0,1,2) = yz,xz,xy | spin-down (3,4,5) = yz,xz,xy
-    H(0,0) = e_yz;               H(1,1) = e_xz;               H(2,2) = e_xy + delta_cf;
-    H(3,3) = e_yz;               H(4,4) = e_xz;               H(5,5) = e_xy + delta_cf;
+    H(0,0) = e_yz - 0.5*delta_cf;               H(1,1) = e_xz - 0.5*delta_cf;               H(2,2) = e_xy + delta_cf;
+    H(3,3) = e_yz - 0.5*delta_cf;               H(4,4) = e_xz - 0.5*delta_cf;               H(5,5) = e_xy + delta_cf;
 
     return H;
 }
