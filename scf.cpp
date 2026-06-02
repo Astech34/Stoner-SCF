@@ -283,6 +283,7 @@ void printKanamoriOccupations(const KanamoriResult& res) {
 
     double total_up = 0.0, total_dn = 0.0;
     double tlayer1 = 0.0, tlayer2 = 0.0;
+    double sm1 = 0.0, sm2 = 0.0;
 
     for (int layer = 0; layer < 2; layer++) {
         const int base = layer * 6;
@@ -309,10 +310,12 @@ void printKanamoriOccupations(const KanamoriResult& res) {
         if (layer == 0) {
             std::cout << "   Lz       " << lz1 << "\n\n";
             tlayer1 = layer_up + layer_dn;
+            sm1 = layer_up - layer_dn;
         }
         if (layer == 1) {
             std::cout << "   Lz       " << lz2 << "\n\n";
             tlayer2 = layer_up + layer_dn;
+            sm2 = layer_up - layer_dn;
         }
     }
 
@@ -323,11 +326,21 @@ void printKanamoriOccupations(const KanamoriResult& res) {
 
     std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
 
-    std::cout << "--- Initial density matrix (rho0) ---\n";
-    print_density_matrix(res.rho0);
-    std::cout << "\n--- Final density matrix (rho) ---\n";
-    print_density_matrix(res.rho);
-    std::cout << "\n";
+    std::cout << "Compare with DFT \n";
+    std::cout << "\nOccupations \n";
+    std::cout << "          n(xz/yz) down     n(xy) down \n";
+    std::cout << "Co1       " << rho(4,4).real() << "            " << rho(5,5).real() << "\n";
+    std::cout << "Co2       " << rho(10,10).real() << "            " << rho(11,11).real() << "\n";
+    std::cout << "\nMoments \n";
+    std::cout << "          Spin moment       Lz moment\n";
+    std::cout << "Co1       " << sm1 << "            " << lz1 << "\n";
+    std::cout << "Co2       " << sm2 << "            " << lz2 << "\n\n";
+
+    //std::cout << "--- Initial density matrix (rho0) ---\n";
+    //print_density_matrix(res.rho0);
+    //std::cout << "\n--- Final density matrix (rho) ---\n";
+    //print_density_matrix(res.rho);
+    //std::cout << "\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -545,8 +558,10 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             const double dc = kanamori_dc_layer(rho.block<6,6>(0, 0), kp)
                             + kanamori_dc_layer(rho.block<6,6>(6, 6), kp);
             std::cout << "\nKanamori SCF converged! mu = " << mu
-                      << ", E_total = " << bandsum + dc << "\n";
-            return {rho0, rho, mu, bandsum + dc};
+                      << "\n Band Energy = " << bandsum
+                      << "\n DC Correction = " << dc
+                      << ", E_total = " << bandsum - dc << "\n";
+            return {rho0, rho, mu, bandsum - dc};
         }
 
         if (i < diis_start) {
