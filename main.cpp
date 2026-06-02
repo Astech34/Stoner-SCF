@@ -44,6 +44,8 @@ int main(int argc, char* argv[]) {
     std::cout << "  J       = " << kp.J       << "\n\n";
 
     // const double delta = 0.01;
+
+    
     std::cout << "=== Stoner bootstrap ===\n";
     const CalcResult stoner = runSelfCalc(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p);
     const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, scf.grid, p);
@@ -55,7 +57,7 @@ int main(int argc, char* argv[]) {
     const KanamoriResult res_001 = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001);
-
+    
 
     //const double delta = 0.01;
     //const MCAResult mca = compute_MCA(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, delta, p, kp);

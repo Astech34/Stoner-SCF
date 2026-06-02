@@ -30,15 +30,15 @@ Mat6 SOC(double lam, double theta, double phi) {
     Eigen::Matrix<cd, 3, 3> Lx, Ly, Lz;
 
     Lx << cd(0,0),  cd(0,0),  cd(0,0),
-          cd(0,0),  cd(0,0),  cd(0,1),
-          cd(0,0),  cd(0,-1), cd(0,0);
+          cd(0,0),  cd(0,0),  cd(0,-1),
+          cd(0,0),  cd(0,1), cd(0,0);
 
-    Ly << cd(0,0),  cd(0,0),  cd(0,-1),
+    Ly << cd(0,0),  cd(0,0),  cd(0,1),
           cd(0,0),  cd(0,0),  cd(0,0),
-          cd(0,1),  cd(0,0),  cd(0,0);
+          cd(0,-1),  cd(0,0),  cd(0,0);
 
-    Lz << cd(0,0),  cd(0,1),  cd(0,0),
-          cd(0,-1), cd(0,0),  cd(0,0),
+    Lz << cd(0,0),  cd(0,-1),  cd(0,0),
+          cd(0,1), cd(0,0),  cd(0,0),
           cd(0,0),  cd(0,0),  cd(0,0);
 
     // Spin-1/2 matrices in z-quantization basis

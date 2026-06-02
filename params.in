@@ -10,7 +10,7 @@ t2yzxz   = 0.04
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
-lam      = 0.3
+lam      = 0.8
 theta    = 0.0      # polar angle of spin quantization axis (0 = out-of-plane)
 phi      = 0.0      # azimuthal angle
 
@@ -27,11 +27,11 @@ t_perp_xy = 0.005
 # --- Crystal fields and layer potential ---
 delta_cf1 = 0.23    # tetragonal CF layer 1 (positive = xy above yz/xz)
 delta_cf2 = -0.16   # tetragonal CF layer 2
-delta_V   = 0.0     # staggered layer potential
+delta_V   = 0.2     # staggered layer potential
 
 # --- SCF loop ---
 S0       = 0.3      # initial magnetization guess
-alpha    = 0.2      # linear mixing parameter
+alpha    = 0.2      # linear mixing parameter. If zero it uses DIIS
 T        = 0.05     # temperature (eV)
 N_target = 10.0     # target electron count (5 per layer x 2 layers)
 grid     = 50       # k-grid size (grid x grid)

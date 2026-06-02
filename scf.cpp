@@ -281,6 +281,7 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
 
     double total_up = 0.0, total_dn = 0.0;
+    double tlayer1 = 0.0, tlayer2 = 0.0;
 
     for (int layer = 0; layer < 2; layer++) {
         const int base = layer * 6;
@@ -304,13 +305,18 @@ void printKanamoriOccupations(const KanamoriResult& res) {
         std::cout << "   Spin Dn  " << layer_dn << "\n";
         std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
         std::cout << "   Moment   " << (layer_up - layer_dn) << "\n";
-        if (layer == 0)
-            std::cout << "   Lz      " << lz1 << "\n\n";
-        if (layer == 1)
-            std::cout << "   Lz      " << lz2 << "\n\n";
+        if (layer == 0) {
+            std::cout << "   Lz       " << lz1 << "\n\n";
+            tlayer1 = layer_up + layer_dn;
+        }
+        if (layer == 1) {
+            std::cout << "   Lz       " << lz2 << "\n\n";
+            tlayer2 = layer_up + layer_dn;
+        }
     }
 
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
+    std::cout << "Diff e-     " << (tlayer1 - tlayer2) << "\n";
     std::cout << "  Moment    " << (total_up - total_dn) << "\n";
     std::cout << "Lz Total    " << (lz1 + lz2) << "\n\n";
 
@@ -502,13 +508,19 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
 // Self-consistent loop converging the full density matrix.
 // Convergence: Frobenius norm ||rho_new - rho||_F < tol.
 // Total energy = band sum + double-counting correction from converged rho.
+// Mixing: linear (α) for the first diis_start iterations, then Pulay DIIS.
 KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
                                const Params& p, const KanamoriParams& kp) {
-    constexpr int    max_iter = 999999;
-    constexpr double tol      = 1e-6;
+    constexpr int    max_iter   = 999999;
+    constexpr double tol        = 1e-6;
+    constexpr int    diis_max   = 8;
+    constexpr int    diis_start = 20;
 
     Mat12 rho = rho0;
+
+    std::vector<Mat12> diis_rho;  // rho_new history
+    std::vector<Mat12> diis_err;  // residual history: e_i = rho_new_i - rho_i
 
     for (int i = 0; i < max_iter; i++) {
         const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p, kp);
@@ -521,8 +533,11 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         const Mat12 rho_new = compute_density_matrix(sys, mu, T);
         const double diff = (rho_new - rho).norm();
 
-        std::cout << "\rIteration " << i
-                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff << "   " << std::flush;
+        const bool using_diis = (i >= diis_start);
+        std::cout << "\rIteration " << std::setw(5) << i
+                  << (using_diis ? " [DIIS]" : "  [mix]")
+                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff
+                  << "   " << std::flush;
 
         if (diff < tol) {
             const double bandsum = calculate_band_energy(sys, mu, T);
@@ -533,7 +548,50 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             return {rho0, rho, mu, bandsum + dc};
         }
 
-        rho = alpha * rho_new + (1.0 - alpha) * rho;
+        if (i < diis_start) {
+            rho = alpha * rho_new + (1.0 - alpha) * rho;
+        } else {
+            // Pulay DIIS
+            diis_rho.push_back(rho_new);
+            diis_err.push_back(rho_new - rho);
+
+            if (static_cast<int>(diis_rho.size()) > diis_max) {
+                diis_rho.erase(diis_rho.begin());
+                diis_err.erase(diis_err.begin());
+            }
+
+            const int m = static_cast<int>(diis_rho.size());
+
+            if (m < 2) {
+                rho = rho_new;
+            } else {
+                // Build (m+1)×(m+1) Pulay system
+                //   [B   -1] [c]   [ 0]
+                //   [-1   0] [λ] = [-1]
+                // B_ij = Re(<e_i, e_j>_F),  Σc_i = 1 enforced by λ
+                Eigen::MatrixXd A = Eigen::MatrixXd::Zero(m + 1, m + 1);
+                Eigen::VectorXd b = Eigen::VectorXd::Zero(m + 1);
+                b(m) = -1.0;
+
+                for (int ii = 0; ii < m; ii++) {
+                    for (int jj = ii; jj < m; jj++) {
+                        const double Bij =
+                            (diis_err[ii].array().conjugate() * diis_err[jj].array())
+                            .sum().real();
+                        A(ii, jj) = Bij;
+                        A(jj, ii) = Bij;
+                    }
+                    A(ii, m) = -1.0;
+                    A(m, ii) = -1.0;
+                }
+
+                const Eigen::VectorXd c = A.colPivHouseholderQr().solve(b);
+
+                rho = Mat12::Zero();
+                for (int ii = 0; ii < m; ii++)
+                    rho.noalias() += c(ii) * diis_rho[ii];
+            }
+        }
     }
 
     throw std::runtime_error("runKanamoriSCF: failed to converge within max_iter");
