@@ -48,15 +48,6 @@ Mat12 staggered_potential(const Params& p = Params{});
 // Full bilayer Hamiltonian (12x12, layer-major block structure)
 Mat12 bilayerHamiltonian(double kx, double ky, double S, const Params& p = Params{});
 
-// Save band structure along high-symmetry path to CSV (for plotting in Python)
-void save_band_structure(double S, int n_points, const Params& p,
-                         const std::string& filename, double mu);
-                         
-// Save DOS on a fine energy grid to CSV (for plotting in Python)
-void save_dos(double S, int grid_size, double T, double N_target,
-              const Params& p, const std::string& filename,
-              int n_energy_points = 500, double sigma = 0.05);
-
 // Band energy + Hubbard DC correction (+6·U·S²) for a given Stoner parameter S
 double calculate_hubbard_energy(double S, int grid_size, double T, double N_target,
                                 const Params& p);
@@ -72,3 +63,12 @@ struct KanamoriParams {
 // rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
 // Acts within each layer independently (on-site interaction)
 Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp = KanamoriParams{});
+
+// Save band structure along high-symmetry path to CSV (for plotting in Python)
+void save_band_structure(const Mat12& rho, int n_points, const Params& p, const KanamoriParams& kp,
+                         const std::string& filename, double mu);
+                         
+// Save DOS on a fine energy grid to CSV (for plotting in Python)
+void save_dos(double S, int grid_size, double T, double N_target,
+              const Params& p, const std::string& filename,
+              int n_energy_points = 500, double sigma = 0.05);

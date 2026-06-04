@@ -103,7 +103,7 @@ void run_U_sweep(double S0, double alpha, int grid, double T, double N_target,
                      << "_U" << std::fixed << std::setprecision(3) << p.U
                      << ".csv";
 
-        save_band_structure(S_final, 300, p, bs_filename.str(), mu);
+        //save_band_structure(S_final, 300, p, bs_filename.str(), mu);
         save_dos(S_final, grid, T, N_target, p, dos_filename.str());
         std::cout << "\n";
     }
