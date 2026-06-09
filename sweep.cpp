@@ -58,7 +58,10 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     p.theta = M_PI / 2.0;
     p.phi   = M_PI / 4.0;
     std::cout << "\n=== Kanamori SCF: [110] (seeded from [001]) ===\n";
-    const KanamoriResult res_110 = runKanamoriSCF(res_001.rho, alpha, grid, T, N_target, p, kp);
+    // Add random pertubation
+    Mat12 perturbation = random_hermitian_perturbation(0.01, 123);
+    Mat12 rho111P = res_001.rho + perturbation;
+    const KanamoriResult res_110 = runKanamoriSCF(rho111P, alpha, grid, T, N_target, p, kp);
     std::cout << "\n=== [110] Occupations ===\n";
     printKanamoriOccupations(res_110);
 

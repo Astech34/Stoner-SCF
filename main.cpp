@@ -44,8 +44,6 @@ int main(int argc, char* argv[]) {
     std::cout << "  J       = " << kp.J       << "\n\n";
 
     // const double delta = 0.01;
-
-    
     std::cout << "=== Stoner bootstrap ===\n";
     const CalcResult stoner = runSelfCalc(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p);
     const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, scf.grid, p);
@@ -57,6 +55,7 @@ int main(int argc, char* argv[]) {
     const KanamoriResult res_001 = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001);
+    
 
     //const double delta = 0.01;
     //const MCAResult mca = compute_MCA(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, delta, p, kp);
@@ -64,17 +63,18 @@ int main(int argc, char* argv[]) {
     //std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
 
     //const double delta = 0.01;
-    //run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.01, 0.05, 3, delta, p, kp);
+    //run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.01, 0.05, 10, delta, p, kp);
 
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";
     //run_delta_V_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.0, 0.1, 20, p, kp);
 
-    const KanamoriResult res = runKanamoriSCF_random(4, scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 0.001);
-    std::cout << "\n=== Random-seed result ===\n";
-    printKanamoriOccupations(res);
+    //const KanamoriResult res = runKanamoriSCF_random(4, scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 0.001);
+    //std::cout << "\n=== Random-seed result ===\n";
+    //printKanamoriOccupations(res);
 
-    save_band_structure(res.rho, 200, p, kp, "out/band_structure.csv", res.mu);
+    save_band_structure(res_001.rho, 200, p, kp, "out/band_structure.csv", res_001.mu);
+    save_projected_dos(res_001.rho, scf.grid, scf.T, scf.N_target, p, kp, "out/projected_dos.csv");
 
     return 0;
 }

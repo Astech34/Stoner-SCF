@@ -72,3 +72,11 @@ void save_band_structure(const Mat12& rho, int n_points, const Params& p, const 
 void save_dos(double S, int grid_size, double T, double N_target,
               const Params& p, const std::string& filename,
               int n_energy_points = 500, double sigma = 0.05);
+
+// Save layer/spin/orbital-projected DOS for the converged Kanamori system.
+// Each basis component contributes |v_nk(c)|^2, Gaussian-broadened on an energy grid.
+// Columns: energy, mu, then the 12 projections (L{1,2}_{up,dn}_{yz,xz,xy}) and total.
+void save_projected_dos(const Mat12& rho, int grid_size, double T, double N_target,
+                        const Params& p, const KanamoriParams& kp,
+                        const std::string& filename,
+                        int n_energy_points = 500, double sigma = 0.05);

@@ -3,26 +3,23 @@
 # Unknown keys are skipped with a warning.
 
 # --- Tight-binding hopping ---
-tpi      = 0.3
+tpi      = 0.2
 tdelta   = 0.03
-t2xy     = 0.08
-t2yzxz   = 0.04
+t2xy     = 0.08 # changes xy hump
+t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
-# tpi      = 0.0
-# tdelta   = 0.0
-# t2xy     = 0.0
-# t2yzxz   = 0.0
-# tg       = 0.0
-
 # --- Spin-orbit coupling ---
-lam      = 0.0
-theta    = 0.0      # polar angle of spin quantization axis (0 = out-of-plane)
-phi      = 0.0      # azimuthal angle
+lam      = 0.00
+theta    = 0     # polar angle of spin quantization axis (0 = out-of-plane)
+phi      = 0      # azimuthal angle
+
+# theta    = 1.57079632679     # polar angle of spin quantization axis (0 = out-of-plane)
+# phi      = 0.785398163397      # azimuthal angle
 
 # --- Hubbard / Kanamori ---
-U        = 3      # intraorbital U (also sets KanamoriParams.U unless K_U is given)
-J        = 0.6      # Hund's coupling; U_prime = U - 2*J is enforced automatically
+U        = 5     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
+J        = 0.9      # Hund's coupling; U_prime = U - 2*J is enforced automatically
 # K_U    = 4.0      # override Kanamori U independently of Stoner U
 # U_prime = 2.4    # set explicitly to bypass the U - 2*J rule
 
@@ -30,13 +27,16 @@ J        = 0.6      # Hund's coupling; U_prime = U - 2*J is enforced automatical
 t_perp    = 0.06
 t_perp_xy = 0.005
 
-# t_perp    = 0.0
-# t_perp_xy = 0.0
+#t_perp    = 0.0
+#t_perp_xy = 0.0
 
 # --- Crystal fields and layer potential ---
-delta_cf1 = 0.5    # tetragonal CF layer 1 (positive = xy above yz/xz)
-delta_cf2 = -0.33   # tetragonal CF layer 2
-delta_V   = 0.0     # staggered layer potential
+# delta_cf1 = 0.5    # tetragonal CF layer 1 (positive = xy above yz/xz)
+# delta_cf2 = -0.33   # tetragonal CF layer 2
+delta_V   = 1.0    # staggered layer potential
+
+delta_cf1 = 0.6    # tetragonal CF layer 1 (positive = xy above yz/xz)
+delta_cf2 = -0.4   # tetragonal CF layer 2
 
 # --- SCF loop ---
 S0       = 0.3      # initial magnetization guess

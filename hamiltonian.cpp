@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <array>
 
 Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
 
@@ -383,4 +384,91 @@ void save_dos(double S, int grid_size, double T, double N_target,
         file << energy[ie] << "," << dos[ie] << "," << mu << "\n";
 
     std::cout << "DOS written to " << filename << "\n";
+}
+// -----------------------------------------------------------------------------
+// save_projected_dos — layer/spin/orbital-resolved DOS for the Kanamori system
+// -----------------------------------------------------------------------------
+// Builds the same Hamiltonian as the converged Kanamori SCF (KanamoriMF(rho) +
+// SOC + interlayer hopping + staggered potential + kinetic H0) and resolves the
+// DOS onto each of the 12 basis components. Eigenstate |v_nk> contributes its
+// projection weight |v_nk(c)|^2 to component c, Gaussian-broadened in energy:
+//   PDOS_c(E) = (1/N_k) sum_{k,n} |v_nk(c)|^2 / (sigma*sqrt(2pi)) * exp(-0.5*((E-E_nk)/sigma)^2)
+// Since the eigenvectors are normalised, the 12 projections sum to the total DOS.
+// Basis ordering (layer-major / spin-major / orbital-minor):
+//   0-2  L1 up (yz,xz,xy)   3-5  L1 dn (yz,xz,xy)
+//   6-8  L2 up (yz,xz,xy)   9-11 L2 dn (yz,xz,xy)
+void save_projected_dos(const Mat12& rho, int grid_size, double T, double N_target,
+                        const Params& p, const KanamoriParams& kp,
+                        const std::string& filename,
+                        int n_energy_points, double sigma) {
+
+    // --- Compute eigensystem with the converged Kanamori MF Hamiltonian ---
+    const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p, kp);
+    const double mu = find_mu(sys, T, N_target);
+
+    // --- Energy axis: span all eigenvalues with some padding ---
+    const int N_k     = static_cast<int>(sys.evals.size());
+    const int N_bands = 12;
+    const int N_proj  = 12;
+
+    double e_min =  std::numeric_limits<double>::infinity();
+    double e_max = -std::numeric_limits<double>::infinity();
+    for (const auto& ev : sys.evals) {
+        e_min = std::min(e_min, ev.minCoeff());
+        e_max = std::max(e_max, ev.maxCoeff());
+    }
+    const double padding = 5.0 * sigma;
+    const double e_start = e_min - padding;
+    const double e_end   = e_max + padding;
+    const double de      = (e_end - e_start) / (n_energy_points - 1);
+
+    // --- Gaussian broadening, accumulated per basis component ---
+    const double norm = 1.0 / (sigma * std::sqrt(2.0 * M_PI));
+    std::vector<double> energy(n_energy_points);
+    std::vector<std::array<double, 12>> pdos(n_energy_points);
+    for (auto& row : pdos) row.fill(0.0);
+
+    #pragma omp parallel for schedule(static)
+    for (int ie = 0; ie < n_energy_points; ie++) {
+        const double E = e_start + ie * de;
+        energy[ie] = E;
+
+        std::array<double, 12> acc{};
+        acc.fill(0.0);
+        for (int idx = 0; idx < N_k; idx++) {
+            for (int b = 0; b < N_bands; b++) {
+                const double x = (E - sys.evals[idx][b]) / sigma;
+                const double g = norm * std::exp(-0.5 * x * x);
+                const auto   v = sys.evecs[idx].col(b);
+                for (int c = 0; c < N_proj; c++)
+                    acc[c] += g * std::norm(v[c]);   // std::norm(z) = |z|^2
+            }
+        }
+        for (int c = 0; c < N_proj; c++)
+            pdos[ie][c] = acc[c] / static_cast<double>(N_k);
+    }
+
+    // --- Write to CSV ---
+    std::ofstream file(filename);
+    if (!file.is_open())
+        throw std::runtime_error("save_projected_dos: could not open " + filename);
+
+    file << std::fixed << std::setprecision(8);
+    file << "energy,mu,"
+            "L1_up_yz,L1_up_xz,L1_up_xy,"
+            "L1_dn_yz,L1_dn_xz,L1_dn_xy,"
+            "L2_up_yz,L2_up_xz,L2_up_xy,"
+            "L2_dn_yz,L2_dn_xz,L2_dn_xy,total\n";
+
+    for (int ie = 0; ie < n_energy_points; ie++) {
+        file << energy[ie] << "," << mu;
+        double total = 0.0;
+        for (int c = 0; c < 12; c++) {
+            file << "," << pdos[ie][c];
+            total += pdos[ie][c];
+        }
+        file << "," << total << "\n";
+    }
+
+    std::cout << "Projected DOS written to " << filename << "\n";
 }

@@ -239,6 +239,25 @@ std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
     return {lz_layer(0).real(), lz_layer(6).real()};
 }
 
+// <Ly> = i * sum_{l,σ} (ρ_{xy,yz} - ρ_{yz,xy})
+// Orbital indices per layer: yz=0, xz=1, xy=2 (spin-up); +3 for spin-down
+std::pair<double, double> compute_Ly_moments(const Mat12& rho) {
+    auto ly_layer = [&](int base) {
+        return cd(0, 1) * (rho(base + 2, base + 0) - rho(base + 0, base + 2)  // xy↑,yz↑
+                         + rho(base + 5, base + 3) - rho(base + 3, base + 5)); // xy↓,yz↓
+    };
+    return {ly_layer(0).real(), ly_layer(6).real()};
+}
+
+// <Lx> = i * sum_{l,σ} (ρ_{xz,xy} - ρ_{xy,xz})
+std::pair<double, double> compute_Lx_moments(const Mat12& rho) {
+    auto lx_layer = [&](int base) {
+        return cd(0, 1) * (rho(base + 1, base + 2) - rho(base + 2, base + 1)  // xz↑,xy↑
+                         + rho(base + 4, base + 5) - rho(base + 5, base + 4)); // xz↓,xy↓
+    };
+    return {lx_layer(0).real(), lx_layer(6).real()};
+}
+
 // -----------------------------------------------------------------------------
 // printKanamoriOccupations — orbital occupations, spin/Lz moments, total energy
 // -----------------------------------------------------------------------------
@@ -277,6 +296,10 @@ void printKanamoriOccupations(const KanamoriResult& res) {
 
     // Orbital Moments
     const auto [lz1, lz2] = compute_Lz_moments(rho);
+    const auto [ly1, ly2] = compute_Ly_moments(rho);
+    const auto [lx1, lx2] = compute_Lx_moments(rho);
+    const double l110_1 = (lx1 + ly1) / std::sqrt(2.0);
+    const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
 
     struct OrbEntry { const char* name; int up; int dn; };
     const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
@@ -308,12 +331,18 @@ void printKanamoriOccupations(const KanamoriResult& res) {
         std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
         std::cout << "   Moment   " << (layer_up - layer_dn) << "\n";
         if (layer == 0) {
-            std::cout << "   Lz       " << lz1 << "\n\n";
+            std::cout << "   Lx       " << lx1 << "\n";
+            std::cout << "   Ly       " << ly1 << "\n";
+            std::cout << "   Lz       " << lz1 << "\n";
+            std::cout << "   L[110]   " << l110_1 << "\n\n";
             tlayer1 = layer_up + layer_dn;
             sm1 = layer_up - layer_dn;
         }
         if (layer == 1) {
-            std::cout << "   Lz       " << lz2 << "\n\n";
+            std::cout << "   Lx       " << lx2 << "\n";
+            std::cout << "   Ly       " << ly2 << "\n";
+            std::cout << "   Lz       " << lz2 << "\n";
+            std::cout << "   L[110]   " << l110_2 << "\n\n";
             tlayer2 = layer_up + layer_dn;
             sm2 = layer_up - layer_dn;
         }
@@ -322,7 +351,10 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
     std::cout << "Diff e-     " << (tlayer1 - tlayer2) << "\n";
     std::cout << "  Moment    " << (total_up - total_dn) << "\n";
-    std::cout << "Lz Total    " << (lz1 + lz2) << "\n\n";
+    std::cout << "Lz Total    " << (lz1 + lz2) << "\n";
+    std::cout << "Ly Total    " << (ly1 + ly2) << "\n";
+    std::cout << "Lx Total    " << (lx1 + lx2) << "\n";
+    std::cout << "L[110] Tot  " << (l110_1 + l110_2) << "\n\n";
 
     std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
 
@@ -536,6 +568,12 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     std::vector<Mat12> diis_rho;  // rho_new history
     std::vector<Mat12> diis_err;  // residual history: e_i = rho_new_i - rho_i
 
+    constexpr int no_improve_max    = 100;
+    constexpr int linear_reset_steps = 10;
+    double best_diis_diff   = std::numeric_limits<double>::max();
+    int    no_improve_count = 0;
+    int    linear_remaining = 0;  // counts down during post-stall linear phase
+
     for (int i = 0; i < max_iter; i++) {
         const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p, kp);
         const double mu = find_mu(sys, T, N_target);
@@ -547,7 +585,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         const Mat12 rho_new = compute_density_matrix(sys, mu, T);
         const double diff = (rho_new - rho).norm();
 
-        const bool using_diis = (i >= diis_start);
+        const bool using_diis = (i >= diis_start) && (linear_remaining == 0);
         std::cout << "\rIteration " << std::setw(5) << i
                   << (using_diis ? " [DIIS]" : "  [mix]")
                   << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff
@@ -564,9 +602,30 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             return {rho0, rho, mu, bandsum - dc};
         }
 
-        if (i < diis_start) {
+        if (!using_diis) {
+            if (linear_remaining > 0) --linear_remaining;
             rho = alpha * rho_new + (1.0 - alpha) * rho;
         } else {
+            // Track improvement; on stall, do linear_reset_steps of linear mixing then retry DIIS.
+            if (diff < best_diis_diff) {
+                best_diis_diff  = diff;
+                no_improve_count = 0;
+            } else {
+                ++no_improve_count;
+            }
+
+            if (no_improve_count >= no_improve_max) {
+                std::cout << "\n[DIIS stalled " << no_improve_max
+                          << " iters — " << linear_reset_steps << " linear mix steps]\n";
+                diis_rho.clear();
+                diis_err.clear();
+                best_diis_diff   = std::numeric_limits<double>::max();
+                no_improve_count = 0;
+                linear_remaining = linear_reset_steps;
+                rho = alpha * rho_new + (1.0 - alpha) * rho;
+                continue;
+            }
+
             // Pulay DIIS
             diis_rho.push_back(rho_new);
             diis_err.push_back(rho_new - rho);
