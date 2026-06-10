@@ -351,9 +351,9 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     std::cout << "Total e-    " << (total_up + total_dn) << "\n";
     std::cout << "Diff e-     " << (tlayer1 - tlayer2) << "\n";
     std::cout << "  Moment    " << (total_up - total_dn) << "\n";
-    std::cout << "Lz Total    " << (lz1 + lz2) << "\n";
-    std::cout << "Ly Total    " << (ly1 + ly2) << "\n";
     std::cout << "Lx Total    " << (lx1 + lx2) << "\n";
+    std::cout << "Ly Total    " << (ly1 + ly2) << "\n";
+    std::cout << "Lz Total    " << (lz1 + lz2) << "\n";
     std::cout << "L[110] Tot  " << (l110_1 + l110_2) << "\n\n";
 
     std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
@@ -364,9 +364,9 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     std::cout << "Co1       " << rho(4,4).real() << "            " << rho(5,5).real() << "\n";
     std::cout << "Co2       " << rho(10,10).real() << "            " << rho(11,11).real() << "\n";
     std::cout << "\nMoments \n";
-    std::cout << "          Spin moment       Lz moment\n";
-    std::cout << "Co1       " << sm1 << "            " << lz1 << "\n";
-    std::cout << "Co2       " << sm2 << "            " << lz2 << "\n\n";
+    std::cout << "          Spin moment       Lz moment       L[110] moment\n";
+    std::cout << "Co1       " << sm1 << "            " << lz1 << "            " << l110_1 << "\n";
+    std::cout << "Co2       " << sm2 << "            " << lz2 << "            " << l110_2 << "\n\n";
 
     //std::cout << "--- Initial density matrix (rho0) ---\n";
     //print_density_matrix(res.rho0);
