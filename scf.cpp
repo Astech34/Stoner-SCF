@@ -202,7 +202,7 @@ Mat12 compute_density_matrix(const Eigensystem& sys, double mu, double T) {
                 const double x = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
                 const double f = 1.0 / (std::exp(x) + 1.0);
                 const Eigen::Vector<cd, 12> v = sys.evecs[idx].col(band);
-                rho_local.noalias() += f * v.conjugate() * v.transpose();
+                rho_local.noalias() += f * v.conjugate() * v.transpose(); //try without outer product
             }
         }
 
@@ -270,6 +270,8 @@ static void print_density_matrix(const Mat12& rho) {
         if (re_zero && im_zero) return "0";
         std::ostringstream ss;
         ss << std::fixed << std::setprecision(4);
+        ss << v.real() << "+" << v.imag() << "i";
+        /*
         if (re_zero) {
             ss << v.imag() << "i";
         } else if (im_zero) {
@@ -279,6 +281,7 @@ static void print_density_matrix(const Mat12& rho) {
             if (v.imag() >= 0.0) ss << "+";
             ss << v.imag() << "i";
         }
+            */
         return ss.str();
     };
 
@@ -368,11 +371,11 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     std::cout << "Co1       " << sm1 << "            " << lz1 << "            " << l110_1 << "\n";
     std::cout << "Co2       " << sm2 << "            " << lz2 << "            " << l110_2 << "\n\n";
 
-    //std::cout << "--- Initial density matrix (rho0) ---\n";
-    //print_density_matrix(res.rho0);
-    //std::cout << "\n--- Final density matrix (rho) ---\n";
-    //print_density_matrix(res.rho);
-    //std::cout << "\n";
+    std::cout << "--- Initial density matrix (rho0) ---\n";
+    print_density_matrix(res.rho0);
+    std::cout << "\n--- Final density matrix (rho) ---\n";
+    print_density_matrix(res.rho);
+    std::cout << "\n";
 }
 
 // -----------------------------------------------------------------------------
@@ -554,17 +557,26 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
 // Self-consistent loop converging the full density matrix.
 // Convergence: Frobenius norm ||rho_new - rho||_F < tol.
 // Total energy = band sum + double-counting correction from converged rho.
-// Mixing: linear (α) for the first diis_start iterations, then Pulay DIIS.
+// Mixing (selected by `mixer`):
+//   LinearDIIS : linear (α) for the first diis_start iterations, then Pulay DIIS.
+//   Broyden    : modified Broyden second method (Johnson, PRB 38, 12807 (1988)).
 KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
-                               const Params& p, const KanamoriParams& kp) {
+                               const Params& p, const KanamoriParams& kp,
+                               MixerType mixer) {
     constexpr int    max_iter   = 999999;
     constexpr double tol        = 1e-6;
-    constexpr int    diis_max   = 8;
-    constexpr int    diis_start = 20;
+    constexpr int    diis_max   = 1;
+    constexpr int    diis_start = 999999;
 
     Mat12 rho = rho0;
 
+    // Frobenius inner product Re<A, B>_F (matches the DIIS residual metric).
+    auto frob = [](const Mat12& A, const Mat12& B) {
+        return (A.array().conjugate() * B.array()).sum().real();
+    };
+
+    // --- LinearDIIS state ---
     std::vector<Mat12> diis_rho;  // rho_new history
     std::vector<Mat12> diis_err;  // residual history: e_i = rho_new_i - rho_i
 
@@ -573,6 +585,15 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     double best_diis_diff   = std::numeric_limits<double>::max();
     int    no_improve_count = 0;
     int    linear_remaining = 0;  // counts down during post-stall linear phase
+
+    // --- Broyden state ---
+    constexpr int    broyden_max = 5;     // max history length
+    constexpr double broyden_w0  = 0.01;  // diagonal regularisation weight
+    std::vector<Mat12> broyden_dF;  // normalised residual differences
+    std::vector<Mat12> broyden_u;   // corresponding update vectors
+    Mat12  F_prev      = Mat12::Zero();
+    Mat12  rho_in_prev = Mat12::Zero();
+    bool   broyden_have_prev = false;
 
     for (int i = 0; i < max_iter; i++) {
         const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p, kp);
@@ -585,9 +606,12 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         const Mat12 rho_new = compute_density_matrix(sys, mu, T);
         const double diff = (rho_new - rho).norm();
 
-        const bool using_diis = (i >= diis_start) && (linear_remaining == 0);
-        std::cout << "\rIteration " << std::setw(5) << i
-                  << (using_diis ? " [DIIS]" : "  [mix]")
+        const bool using_diis = (mixer == MixerType::LinearDIIS)
+                              && (i >= diis_start) && (linear_remaining == 0);
+        const char* tag = (mixer == MixerType::Broyden)
+                              ? (broyden_have_prev ? " [Broy]" : "  [mix]")
+                              : (using_diis        ? " [DIIS]" : "  [mix]");
+        std::cout << "\nIteration " << std::setw(5) << i << tag
                   << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff
                   << "   " << std::flush;
 
@@ -602,7 +626,60 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             return {rho0, rho, mu, bandsum - dc};
         }
 
-        if (!using_diis) {
+        if (mixer == MixerType::Broyden) {
+            // Modified Broyden second method (Johnson 1988).
+            // Residual of the fixed-point map ρ ↦ ρ_new: F = ρ_new − ρ.
+            const Mat12 F = rho_new - rho;
+
+            if (!broyden_have_prev) {
+                // Bootstrap with a single linear-mixing step.
+                rho_in_prev = rho;
+                F_prev      = F;
+                broyden_have_prev = true;
+                rho += alpha * F;
+            } else {
+                const Mat12  dF_raw = F - F_prev;
+                const double nrm    = std::sqrt(frob(dF_raw, dF_raw));
+
+                if (nrm > 0.0) {
+                    broyden_dF.push_back(dF_raw / nrm);
+                    broyden_u.push_back(alpha * (dF_raw / nrm)
+                                        + (rho - rho_in_prev) / nrm);
+
+                    if (static_cast<int>(broyden_dF.size()) > broyden_max) {
+                        broyden_dF.erase(broyden_dF.begin());
+                        broyden_u.erase(broyden_u.begin());
+                    }
+                }
+
+                rho_in_prev = rho;
+                F_prev      = F;
+
+                const int m = static_cast<int>(broyden_dF.size());
+                Mat12 rho_next = rho + alpha * F;  // linear step + Broyden correction
+
+                if (m > 0) {
+                    // a_ij = <dF_i, dF_j>, regularised; c_k = <dF_k, F>; γ = (w0²I + a)⁻¹ c
+                    Eigen::MatrixXd a = Eigen::MatrixXd::Zero(m, m);
+                    Eigen::VectorXd c(m);
+                    for (int ii = 0; ii < m; ii++) {
+                        for (int jj = ii; jj < m; jj++) {
+                            const double aij = frob(broyden_dF[ii], broyden_dF[jj]);
+                            a(ii, jj) = aij;
+                            a(jj, ii) = aij;
+                        }
+                        a(ii, ii) += broyden_w0 * broyden_w0;
+                        c(ii) = frob(broyden_dF[ii], F);
+                    }
+
+                    const Eigen::VectorXd gamma = a.colPivHouseholderQr().solve(c);
+                    for (int l = 0; l < m; l++)
+                        rho_next.noalias() -= gamma(l) * broyden_u[l];
+                }
+
+                rho = rho_next;
+            }
+        } else if (!using_diis) {
             if (linear_remaining > 0) --linear_remaining;
             rho = alpha * rho_new + (1.0 - alpha) * rho;
         } else {
@@ -650,9 +727,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
                 for (int ii = 0; ii < m; ii++) {
                     for (int jj = ii; jj < m; jj++) {
-                        const double Bij =
-                            (diis_err[ii].array().conjugate() * diis_err[jj].array())
-                            .sum().real();
+                        const double Bij = frob(diis_err[ii], diis_err[jj]);
                         A(ii, jj) = Bij;
                         A(jj, ii) = Bij;
                     }

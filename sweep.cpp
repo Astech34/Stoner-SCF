@@ -50,7 +50,8 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
 
     // Kanamori at [001]
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
-    const KanamoriResult res_001 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp);
+    const KanamoriResult res_001 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
+                                                  MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001);
 
@@ -58,10 +59,10 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     p.theta = M_PI / 2.0;
     p.phi   = M_PI / 4.0;
     std::cout << "\n=== Kanamori SCF: [110] (seeded from [001]) ===\n";
-    // Add random pertubation
-    Mat12 perturbation = random_hermitian_perturbation(0.01, 123);
-    Mat12 rho111P = res_001.rho + perturbation;
-    const KanamoriResult res_110 = runKanamoriSCF(rho111P, alpha, grid, T, N_target, p, kp);
+    
+    Mat12 rho110SP = res_001.rho + random_hermitian_perturbation(delta, 12345);  // small random perturbation to break any residual symmetries
+    const KanamoriResult res_110 = runKanamoriSCF(rho110SP, alpha, grid, T, N_target, p, kp,
+                                                  MixerType::Broyden);
     std::cout << "\n=== [110] Occupations ===\n";
     printKanamoriOccupations(res_110);
 

@@ -111,6 +111,8 @@ Mat6 T_perp_mat(const Params& p) {
     return T;
 }
 
+// Raises energy on diagonal for layer 2 and lowers for layer 1
+// hence occupation is encouraged for layer 1
 Mat12 staggered_potential(const Params& p) {
     Mat12 V = Mat12::Zero();
     for (int m = 0; m < 6; m++)

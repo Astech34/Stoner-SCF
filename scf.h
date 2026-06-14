@@ -13,6 +13,11 @@ struct Eigensystem {
 
 struct CalcResult { double S_new; double mu; double E_total; };
 
+// Density-matrix mixing scheme for runKanamoriSCF.
+//   LinearDIIS : linear (α) mixing for the first diis_start iters, then Pulay DIIS
+//   Broyden    : modified Broyden second method (Johnson, PRB 38, 12807 (1988))
+enum class MixerType { LinearDIIS, Broyden };
+
 // Extract spin-up/down spinors from a bilayer eigenvector and return ψ↑† · ψ↓
 cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
               Eigen::Vector<cd, 6>& psi_up,
@@ -66,4 +71,5 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
 KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
                                const Params& p = Params{},
-                               const KanamoriParams& kp = KanamoriParams{});
+                               const KanamoriParams& kp = KanamoriParams{},
+                               MixerType mixer = MixerType::LinearDIIS);

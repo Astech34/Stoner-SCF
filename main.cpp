@@ -43,6 +43,7 @@ int main(int argc, char* argv[]) {
     std::cout << "  U'      = " << kp.U_prime << "\n";
     std::cout << "  J       = " << kp.J       << "\n\n";
 
+    
     // const double delta = 0.01;
     std::cout << "=== Stoner bootstrap ===\n";
     const CalcResult stoner = runSelfCalc(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p);
@@ -52,12 +53,13 @@ int main(int argc, char* argv[]) {
 
     // Kanamori at [001]
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
-    const KanamoriResult res_001 = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp);
+    const KanamoriResult res_001 = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001);
     
 
-    //const double delta = 0.01;
+
+    //const double delta = 0.02;
     //const MCAResult mca = compute_MCA(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, delta, p, kp);
 
     //std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";

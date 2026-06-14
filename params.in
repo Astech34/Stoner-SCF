@@ -11,11 +11,11 @@ tg       = 0.05
 
 # --- Spin-orbit coupling ---
 lam      = 0.03
-# theta    = 0     # polar angle of spin quantization axis (0 = out-of-plane)
-# phi      = 0      # azimuthal angle
+theta    = 0     # polar angle of spin quantization axis (0 = out-of-plane)
+phi      = 0      # azimuthal angle
 
-theta    = 1.57079632679     # polar angle of spin quantization axis (0 = out-of-plane)
-phi      = 0.785398163397      # azimuthal angle
+# theta    = 1.57079632679     # polar angle of spin quantization axis (0 = out-of-plane)
+# phi      = 0.785398163397      # azimuthal angle
 
 # --- Hubbard / Kanamori ---
 U        = 5     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
@@ -31,12 +31,12 @@ t_perp_xy = 0.005
 #t_perp_xy = 0.0
 
 # --- Crystal fields and layer potential ---
-# delta_cf1 = 0.5    # tetragonal CF layer 1 (positive = xy above yz/xz)
-# delta_cf2 = -0.33   # tetragonal CF layer 2
-delta_V   = 1.0    # staggered layer potential
+delta_V   = 0.50    # staggered layer potential
+delta_cf1 = 0.2    # tetragonal CF layer 1 (positive = xy above yz/xz)
+delta_cf2 = -0.05   # tetragonal CF layer 2
 
-delta_cf1 = 0.6    # tetragonal CF layer 1 (positive = xy above yz/xz)
-delta_cf2 = -0.4   # tetragonal CF layer 2
+# delta_cf1 = 0.4    # tetragonal CF layer 1 (positive = xy above yz/xz)
+# delta_cf2 = -0.33   # tetragonal CF layer 2
 
 # --- SCF loop ---
 S0       = 0.3      # initial magnetization guess
