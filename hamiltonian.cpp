@@ -38,8 +38,8 @@ Mat6 SOC(double lam, double theta, double phi) {
           cd(0,0),  cd(0,0),  cd(0,0),
           cd(0,-1),  cd(0,0),  cd(0,0);
 
-    Lz << cd(0,0),  cd(0,-1),  cd(0,0),
-          cd(0,1), cd(0,0),  cd(0,0),
+    Lz << cd(0,0),  cd(0,1),  cd(0,0),
+          cd(0,-1), cd(0,0),  cd(0,0),
           cd(0,0),  cd(0,0),  cd(0,0);
 
     // Spin-1/2 matrices in z-quantization basis
@@ -77,7 +77,7 @@ Mat6 SOC(double lam, double theta, double phi) {
         for (int j = 0; j < 3; j++)
             for (int si = 0; si < 2; si++)
                 for (int sj = 0; sj < 2; sj++)
-                    Hsoc(3*si+i, 3*sj+j) -= lam * (Lx(i,j) * sx(si,sj)
+                    Hsoc(3*si+i, 3*sj+j) += lam * (Lx(i,j) * sx(si,sj)
                                                    + Ly(i,j) * sy(si,sj)
                                                    + Lz(i,j) * sz(si,sj));
 

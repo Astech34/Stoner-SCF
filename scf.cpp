@@ -566,8 +566,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                MixerType mixer) {
     constexpr int    max_iter   = 999999;
     constexpr double tol        = 1e-6;
-    constexpr int    diis_max   = 1;
-    constexpr int    diis_start = 999999;
+    constexpr int    diis_max   = 4;
+    constexpr int    diis_start = 200;
 
     Mat12 rho = rho0;
 

@@ -25,6 +25,8 @@ static Mat12 random_hermitian_perturbation(double epsilon, unsigned seed) {
 
 // Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
 void apply_symmetry_breaking(Mat12& rho, double delta) {
+    //PO Phase
+    /*
     // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
     rho(2, 2) += delta;   rho(0, 0) -= delta;
     rho(2, 1) += delta;   rho(1, 2) += delta;
@@ -35,6 +37,17 @@ void apply_symmetry_breaking(Mat12& rho, double delta) {
     rho(3, 3) += delta;   rho(4, 4) += delta;   rho(5, 5) += delta;
     // Layer 2 spin-down: remove electrons (layer-AF seed)
     rho(9,  9)  -= delta; rho(10, 10) -= delta; rho(11, 11) -= delta;
+    */
+
+    //SYM Phase
+    // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
+    rho(2, 2) -= delta;   rho(0, 0) -= delta;
+    rho(2, 1) += delta;   rho(1, 2) += delta;
+    // Layer 2 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
+    rho(8, 8) -= delta;   rho(6, 6) -= delta;
+    rho(8, 7) += delta;   rho(7, 8) += delta;
+
+
 }
 
 MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_target,
