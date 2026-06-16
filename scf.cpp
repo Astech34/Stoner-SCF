@@ -202,7 +202,7 @@ Mat12 compute_density_matrix(const Eigensystem& sys, double mu, double T) {
                 const double x = std::clamp((sys.evals[idx][band] - mu) / T, -500.0, 500.0);
                 const double f = 1.0 / (std::exp(x) + 1.0);
                 const Eigen::Vector<cd, 12> v = sys.evecs[idx].col(band);
-                rho_local.noalias() += f * v.conjugate() * v.transpose(); //try without outer product
+                rho_local.noalias() += f * v.conjugate() * v.transpose(); 
             }
         }
 

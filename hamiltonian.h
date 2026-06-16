@@ -62,6 +62,7 @@ struct KanamoriParams {
 // Kanamori mean-field Hamiltonian (12x12 bilayer)
 // rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
 // Acts within each layer independently (on-site interaction)
+Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp);
 Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp = KanamoriParams{});
 
 // Save band structure along high-symmetry path to CSV (for plotting in Python)

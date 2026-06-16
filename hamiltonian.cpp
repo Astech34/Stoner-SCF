@@ -157,7 +157,6 @@ double calculate_hubbard_energy(double S, int grid_size, double T, double N_targ
 // KanamoriMF — Kanamori mean-field Hamiltonian (12x12 bilayer)
 // rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
 // -----------------------------------------------------------------------------
-namespace {
 // Compute the 6x6 single-layer Kanamori MF block from the 6x6 density matrix.
 // Spin-major ordering: up = indices 0-2 (yz, xz, xy), down = indices 3-5.
 //
@@ -190,13 +189,13 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
 
         // Up Diagonal
         H(m,   m  ) += U  * n_dn_m
-                     + Up * (n_dn - n_dn_m)
-                     + (Up - J) * (n_up - n_up_m);
+                     + Up * (n_dn - n_dn_m);
+                     //+ (Up - J) * (n_up - n_up_m);
         
         // Down Diagonal
         H(m+3, m+3) += U  * n_up_m
-                     + Up * (n_up - n_up_m)
-                     + (Up - J) * (n_dn - n_dn_m);
+                     + Up * (n_up - n_up_m);
+                     //+ (Up - J) * (n_dn - n_dn_m);
         
         // Hubbard U Off Diagonal Terms
         H(m+3, m) -= U * rho(m, m+3); // -U <d†_{m↑} d_{m↓}> d†_{m↓} d_{m↑}
@@ -207,6 +206,14 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
     for (int m = 0; m < 3; m++) {
         for (int mp = 0; mp < 3; mp++) {
             if (mp == m) continue;
+
+            // Diagonal U'-J
+            // Up Spin
+            H(m,m) += 0.5 * (Up - J) * rho(mp, mp);
+            H(mp,mp) += 0.5 * (Up - J) * rho(m, m);
+            // Up Spin
+            H(m+3,m+3) += 0.5 * (Up - J) * rho(mp+3, mp+3);
+            H(mp+3,mp+3) += 0.5 * (Up - J) * rho(m+3, m+3);
 
             // U' off diagonal terms
             H(mp+3, m) -= Up * rho(m, mp+3);
@@ -239,10 +246,12 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
             H(m, mp+3) -= J * rho(m+3, mp);
         }
     }
+    
+    
+    assert((H - H.adjoint()).norm() < 1e-10 && "H is not Hermitian!");
 
     return H;
 }
-} // anonymous namespace
 
 Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp) {
     Mat12 H = Mat12::Zero();
