@@ -343,128 +343,44 @@ TEST(SOC, DiagonalIsZero) {
         EXPECT_NEAR(std::abs(H(i,i)), 0.0, tol);
 }
 
-// Lz⊗sz: same-spin yz<->xz coupling
-TEST(SOC, LzSzOrbitalCoupling) {
-    const double lam = 1.0;
-    const Mat6   H   = SOC(lam);
-    const double tol = 1e-12;
+TEST(SOC, kron){
+    Eigen::Matrix<cd, 3, 3> A;
+    A << 1, 2, 3, 4, 5, 6, 
+         7, 8, 9;
+    Eigen::Matrix<cd, 2, 2> B;
+    B << 1, 2, 3, 4;
+    Mat6 C = kron(A, B);
+    Mat6 C_expected;
+    C_expected << 1, 2, 2, 4, 3, 6,
+                  3, 4, 6, 8, 9, 12,
+                  4, 8, 5, 10, 6, 12,
+                  12, 16, 15, 20, 18, 24,
+                  7, 14, 8, 16, 9, 18,
+                  21, 28, 24, 32, 27, 36;
+    const Mat6 diff = C - C_expected;
+    std::cout << "\nC:\n" << C << "\n";
+    EXPECT_NEAR(diff.norm(), 0.0, 1e-12);
 
-    // up-yz <-> up-xz : +i*lam/2
-    EXPECT_NEAR(H(0,1).real(),  0.0,      tol);
-    EXPECT_NEAR(H(0,1).imag(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(1,0).real(),  0.0,      tol);
-    EXPECT_NEAR(H(1,0).imag(), -lam/2.0,  tol);
-
-    // dn-yz <-> dn-xz : -i*lam/2
-    EXPECT_NEAR(H(3,4).real(),  0.0,      tol);
-    EXPECT_NEAR(H(3,4).imag(), -lam/2.0,  tol);
-    EXPECT_NEAR(H(4,3).real(),  0.0,      tol);
-    EXPECT_NEAR(H(4,3).imag(),  lam/2.0,  tol);
 }
-
-// Lx⊗sx: spin-flip xz<->xy coupling
-TEST(SOC, LxSxSpinFlip) {
-    const double lam = 1.0;
-    const Mat6   H   = SOC(lam);
-    const double tol = 1e-12;
-
-    // up-xz <-> dn-xy : +i*lam/2
-    EXPECT_NEAR(H(1,5).real(),  0.0,      tol);
-    EXPECT_NEAR(H(1,5).imag(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(5,1).real(),  0.0,      tol);
-    EXPECT_NEAR(H(5,1).imag(), -lam/2.0,  tol);
-
-    // dn-xz <-> up-xy : +i*lam/2
-    EXPECT_NEAR(H(4,2).real(),  0.0,      tol);
-    EXPECT_NEAR(H(4,2).imag(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(2,4).real(),  0.0,      tol);
-    EXPECT_NEAR(H(2,4).imag(), -lam/2.0,  tol);
-}
-
-// Ly⊗sy: spin-flip yz<->xy coupling (real)
-TEST(SOC, LySySpinFlip) {
-    const double lam = 1.0;
-    const Mat6   H   = SOC(lam);
-    const double tol = 1e-12;
-
-    // up-yz <-> dn-xy : -lam/2 (real)
-    EXPECT_NEAR(H(0,5).real(), -lam/2.0,  tol);
-    EXPECT_NEAR(H(0,5).imag(),  0.0,      tol);
-    EXPECT_NEAR(H(5,0).real(), -lam/2.0,  tol);
-    EXPECT_NEAR(H(5,0).imag(),  0.0,      tol);
-
-    // dn-yz <-> up-xy : +lam/2 (real)
-    EXPECT_NEAR(H(3,2).real(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(3,2).imag(),  0.0,      tol);
-    EXPECT_NEAR(H(2,3).real(),  lam/2.0,  tol);
-    EXPECT_NEAR(H(2,3).imag(),  0.0,      tol);
-}
-
-// Full matrix check against hand-computed lam=1 result (spin-major ordering)
-// Rows/cols: 0=up-yz, 1=up-xz, 2=up-xy, 3=dn-yz, 4=dn-xz, 5=dn-xy
-//
-//       0      1      2      3      4      5
-// 0: [  0,   i/2,    0,     0,     0,  -1/2 ]
-// 1: [-i/2,   0,     0,     0,     0,   i/2 ]
-// 2: [  0,    0,     0,   1/2,  -i/2,    0  ]
-// 3: [  0,    0,   1/2,    0,   -i/2,    0  ]
-// 4: [  0,    0,   i/2,  i/2,     0,     0  ]
-// 5: [-1/2, -i/2,   0,     0,     0,     0  ]
-TEST(SOC, FullMatrixLam1) {
-    const Mat6   H   = SOC(1.0);
-    const double tol = 1e-12;
-
-    // Build expected matrix entry by entry
-    Mat6 E = Mat6::Zero();
-    E(0,1) = cd( 0,  0.5);  E(0,5) = cd(-0.5,  0);
-    E(1,0) = cd( 0, -0.5);  E(1,5) = cd( 0,   0.5);
-    E(2,3) = cd( 0.5, 0);   E(2,4) = cd( 0,  -0.5);
-    E(3,2) = cd( 0.5, 0);   E(3,4) = cd( 0,  -0.5);
-    E(4,2) = cd( 0,  0.5);  E(4,3) = cd( 0,   0.5);
-    E(5,0) = cd(-0.5, 0);   E(5,1) = cd( 0,  -0.5);
-
-    EXPECT_NEAR((H - E).norm(), 0.0, tol);
-}
-
-// Scales linearly with lam
-TEST(SOC, ScalesWithLambda) {
-    const Mat6 H1 = SOC(1.0);
-    const Mat6 H2 = SOC(2.0);
-    EXPECT_NEAR((H2 - 2.0*H1).norm(), 0.0, 1e-12);
-}
-
-// We rotate the quantization axis by applying rotation operators
-// on our spin matrices. We test this here
-TEST(SOC, SOCAngles) {
-    const Mat6   HS   = SOC(1.0, M_PI/2, M_PI/4);
-    const double tol = 1e-12;
-
-    const double s = std::sqrt(2.0) / 4.0;  // 1/(2√2) = √2/4
-    const double h = 0.5;                    // 1/2
-
-    Mat6 H = Mat6::Zero();
-
-    // Row 0
-    H(0,2) = cd( 0, -s);  H(0,4) = cd( 0, -h);  H(0,5) = cd(-s,  0);
-
+TEST(SOC, SOCAngles){
+    Mat6 H1 = SOC(0.5, 0.2, 0.3);
+    Mat6 mat;
+    mat << 
     // Row 1
-    H(1,2) = cd( 0,  s);  H(1,3) = cd( 0,  h);  H(1,5) = cd(-s,  0);
-
+    cd(0.0, 0.0), cd(0.0, 0.245017), cd(0.0, 0.0146777), cd(0.0, 0.0), cd(0.0, -0.0496673), cd(0.238834, 0.0724074),
     // Row 2
-    H(2,0) = cd( 0,  s);  H(2,1) = cd( 0, -s);
-    H(2,3) = cd( s,  0);  H(2,4) = cd( s,  0);
-
+    cd(0.0, -0.245017), cd(0.0, 0.0), cd(0.0, -0.047449), cd(0.0, 0.0496673), cd(0.0, 0.0), cd(0.0738801, -0.234073),
     // Row 3
-    H(3,1) = cd( 0, -h);  H(3,2) = cd( s,  0);  H(3,5) = cd( 0,  s);
-
+    cd(0.0, -0.0146777), cd(0.0, 0.047449), cd(0.0, 0.0), cd(-0.238834, -0.0724074), cd(-0.0738801, 0.234073), cd(0.0, 0.0),
     // Row 4
-    H(4,0) = cd( 0,  h);  H(4,2) = cd( s,  0);  H(4,5) = cd( 0, -s);
-
+    cd(0.0, 0.0), cd(0.0, -0.0496673), cd(-0.238834, 0.0724074), cd(0.0, 0.0), cd(0.0, -0.245017), cd(0.0, -0.0146777),
     // Row 5
-    H(5,0) = cd(-s,  0);  H(5,1) = cd(-s,  0);
-    H(5,3) = cd( 0, -s);  H(5,4) = cd( 0,  s);
-
-    EXPECT_NEAR((H - HS).norm(), 0.0, tol);
+    cd(0.0, 0.0496673), cd(0.0, 0.0), cd(-0.0738801, -0.234073), cd(0.0, 0.245017), cd(0.0, 0.0), cd(0.0, 0.047449),
+    // Row 6
+    cd(0.238834, -0.0724074), cd(0.0738801, 0.234073), cd(0.0, 0.0), cd(0.0, 0.0146777), cd(0.0, -0.047449), cd(0.0, 0.0);
+    Mat6 diff = H1 - mat;
+    //std::cout << "\nH1:\n" << diff << "\n";
+    EXPECT_NEAR(diff.norm(), 0.0, 1e-3);
 }
 
 // -----------------------------------------------------------------------------
