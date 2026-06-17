@@ -583,15 +583,15 @@ To calculate the orbital moment we take
 \end{gather}
 the only non zero matrix elements for $L_z$ are:
 \begin{gather}
-    \langle yz | L_z | xz \rangle = -i \\
-    \langle xz | L_z | yz \rangle = i
+    \langle yz | L_z | xz \rangle = i \\
+    \langle xz | L_z | yz \rangle = -i
 \end{gather}
 hence
 \begin{align}
     \langle L_z \rangle &= \sum_{l, \sigma, a} \langle l, \sigma, a | \rho L_z | l, \sigma, a \rangle \\\nonumber
     &= \sum_{l \sigma, a} \sum_{l', \sigma', a'} \langle l, \sigma, a | \rho |l' \sigma', a' \rangle \langle l' \sigma', a' | L_z | l, \sigma, a \rangle \\\nonumber
-    &= \sum_{l,\sigma} \rho_{xz, yz}(-i) + \rho_{yz, xz}(i) \\\nonumber
-    &= \sum_{l,\sigma} i(\rho_{yz, xz} - \rho_{xz, yz})
+    &= \sum_{l,\sigma} \rho_{xz, yz}(i) + \rho_{yz, xz}(-i) \\\nonumber
+    &= \sum_{l,\sigma} i(\rho_{xz, yz}-\rho_{yz, xz})
 \end{align}
 with the same process we get
 \begin{gather}

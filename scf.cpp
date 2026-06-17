@@ -236,7 +236,7 @@ std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
         return cd(0, 1) * (rho(base + 0, base + 1) - rho(base + 1, base + 0)  // xz↑,yz↑
                          + rho(base + 3, base + 4) - rho(base + 4, base + 3)); // xz↓,yz↓
     };
-    return {lz_layer(0).real(), lz_layer(6).real()};
+    return {-lz_layer(0).real(), -lz_layer(6).real()};
 }
 
 // <Ly> = i * sum_{l,σ} (ρ_{xy,yz} - ρ_{yz,xy})

@@ -10,7 +10,7 @@ t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
-lam      = 0.00
+lam      = 0.03
 theta    = 0     # polar angle of spin quantization axis (0 = out-of-plane)
 phi      = 0      # azimuthal angle
 
