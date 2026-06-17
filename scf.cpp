@@ -6,6 +6,8 @@
 #include <iomanip>
 #include <utility>
 #include <stdexcept>
+#include <array>
+#include <utility>
 #include <sstream>
 #include <omp.h>
 
@@ -258,6 +260,28 @@ std::pair<double, double> compute_Lx_moments(const Mat12& rho) {
     return {lx_layer(0).real(), lx_layer(6).real()};
 }
 
+// Spin Moments
+// Returns {(Sx_L1, Sx_L2), (Sy_L1, Sy_L2), (Sz_L1, Sz_L2)}
+// Operator: I_2 ⊗ s_i ⊗ I_3 — identity on layer, spin matrix, identity on orbital.
+// Per-layer value: Tr(rho_layer * kron(s_i, I_3)).
+std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, const Params& p){
+    const auto [sx, sy, sz] = spin_matrices(p.theta, p.phi);
+
+    const Eigen::Matrix<cd, 3, 3> I3 = Eigen::Matrix<cd, 3, 3>::Identity();
+    const Eigen::Matrix<cd, 6, 6> Sx_op = kron(sx, I3);
+    const Eigen::Matrix<cd, 6, 6> Sy_op = kron(sy, I3);
+    const Eigen::Matrix<cd, 6, 6> Sz_op = kron(sz, I3);
+
+    auto layer_moment = [&](const Eigen::Matrix<cd, 6, 6>& op, int base) {
+        return (rho.block<6,6>(base, base) * op).trace().real();
+    };
+
+    return {{
+        {layer_moment(Sx_op, 0), layer_moment(Sx_op, 6)},
+        {layer_moment(Sy_op, 0), layer_moment(Sy_op, 6)},
+        {layer_moment(Sz_op, 0), layer_moment(Sz_op, 6)}
+    }};
+}
 // -----------------------------------------------------------------------------
 // printKanamoriOccupations — orbital occupations, spin/Lz moments, total energy
 // -----------------------------------------------------------------------------
@@ -294,7 +318,7 @@ static void print_density_matrix(const Mat12& rho) {
     }
 }
 
-void printKanamoriOccupations(const KanamoriResult& res) {
+void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
     const Mat12& rho = res.rho;
 
     // Orbital Moments
@@ -303,6 +327,14 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     const auto [lx1, lx2] = compute_Lx_moments(rho);
     const double l110_1 = (lx1 + ly1) / std::sqrt(2.0);
     const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
+
+    // Spin Moments
+    const auto smom = compute_S_moments(rho, p);
+    const auto [sx1, sx2] = smom[0];
+    const auto [sy1, sy2] = smom[1];
+    const auto [sz1, sz2] = smom[2];
+    const double s110_1 = (sx1 + sy1) / std::sqrt(2.0);
+    const double s110_2 = (sx2 + sy2) / std::sqrt(2.0);
 
     struct OrbEntry { const char* name; int up; int dn; };
     const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
@@ -337,7 +369,11 @@ void printKanamoriOccupations(const KanamoriResult& res) {
             std::cout << "   Lx       " << lx1 << "\n";
             std::cout << "   Ly       " << ly1 << "\n";
             std::cout << "   Lz       " << lz1 << "\n";
-            std::cout << "   L[110]   " << l110_1 << "\n\n";
+            std::cout << "   L[110]   " << l110_1 << "\n";
+            std::cout << "   Sx       " << sx1 << "\n";
+            std::cout << "   Sy       " << sy1 << "\n";
+            std::cout << "   Sz       " << sz1 << "\n";
+            std::cout << "   S[110]   " << s110_1 << "\n\n";
             tlayer1 = layer_up + layer_dn;
             sm1 = layer_up - layer_dn;
         }
@@ -345,7 +381,11 @@ void printKanamoriOccupations(const KanamoriResult& res) {
             std::cout << "   Lx       " << lx2 << "\n";
             std::cout << "   Ly       " << ly2 << "\n";
             std::cout << "   Lz       " << lz2 << "\n";
-            std::cout << "   L[110]   " << l110_2 << "\n\n";
+            std::cout << "   L[110]   " << l110_2 << "\n";
+            std::cout << "   Sx       " << sx2 << "\n";
+            std::cout << "   Sy       " << sy2 << "\n";
+            std::cout << "   Sz       " << sz2 << "\n";
+            std::cout << "   S[110]   " << s110_2 << "\n\n";
             tlayer2 = layer_up + layer_dn;
             sm2 = layer_up - layer_dn;
         }
@@ -357,7 +397,11 @@ void printKanamoriOccupations(const KanamoriResult& res) {
     std::cout << "Lx Total    " << (lx1 + lx2) << "\n";
     std::cout << "Ly Total    " << (ly1 + ly2) << "\n";
     std::cout << "Lz Total    " << (lz1 + lz2) << "\n";
-    std::cout << "L[110] Tot  " << (l110_1 + l110_2) << "\n\n";
+    std::cout << "L[110] Tot  " << (l110_1 + l110_2) << "\n";
+    std::cout << "Sx Total    " << (sx1 + sx2) << "\n";
+    std::cout << "Sy Total    " << (sy1 + sy2) << "\n";
+    std::cout << "Sz Total    " << (sz1 + sz2) << "\n";
+    std::cout << "S[110] Tot  " << (s110_1 + s110_2) << "\n\n";
 
     std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
 

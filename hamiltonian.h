@@ -29,9 +29,30 @@ struct Params {
 // Kinetic hopping term (k-dependent, real diagonal). delta_cf shifts the xy orbital energy.
 Mat6 H0(double kx, double ky, const Params& p = Params{}, double delta_cf = 0.0);
 
+// Kronecker product of two square complex matrices: result[i*N+k, j*N+l] = A[i,j] * B[k,l]
+// Write a test to test this.
+template<int M, int N>
+Eigen::Matrix<cd, M*N, M*N> kron(
+    const Eigen::Matrix<cd, M, M>& A,
+    const Eigen::Matrix<cd, N, N>& B)
+{
+    Eigen::Matrix<cd, M*N, M*N> result = Eigen::Matrix<cd, M*N, M*N>::Zero();
+    for (int i = 0; i < M; ++i)
+        for (int j = 0; j < M; ++j)
+            result.template block<N,N>(i*N, j*N) = A(i,j) * B;
+    return result;
+}
+
+struct SpinMatrices {
+    Eigen::Matrix<cd, 2, 2> sx, sy, sz;
+};
+
+// Spin-1/2 matrices in z-quantization basis, optionally rotated to n̂(θ,φ).
+SpinMatrices spin_matrices(double theta = 0.0, double phi = 0.0);
+
 // Spin-orbit coupling (k-independent, precompute once).
 // theta/phi rotate the spin quantization axis via U†(θ,φ)·s·U(θ,φ) on each spin operator.
-Mat6 SOC(double lam = 0.1, double theta = 0.0, double phi = 0.0);
+Mat6 SOC(double lam = 0.0, double theta = 0.0, double phi = 0.0);
 
 // Hubbard mean-field term (k-independent, off-diagonal in spin for general n̂)
 Mat6 HubbardU(double S, const Params& p = Params{});

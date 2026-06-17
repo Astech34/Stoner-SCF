@@ -53,12 +53,17 @@ CalcResult  runSelfCalc(double S0, double alpha, int grid_size, double T, double
 // Returns {Lz_layer1, Lz_layer2}. Uses t2g Lz: Lz(yz,xz)=i, Lz(xz,yz)=-i.
 std::pair<double, double> compute_Lz_moments(const Mat12& rho);
 
+// Spin moments per layer: <S_i>_layer = Tr(rho_layer * kron(s_i, I_3))
+// Operator in full space: I_2 ⊗ s_i ⊗ I_3. s_i rotated to p.theta/phi quantization axis.
+// Returns array of {(Sx_L1, Sx_L2), (Sy_L1, Sy_L2), (Sz_L1, Sz_L2)}.
+std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, const Params& p);
+
 // ---- Kanamori SCF ----
 
 struct KanamoriResult { Mat12 rho0; Mat12 rho; double mu; double E_total; };
 
-// Print orbital occupations, spin moments, Lz moments, and total energy.
-void printKanamoriOccupations(const KanamoriResult& res);
+// Print orbital occupations, spin/L moments, and total energy.
+void printKanamoriOccupations(const KanamoriResult& res, const Params& p = Params{});
 
 // Compute eigensystem with the full Kanamori MF Hamiltonian (density matrix input)
 Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
