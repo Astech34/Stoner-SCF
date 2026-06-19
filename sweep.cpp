@@ -71,10 +71,10 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     // Kanamori at [110], seeded from converged [001] rho
     p.theta = M_PI / 2.0;
     p.phi   = M_PI / 4.0;
-    std::cout << "\n=== Kanamori SCF: [110] (seeded from [001]) ===\n";
+    std::cout << "\n=== Kanamori SCF: [110] ===\n";
     
-    Mat12 rho110SP = res_001.rho + random_hermitian_perturbation(delta, 12345);  // small random perturbation to break any residual symmetries
-    const KanamoriResult res_110 = runKanamoriSCF(rho110SP, alpha, grid, T, N_target, p, kp,
+    //Mat12 rho110SP = res_001.rho + random_hermitian_perturbation(delta, 12345);  // small random perturbation to break any residual symmetries
+    const KanamoriResult res_110 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
                                                   MixerType::Broyden);
     std::cout << "\n=== [110] Occupations ===\n";
     printKanamoriOccupations(res_110);
@@ -148,16 +148,7 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     outfile << "# J       = " << kp.J        << "\n";
     outfile << "# t_perp  = " << p.t_perp    << "\n";
 
-    outfile << "lam,moment_110,E_110,moment_001,E_001,E_MCA\n";
-
-    auto kanamori_moment = [](const KanamoriResult& kres) {
-        double up = 0.0, dn = 0.0;
-        for (int m = 0; m < 3; m++) {
-            up += kres.rho(m,   m  ).real() + kres.rho(m+6, m+6).real();
-            dn += kres.rho(m+3, m+3).real() + kres.rho(m+9, m+9).real();
-        }
-        return up - dn;
-    };
+    outfile << "lam,E_110, S_110, L_110, E_001, S_001, L_001, MCA\n";
 
     for (int i = 0; i < N_points; i++) {
         p.lam = lam_min + i * (lam_max - lam_min) / (N_points - 1);
@@ -165,9 +156,25 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
 
         const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
 
-        outfile << p.lam << ","
-                << kanamori_moment(mca.res_110) << "," << mca.res_110.E_total << ","
-                << kanamori_moment(mca.res_001) << "," << mca.res_001.E_total << ","
+        //001 Result
+        const auto lmom001 = compute_L_moments(mca.res_001.rho, p);
+        const auto [l001R1, l001R2] = lmom001[2];
+        const auto smom001 = compute_S_moments(mca.res_001.rho, p);
+        const auto [s001R1, s001R2] = smom001[2];
+
+        //110 Result
+        const auto lmom110 = compute_L_moments(mca.res_110.rho,p);
+        const auto [lx1, lx2] = lmom110[0];
+        const auto [ly1, ly2] = lmom110[1];
+        const double l110_1 = (lx1 + ly1) / std::sqrt(2.0);
+        const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
+        const auto smom110 = compute_S_moments(mca.res_110.rho, p);
+        const auto [s110R1, s110R2] = smom110[2];
+
+        //outfile << "lam,E_110, S_110, L_110, E_001, S_001, L_001, MCA\n";
+        outfile << p.lam << ","<< mca.res_110.E_total << ","
+                << s110R1 + s110R2 << "," << l110_1 + l110_2 << "," << mca.res_001.E_total << ","
+                << s001R1 + s001R2 << "," << l001R1 + l001R2 << ","
                 << mca.E_MCA << "\n";
         outfile.flush();
     }

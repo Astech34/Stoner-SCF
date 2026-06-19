@@ -379,7 +379,7 @@ void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
             total_up += up;
             total_dn += dn;
             std::cout << "   " << std::left  << std::setw(6) << o.name
-                      << "   " << std::right << std::fixed << std::setprecision(4)
+                      << "   " << std::right << std::fixed << std::setprecision(6)
                       << up << "    " << dn << "\n";
         }
         std::cout << "   Spin Up  " << layer_up << "\n";
