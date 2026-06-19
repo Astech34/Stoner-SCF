@@ -43,9 +43,16 @@ Eigen::Matrix<cd, M*N, M*N> kron(
     return result;
 }
 
+struct LMatrices {
+    Eigen::Matrix<cd, 3, 3> Lx, Ly, Lz;
+};
+
 struct SpinMatrices {
     Eigen::Matrix<cd, 2, 2> sx, sy, sz;
 };
+
+//t2g orbital angular momentum matrices in the basis (yz, xz, xy)
+LMatrices l_matrices();
 
 // Spin-1/2 matrices in z-quantization basis, optionally rotated to n̂(θ,φ).
 SpinMatrices spin_matrices(double theta = 0.0, double phi = 0.0);

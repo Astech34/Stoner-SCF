@@ -25,6 +25,25 @@ Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
 
     return H;
 }
+
+LMatrices l_matrices() {
+    LMatrices L;
+
+    L.Lx << cd(0,0),  cd(0,0),  cd(0,0),
+          cd(0,0),  cd(0,0),  cd(0,-1),
+          cd(0,0),  cd(0,1), cd(0,0);
+
+    L.Ly << cd(0,0),  cd(0,0),  cd(0,1),
+          cd(0,0),  cd(0,0),  cd(0,0),
+          cd(0,-1),  cd(0,0),  cd(0,0);
+
+    L.Lz << cd(0,0),  cd(0,1),  cd(0,0),
+          cd(0,-1), cd(0,0),  cd(0,0),
+          cd(0,0),  cd(0,0),  cd(0,0);
+
+    return L;
+}
+
 // check this
 SpinMatrices spin_matrices(double theta, double phi) {
     SpinMatrices s;
@@ -59,21 +78,8 @@ SpinMatrices spin_matrices(double theta, double phi) {
 // Checked
 Mat6 SOC(double lam, double theta, double phi) {
     // Orbital angular momentum matrices in t2g basis (yz, xz, xy)
-    Eigen::Matrix<cd, 3, 3> Lx, Ly, Lz;
-
-    Lx << cd(0,0),  cd(0,0),  cd(0,0),
-          cd(0,0),  cd(0,0),  cd(0,-1),
-          cd(0,0),  cd(0,1), cd(0,0);
-
-    Ly << cd(0,0),  cd(0,0),  cd(0,1),
-          cd(0,0),  cd(0,0),  cd(0,0),
-          cd(0,-1),  cd(0,0),  cd(0,0);
-
-    Lz << cd(0,0),  cd(0,1),  cd(0,0),
-          cd(0,-1), cd(0,0),  cd(0,0),
-          cd(0,0),  cd(0,0),  cd(0,0);
-
     const auto [sx, sy, sz] = spin_matrices(theta, phi);
+    const auto [Lx, Ly, Lz] = l_matrices();
 
     return lam * (kron(sx, Lx) + kron(sy, Ly) + kron(sz, Lz));
 }

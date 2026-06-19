@@ -233,6 +233,7 @@ cd spin_cross(const Eigen::Ref<const Eigen::Vector<cd, 12>>& col,
 // Lz acts on t2g orbitals as: Lz(yz,xz)=i, Lz(xz,yz)=-i, xy diagonal = 0
 // <Lz>_layer = -2 * (Im[rho(xz↑,yz↑)] + Im[rho(xz↓,yz↓)])
 // -----------------------------------------------------------------------------
+/*
 std::pair<double, double> compute_Lz_moments(const Mat12& rho) {
     auto lz_layer = [&](int base) {
         return cd(0, 1) * (rho(base + 0, base + 1) - rho(base + 1, base + 0)  // xz↑,yz↑
@@ -258,6 +259,25 @@ std::pair<double, double> compute_Lx_moments(const Mat12& rho) {
                          + rho(base + 4, base + 5) - rho(base + 5, base + 4)); // xz↓,xy↓
     };
     return {lx_layer(0).real(), lx_layer(6).real()};
+}
+*/
+std::array<std::pair<double,double>, 3> compute_L_moments(const Mat12& rho, const Params& p){
+    const auto [Lx, Ly, Lz] = l_matrices();
+
+    const Eigen::Matrix<cd, 2, 2> I2 = Eigen::Matrix<cd, 2, 2>::Identity();
+    const Eigen::Matrix<cd, 6, 6> Lx_op = kron(I2, Lx);
+    const Eigen::Matrix<cd, 6, 6> Ly_op = kron(I2, Ly);
+    const Eigen::Matrix<cd, 6, 6> Lz_op = kron(I2, Lz);
+
+    auto layer_moment = [&](const Eigen::Matrix<cd, 6, 6>& op, int base) {
+        return (rho.block<6,6>(base, base) * op).trace().real();
+    };
+
+    return {{
+        {layer_moment(Lx_op, 0), layer_moment(Lx_op, 6)},
+        {layer_moment(Ly_op, 0), layer_moment(Ly_op, 6)},
+        {layer_moment(Lz_op, 0), layer_moment(Lz_op, 6)}
+    }};
 }
 
 // Spin Moments
@@ -322,9 +342,10 @@ void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
     const Mat12& rho = res.rho;
 
     // Orbital Moments
-    const auto [lz1, lz2] = compute_Lz_moments(rho);
-    const auto [ly1, ly2] = compute_Ly_moments(rho);
-    const auto [lx1, lx2] = compute_Lx_moments(rho);
+    const auto lmom = compute_L_moments(rho, p);
+    const auto [lx1, lx2] = lmom[0];
+    const auto [ly1, ly2] = lmom[1];
+    const auto [lz1, lz2] = lmom[2];
     const double l110_1 = (lx1 + ly1) / std::sqrt(2.0);
     const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
 

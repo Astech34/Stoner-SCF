@@ -51,7 +51,8 @@ CalcResult  runSelfCalc(double S0, double alpha, int grid_size, double T, double
 
 // Orbital Lz moment per layer: <Lz>_layer = Tr(rho_layer * (Lz ⊗ I_spin))
 // Returns {Lz_layer1, Lz_layer2}. Uses t2g Lz: Lz(yz,xz)=i, Lz(xz,yz)=-i.
-std::pair<double, double> compute_Lz_moments(const Mat12& rho);
+//std::pair<double, double> compute_Lz_moments(const Mat12& rho);
+std::array<std::pair<double,double>, 3> compute_L_moments(const Mat12& rho, const Params& p);
 
 // Spin moments per layer: <S_i>_layer = Tr(rho_layer * kron(s_i, I_3))
 // Operator in full space: I_2 ⊗ s_i ⊗ I_3. s_i rotated to p.theta/phi quantization axis.
