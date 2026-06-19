@@ -3,19 +3,19 @@
 # Unknown keys are skipped with a warning.
 
 # --- Tight-binding hopping ---
-tpi      = 0.25
+tpi      = 0.3
 tdelta   = 0.03
-t2xy     = 0.08 # changes xy hump
+t2xy     = 0.02 # changes xy hump
 t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
 lam      = 0.03
-theta    = 0     # polar angle of spin quantization axis (0 = out-of-plane)
-phi      = 0      # azimuthal angle
+# theta    = 0     # polar angle of spin quantization axis (0 = out-of-plane)
+# phi      = 0      # azimuthal angle
 
-# theta    = 1.57079632679     # polar angle of spin quantization axis (0 = out-of-plane)
-# phi      = 0.785398163397      # azimuthal angle
+theta    = 1.57079632679     # polar angle of spin quantization axis (0 = out-of-plane)
+phi      = 0.785398163397      # azimuthal angle
 
 # --- Hubbard / Kanamori ---
 U        = 4     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
@@ -24,7 +24,7 @@ J        = 0.9      # Hund's coupling; U_prime = U - 2*J is enforced automatical
 # U_prime = 2.4    # set explicitly to bypass the U - 2*J rule
 
 # --- Interlayer hopping ---
-t_perp    = 0.06
+t_perp    = 0.01
 t_perp_xy = 0.005
 
 #t_perp    = 0.0

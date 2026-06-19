@@ -212,9 +212,9 @@ TEST(Hamiltonian, PrintBiLayerH){
 }
 
 TEST(Hamiltonian, KFSingle){
-    const double U = 5;
-    const double J = 0.8;
-    const double U_prime = U - 2*J;  // 2.4
+    const double U = 5; //5
+    const double J = 0.8; //0.8
+    const double U_prime = U - 2*J;  // 2.4 U - 2*J
 
     KanamoriParams kp;
     kp.U = U;
@@ -231,7 +231,7 @@ TEST(Hamiltonian, KFSingle){
             }
         }
     }
-    std::cout << "\nInput rho:\n" << rho << "\n";
+    //std::cout << "\nInput rho:\n" << rho << "\n";
 
     Mat6 H = kanamori_layer(rho, kp);
 
@@ -246,6 +246,11 @@ TEST(Hamiltonian, KFSingle){
         
     const Mat6 diff = H - H_expected;
     EXPECT_NEAR(diff.norm(), 0.0, 1e-12);
+
+    double dc_correction = kanamori_dc_layer(rho, kp);
+    //std::cout << "\nKanamori DC correction: " << dc_correction;
+    double dc_expected = -806.7999999999998;
+    EXPECT_NEAR(dc_correction, dc_expected, 1e-12);
 
     std::cout << "\nKanamori H:\n" << H << "\n";
 

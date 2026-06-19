@@ -507,7 +507,6 @@ CalcResult runSelfCalc(double S0, double alpha, int grid_size,
 // Computed per single layer from the 6x6 density matrix block.
 // Matches the ΔE expression derived in the LaTeX notes (Section: Complete Kanamori Hamiltonian).
 // Make test DC should be only real
-namespace {
 double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
     const double U  = kp.U;
     const double Up = kp.U_prime;
@@ -516,9 +515,10 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
     double dc = 0.0;
 
     // -U intraorbital:
-    for (int m = 0; m < 3; m++)
+    for (int m = 0; m < 3; m++){
         dc -= U * (rho(m, m+3)*rho(m+3, m) - 
                     rho(m,m)*rho(m+3,m+3)).real();
+    }
 
     // -U' interorbital opposite-spin: -U' sum_{m≠m'} <n_{m↑}><n_{m'↓}>
     for (int m = 0; m < 3; m++)
@@ -526,6 +526,8 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
             if (mp != m)
                 dc -= Up * (rho(m, mp+3) * rho(mp+3, m) - 
                              rho(m,m) * rho(mp+3, mp+3)).real();
+    
+    std::cout << "DC after -U and -U': " << dc << "\n";
 
     // -(U'-J) same-spin: -(U'-J) sum_{m<m', σ} <n_{mσ}><n_{m'σ}>
     for (int m = 0; m < 3; m++)
@@ -550,7 +552,6 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp) {
 
     return dc;
 }
-} // anonymous namespace
 
 // Eigensystem with Kanamori MF: replaces HubbardU(S) with KanamoriMF(rho).
 // k-independent pieces (SOC, T_perp, KanamoriMF) are precomputed outside the k-loop.

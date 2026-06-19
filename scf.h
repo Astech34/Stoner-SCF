@@ -62,6 +62,8 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
 
 struct KanamoriResult { Mat12 rho0; Mat12 rho; double mu; double E_total; };
 
+double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp);
+
 // Print orbital occupations, spin/L moments, and total energy.
 void printKanamoriOccupations(const KanamoriResult& res, const Params& p = Params{});
 
