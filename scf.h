@@ -68,6 +68,9 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp);
 // Print orbital occupations, spin/L moments, and total energy.
 void printKanamoriOccupations(const KanamoriResult& res, const Params& p = Params{});
 
+// Save density matrix to CSV file (12x12, layer-major ordering)
+void save_density_matrix(const Mat12& rho, const std::string& filename = "density_matrix.txt");
+
 // Compute eigensystem with the full Kanamori MF Hamiltonian (density matrix input)
 Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
                                          const Params& p = Params{},

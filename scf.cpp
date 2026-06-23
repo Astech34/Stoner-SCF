@@ -10,6 +10,8 @@
 #include <utility>
 #include <sstream>
 #include <omp.h>
+#include <fstream>
+#include <string>
 
 // -----------------------------------------------------------------------------
 // Brent's method
@@ -336,6 +338,56 @@ static void print_density_matrix(const Mat12& rho) {
         }
         std::cout << "\n";
     }
+}
+
+// Takes a filename parameter with a default value of "density_matrix.txt"
+void save_density_matrix(const Mat12& rho, const std::string& filename) {
+    // Open the file stream
+    std::ofstream outfile(filename);
+
+    // Ensure the file was successfully opened before trying to write
+    if (!outfile.is_open()) {
+        std::cerr << "Error: Could not open " << filename << " for writing.\n";
+        return;
+    }
+
+    constexpr double tol = 5e-5;
+
+    auto fmt = [&](cd v) -> std::string {
+        const bool re_zero = std::abs(v.real()) < tol;
+        const bool im_zero = std::abs(v.imag()) < tol;
+        
+        if (re_zero && im_zero) return "0";
+        
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(4);
+        
+        // Cleaned up formatting to avoid double signs like "+-"
+        if (re_zero) {
+            ss << v.imag() << "i";
+        } else if (im_zero) {
+            ss << v.real();
+        } else {
+            ss << v.real();
+            if (v.imag() >= 0.0) ss << "+"; // Only add explicit '+' if positive
+            ss << v.imag() << "i";
+        }
+        
+        return ss.str();
+    };
+
+    // Write to the file exactly as you were writing to cout
+    for (int i = 0; i < 12; i++) {
+        for (int j = 0; j < 12; j++) {
+            if (j > 0) outfile << "  ";
+            outfile << std::setw(15) << std::right << fmt(rho(i, j));
+        }
+        outfile << "\n";
+    }
+
+    // Close the file stream
+    outfile.close();
+    std::cout << "Density matrix saved to " << filename << "\n";
 }
 
 void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {

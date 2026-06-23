@@ -39,13 +39,34 @@ void apply_symmetry_breaking(Mat12& rho, double delta) {
     rho(9,  9)  -= delta; rho(10, 10) -= delta; rho(11, 11) -= delta;
     */
 
-    //SYM Phase
-    // Layer 1 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
-    rho(2, 2) -= delta;   rho(0, 0) -= delta;
-    rho(2, 1) += delta;   rho(1, 2) += delta;
-    // Layer 2 spin-up: raise dxy, lower dyz, seed dxy-dxz coherence
-    rho(8, 8) -= delta;   rho(6, 6) -= delta;
-    rho(8, 7) += delta;   rho(7, 8) += delta;
+    // Assuming rho is a 2D array or matrix of std::complex<double>
+    // and t2g ordering is: 0=dxy, 1=dxz, 2=dyz
+    // Layer stride = 6, Spin stride = 3
+
+    // =====================================================================
+    // LAYER 1 - SPIN UP (Indices 0, 1, 2)
+    // Goal: Raise dxy, lower dyz, seed complex dxz + i*dyz coherence
+    // =====================================================================
+    //rho(0, 0) -= delta;  // Raise dxy
+    //rho(2, 2) += delta;  // Lower dyz
+
+    // Hermiticity requires rho(j,i) = conj(rho(i,j))
+    // Setting dxz-dyz coherence to a complex phase
+    rho(1, 2) += std::complex<double>(0.0,  delta); // rho(dxz, dyz) = +i*delta
+    rho(2, 1) += std::complex<double>(0.0, -delta); // rho(dyz, dxz) = -i*delta
+
+
+    // =====================================================================
+    // LAYER 2 - SPIN UP (Indices 6, 7, 8)
+    // Goal: Raise dxy, lower dyz, seed complex dxz + i*dyz coherence
+    // =====================================================================
+    //rho(6, 6) += delta;  // Raise dxy
+    //rho(8, 8) -= delta;  // Lower dyz
+
+    // Setting dxz-dyz coherence to a complex phase
+    rho(7, 8) += std::complex<double>(0.0,  delta); // rho(dxz, dyz) = +i*delta
+
+    rho(8, 7) += std::complex<double>(0.0, -delta); // rho(dyz, dxz) = -i*delta
 
 
 }
@@ -74,8 +95,10 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     std::cout << "\n=== Kanamori SCF: [110] ===\n";
     
     //Mat12 rho110SP = res_001.rho + random_hermitian_perturbation(delta, 12345);  // small random perturbation to break any residual symmetries
+    //const KanamoriResult res_110 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
+                                                  //MixerType::Broyden);
     const KanamoriResult res_110 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
-                                                  MixerType::Broyden);
+                                                  MixerType::LinearDIIS);
     std::cout << "\n=== [110] Occupations ===\n";
     printKanamoriOccupations(res_110);
 
