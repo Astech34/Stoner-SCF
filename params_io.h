@@ -15,6 +15,8 @@ struct AllParams {
     Params         p;
     KanamoriParams kp;
     SCFParams      scf;
+    std::string    param_file;
+    std::string    rho_out_file;
 };
 
 // Load parameters from a key=value file. Lines starting with '#' are ignored.

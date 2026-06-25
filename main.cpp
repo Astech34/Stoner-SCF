@@ -42,20 +42,40 @@ int main(int argc, char* argv[]) {
     std::cout << "  U       = " << kp.U       << "\n";
     std::cout << "  U'      = " << kp.U_prime << "\n";
     std::cout << "  J       = " << kp.J       << "\n\n";
+    std::cout << "\nParamFile = " << ap.param_file << "\n";
+    std::cout << "\nRhoOutFile = " << ap.rho_out_file << "\n";
 
-    
+    Mat12 loaded_rho = Mat12::Zero();
+
+    if (!ap.param_file.empty()) {
+        std::cout << "Loading density matrix from '" << ap.param_file << "'\n";
+        loaded_rho = load_density_matrix(ap.param_file);
+    } else {
+        std::cout << "=== Stoner bootstrap ===\n";
+        const CalcResult stoner = runSelfCalc(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p);
+        const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, scf.grid, p);
+        loaded_rho = compute_density_matrix(sys0, stoner.mu, scf.T);
+        apply_symmetry_breaking(loaded_rho, 0.1);
+    }
     // const double delta = 0.01;
+    /*
     std::cout << "=== Stoner bootstrap ===\n";
     const CalcResult stoner = runSelfCalc(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p);
     const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, scf.grid, p);
-    Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, scf.T);
-    apply_symmetry_breaking(rho0, 0.1);
+    Mat12 loaded_rho = compute_density_matrix(sys0, stoner.mu, scf.T);
+    apply_symmetry_breaking(loaded_rho, 0.1);
+    */
 
+    
+    //Mat12 loaded_rho = load_density_matrix("/home/cmp/Documents/Github/Stoner-SCF/out/L110_density_matrix.csv");
+    
     // Kanamori at [001]
+    
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
-    const KanamoriResult res_001 = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, MixerType::LinearDIIS);
+    const KanamoriResult res_001 = runKanamoriSCF(loaded_rho, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
-    printKanamoriOccupations(res_001);
+    printKanamoriOccupations(res_001, p); //be careful angle should be zero maybe hardcode
+    
     
     
 
@@ -78,7 +98,13 @@ int main(int argc, char* argv[]) {
 
     save_band_structure(res_001.rho, 200, p, kp, "out/band_structure.csv", res_001.mu);
     save_projected_dos(res_001.rho, scf.grid, scf.T, scf.N_target, p, kp, "out/projected_dos.csv");
-    save_density_matrix(res_001.rho, "out/density_matrix.csv");
+    
+    if (ap.rho_out_file.empty()) {
+        std::cout << "No output file specified for density matrix. Skipping save.\n";
+    } else {
+        save_density_matrix(res_001.rho, ap.rho_out_file);
+    }
+    //save_density_matrix(res_001.rho, "out/L110_density_matrix.csv");
 
     return 0;
 }

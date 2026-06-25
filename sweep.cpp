@@ -76,31 +76,37 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     // Stoner bootstrap at [001] — exchange field always along z
     p.theta = 0.0;
     p.phi   = 0.0;
+    /*
     std::cout << "=== Stoner bootstrap ===\n";
     const CalcResult stoner = runSelfCalc(S0, alpha, grid, T, N_target, p);
     const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, grid, p);
     Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
     apply_symmetry_breaking(rho0, delta);
-
+    */
+    Mat12 loaded_rho = load_density_matrix("/home/cmp/Documents/Github/Stoner-SCF/out/L001_density_matrix.csv");
     // Kanamori at [001]
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
-    const KanamoriResult res_001 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
+    const KanamoriResult res_001 = runKanamoriSCF(loaded_rho, alpha, grid, T, N_target, p, kp,
                                                   MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
-    printKanamoriOccupations(res_001);
+    printKanamoriOccupations(res_001, p);
 
     // Kanamori at [110], seeded from converged [001] rho
     p.theta = M_PI / 2.0;
     p.phi   = M_PI / 4.0;
     std::cout << "\n=== Kanamori SCF: [110] ===\n";
+    loaded_rho = load_density_matrix("/home/cmp/Documents/Github/Stoner-SCF/out/L110_density_matrix.csv");
     
     //Mat12 rho110SP = res_001.rho + random_hermitian_perturbation(delta, 12345);  // small random perturbation to break any residual symmetries
     //const KanamoriResult res_110 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
                                                   //MixerType::Broyden);
-    const KanamoriResult res_110 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
+    const KanamoriResult res_110 = runKanamoriSCF(loaded_rho, alpha, grid, T, N_target, p, kp,
                                                   MixerType::LinearDIIS);
     std::cout << "\n=== [110] Occupations ===\n";
-    printKanamoriOccupations(res_110);
+    // For S calculation we want to use the unrotated spin operators.
+    p.theta = 0.0;
+    p.phi = 0.0;
+    printKanamoriOccupations(res_110, p);
 
     const double E_MCA = res_110.E_total - res_001.E_total;
     std::cout << "\nE_MCA = E[110] - E[001] = " << E_MCA << " eV\n";
@@ -179,11 +185,20 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
 
         const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
 
-        //001 Result
+        //001 Result — quantization axis must be z for [001]
+        p.theta = 0.0;
+        p.phi   = 0.0;
         const auto lmom001 = compute_L_moments(mca.res_001.rho, p);
         const auto [l001R1, l001R2] = lmom001[2];
         const auto smom001 = compute_S_moments(mca.res_001.rho, p);
         const auto [s001R1, s001R2] = smom001[2];
+
+        //Update param for [110]
+        //p.theta = M_PI / 2.0;
+        //p.phi   = M_PI / 4.0;
+
+        p.theta = 0;
+        p.phi = 0;
 
         //110 Result
         const auto lmom110 = compute_L_moments(mca.res_110.rho,p);
@@ -193,6 +208,8 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
         const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
         const auto smom110 = compute_S_moments(mca.res_110.rho, p);
         const auto [s110R1, s110R2] = smom110[2];
+
+        //std::cout << "\n\nHello" << s110R1 + s110R2;
 
         //outfile << "lam,E_110, S_110, L_110, E_001, S_001, L_001, MCA\n";
         outfile << p.lam << ","<< mca.res_110.E_total << ","

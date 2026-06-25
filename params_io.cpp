@@ -32,6 +32,15 @@ AllParams load_params(const std::string& filename) {
         trim(key); trim(val);
         if (key.empty() || val.empty()) continue;
 
+        if (key == "param_file") {
+            ap.param_file = val;
+            continue;
+        }
+        if (key == "rho_out_file") {
+            ap.rho_out_file = val;
+            continue;
+        }
+
         const double v = std::stod(val);
 
         // Params

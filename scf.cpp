@@ -298,6 +298,9 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
         return (rho.block<6,6>(base, base) * op).trace().real();
     };
 
+    std::cout << "Compute S";
+    std::cout << p.theta << " " << p.phi << "\n";
+
     return {{
         {layer_moment(Sx_op, 0), layer_moment(Sx_op, 6)},
         {layer_moment(Sy_op, 0), layer_moment(Sy_op, 6)},
@@ -388,6 +391,59 @@ void save_density_matrix(const Mat12& rho, const std::string& filename) {
     // Close the file stream
     outfile.close();
     std::cout << "Density matrix saved to " << filename << "\n";
+}
+
+Mat12 load_density_matrix(const std::string& filename) {
+    // Initialize an empty matrix of zeros
+    Mat12 rho = Mat12::Zero(); 
+    std::ifstream infile(filename);
+
+    if (!infile.is_open()) {
+        std::cerr << "Error: Could not open " << filename << " for reading.\n";
+        return rho; // Returns a zero matrix if the file is missing
+    }
+
+    // Helper function to decode strings like "3.5+2.1i", "-4.0i", "1.2", or "0"
+    auto parse_complex = [](std::string s) -> std::complex<double> {
+        if (s == "0") return {0.0, 0.0};
+
+        bool has_i = (s.back() == 'i');
+        if (has_i) s.pop_back(); // Chop off the 'i' so we can parse the numbers
+
+        // If there was no 'i', it's a purely real number
+        if (!has_i) return {std::stod(s), 0.0}; 
+
+        // Look for a '+' or '-' separating the real and imaginary parts.
+        // Because of the fixed formatting we used earlier, we don't have to 
+        // worry about 'e-5' scientific notation throwing off the negative sign.
+        size_t sign_pos = s.find_last_of("+-");
+
+        // If the only sign is at the very front (e.g., "-2.0"), it's purely imaginary
+        if (sign_pos == 0 || sign_pos == std::string::npos) {
+            return {0.0, std::stod(s)};
+        }
+
+        // Otherwise, split the string at the sign
+        std::string re_str = s.substr(0, sign_pos);
+        std::string im_str = s.substr(sign_pos); // Includes the sign!
+
+        return {std::stod(re_str), std::stod(im_str)};
+    };
+
+    std::string token;
+    for (int i = 0; i < 12; i++) {
+        for (int j = 0; j < 12; j++) {
+            // "infile >> token" grabs the next block of text separated by spaces/newlines
+            if (!(infile >> token)) {
+                std::cerr << "Error: File ended early or formatting is broken.\n";
+                return rho;
+            }
+            rho(i, j) = parse_complex(token);
+        }
+    }
+
+    infile.close();
+    return rho;
 }
 
 void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
@@ -683,7 +739,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                const Params& p, const KanamoriParams& kp,
                                MixerType mixer) {
     constexpr int    max_iter   = 999999;
-    constexpr double tol        = 1e-6;
+    constexpr double tol        = 1e-7;
     constexpr int    diis_max   = 4;
     constexpr int    diis_start = 200;
 
@@ -699,7 +755,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     std::vector<Mat12> diis_err;  // residual history: e_i = rho_new_i - rho_i
 
     constexpr int no_improve_max    = 100;
-    constexpr int linear_reset_steps = 10;
+    constexpr int linear_reset_steps = 20;
     double best_diis_diff   = std::numeric_limits<double>::max();
     int    no_improve_count = 0;
     int    linear_remaining = 0;  // counts down during post-stall linear phase
