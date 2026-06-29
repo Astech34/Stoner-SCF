@@ -72,10 +72,15 @@ void apply_symmetry_breaking(Mat12& rho, double delta) {
 }
 
 MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_target,
-                      double delta, Params p, KanamoriParams kp) {
+                      double delta, Params p, KanamoriParams kp, 
+                      std::string seed001, std::string seed110) {
     // Stoner bootstrap at [001] — exchange field always along z
     p.theta = 0.0;
     p.phi   = 0.0;
+
+    std::cout << "Seeding from: " << seed001;
+    std::cout << "Seeding from: " << seed110;
+
     /*
     std::cout << "=== Stoner bootstrap ===\n";
     const CalcResult stoner = runSelfCalc(S0, alpha, grid, T, N_target, p);
@@ -83,19 +88,26 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     Mat12 rho0 = compute_density_matrix(sys0, stoner.mu, T);
     apply_symmetry_breaking(rho0, delta);
     */
-    Mat12 loaded_rho = load_density_matrix("/home/cmp/Documents/Github/Stoner-SCF/out/L001_density_matrix.csv");
+    Mat12 loaded_rho = load_density_matrix(seed001);
     // Kanamori at [001]
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
     const KanamoriResult res_001 = runKanamoriSCF(loaded_rho, alpha, grid, T, N_target, p, kp,
                                                   MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001, p);
+    
+    //Save
+    std::ostringstream filename;
+    filename << "out/dmatrices/L100Lam" 
+             << std::fixed << std::setprecision(2) << p.lam // Controls decimal places
+             << "_density_matrix.csv";
+    save_density_matrix(res_001.rho, filename.str());
 
     // Kanamori at [110], seeded from converged [001] rho
     p.theta = M_PI / 2.0;
     p.phi   = M_PI / 4.0;
     std::cout << "\n=== Kanamori SCF: [110] ===\n";
-    loaded_rho = load_density_matrix("/home/cmp/Documents/Github/Stoner-SCF/out/L110_density_matrix.csv");
+    loaded_rho = load_density_matrix(seed110);
     
     //Mat12 rho110SP = res_001.rho + random_hermitian_perturbation(delta, 12345);  // small random perturbation to break any residual symmetries
     //const KanamoriResult res_110 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp,
@@ -107,6 +119,13 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     p.theta = 0.0;
     p.phi = 0.0;
     printKanamoriOccupations(res_110, p);
+
+    //Save
+    std::ostringstream fname110;
+    fname110 << "out/dmatrices/L110Lam" 
+             << std::fixed << std::setprecision(2) << p.lam // Controls decimal places
+             << "_density_matrix.csv";
+    save_density_matrix(res_001.rho, fname110.str());
 
     const double E_MCA = res_110.E_total - res_001.E_total;
     std::cout << "\nE_MCA = E[110] - E[001] = " << E_MCA << " eV\n";
@@ -178,12 +197,58 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     outfile << "# t_perp  = " << p.t_perp    << "\n";
 
     outfile << "lam,E_110, S_110, L_110, E_001, S_001, L_001, MCA\n";
+                    
+    // Initial Diagonal Seed
+    Mat12 rho0 = Mat12::Zero();
+
+    double n0 = 0.5;
+    double ndelta = 0.1;
+    for (int i = 0; i < 12; ++i) {
+    if ((i % 6) < 3) {
+        rho0(i, i) = n0 + ndelta;
+    } else {
+        rho0(i, i) = n0 - ndelta;
+    }
+    // Seed 001
+    Mat12 StartSeed = Mat12::Zero();
+    const KanamoriResult res_boot = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS);
+    StartSeed = res_boot.rho;
+    save_density_matrix(res_boot.rho, "out/dmatrices/MCAStart001_density_matrix.csv");
+
+    p.theta = M_PI / 2.0;
+    p.phi   = M_PI / 4.0;
+
+    const KanamoriResult res_boot1 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS);
+    //StartSeed = res_boot1.rho;
+    save_density_matrix(res_boot.rho, "out/dmatrices/MCAStart110_density_matrix.csv");
 
     for (int i = 0; i < N_points; i++) {
+
         p.lam = lam_min + i * (lam_max - lam_min) / (N_points - 1);
         std::cout << "--- lam = " << p.lam << " (" << i+1 << "/" << N_points << ") ---\n";
 
-        const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp);
+        std::string Seed001 = "out/dmatrices/MCAStart001_density_matrix.csv";
+        std::string Seed110 = "out/dmatrices/MCAStart110_density_matrix.csv";
+
+        std::ostringstream flname001;
+        std::ostringstream flname110;
+        // Choosing Seed
+        if (i > 0){
+            flname001 << "out/dmatrices/L100Lam" 
+                    << std::fixed << std::setprecision(2) << p.lam // Controls decimal places
+                    << "_density_matrix.csv";
+            
+            flname110 << "out/dmatrices/L110Lam" 
+                    << std::fixed << std::setprecision(2) << p.lam // Controls decimal places
+                    << "_density_matrix.csv";
+            
+            Seed001 = flname001.str();
+            Seed110 = flname110.str();
+        }
+
+
+        const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp, 
+            Seed001, Seed110);
 
         //001 Result — quantization axis must be z for [001]
         p.theta = 0.0;
@@ -197,8 +262,8 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
         //p.theta = M_PI / 2.0;
         //p.phi   = M_PI / 4.0;
 
-        p.theta = 0;
-        p.phi = 0;
+        //p.theta = 0;
+        //p.phi = 0;
 
         //110 Result
         const auto lmom110 = compute_L_moments(mca.res_110.rho,p);
@@ -218,7 +283,7 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
                 << mca.E_MCA << "\n";
         outfile.flush();
     }
-
+}
     outfile.close();
     std::cout << "Results saved to out/mca_lam_sweep.csv\n";
 }

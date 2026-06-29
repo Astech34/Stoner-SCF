@@ -17,7 +17,8 @@ void apply_symmetry_breaking(Mat12& rho, double delta);
 // Converges Kanamori at [001] first (with symmetry-breaking seed delta),
 // then seeds [110] from the converged [001] rho to ensure both axes are in the same phase.
 MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_target,
-                      double delta, Params p, KanamoriParams kp);
+                      double delta, Params p, KanamoriParams kp, 
+                      std::string seed001, std::string seed110);
 
 // Sweep SOC strength lambda and compute MCA energy E([110]) - E([001]) at each value.
 void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_target,

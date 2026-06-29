@@ -45,17 +45,43 @@ int main(int argc, char* argv[]) {
     std::cout << "\nParamFile = " << ap.param_file << "\n";
     std::cout << "\nRhoOutFile = " << ap.rho_out_file << "\n";
 
+
     Mat12 loaded_rho = Mat12::Zero();
 
     if (!ap.param_file.empty()) {
         std::cout << "Loading density matrix from '" << ap.param_file << "'\n";
         loaded_rho = load_density_matrix(ap.param_file);
     } else {
+        /*
         std::cout << "=== Stoner bootstrap ===\n";
         const CalcResult stoner = runSelfCalc(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, p);
         const Eigensystem sys0  = compute_eigensystem_grid(stoner.S_new, scf.grid, p);
         loaded_rho = compute_density_matrix(sys0, stoner.mu, scf.T);
+        apply_symmetry_breaking(loaded_rho, 1);
+        */
+
+        std::cout << "=== Kanamori bootstrap ===\n";
+        Mat12 rho0 = Mat12::Zero();
+        KanamoriParams kp_boot = kp;
+        kp_boot.J = 0;
+        kp_boot.U_prime = 0;
+
+        double n0 = 0.5;
+        double delta = 0.1;
+        for (int i = 0; i < 12; ++i) {
+        // i % 6 gives the position within the current layer block
+        // If the index within the layer is less than 3, it belongs to Spin Up
+        if ((i % 6) < 3) {
+            rho0(i, i) = n0 + delta;
+        } else {
+            rho0(i, i) = n0 - delta;
+        }
+    }
+
+        const KanamoriResult res_boot = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp_boot, MixerType::LinearDIIS);
+        loaded_rho = res_boot.rho;
         apply_symmetry_breaking(loaded_rho, 0.1);
+        loaded_rho += random_hermitian_perturbation(0.1, 42);
     }
     // const double delta = 0.01;
     /*
@@ -85,8 +111,9 @@ int main(int argc, char* argv[]) {
 
     //std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
 
-    //const double delta = 0.01;
-    //run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.01, 0.05, 9, delta, p, kp);
+    /*
+    const double delta = 0.01;
+    run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.01, 0.05, 9, delta, p, kp);
 
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";
@@ -105,6 +132,7 @@ int main(int argc, char* argv[]) {
         save_density_matrix(res_001.rho, ap.rho_out_file);
     }
     //save_density_matrix(res_001.rho, "out/L110_density_matrix.csv");
+    */
 
     return 0;
 }

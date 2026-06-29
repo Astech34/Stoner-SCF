@@ -458,7 +458,10 @@ void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
     const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
 
     // Spin Moments
-    const auto smom = compute_S_moments(rho, p);
+    Params pcopy = p;
+    pcopy.theta = 0;
+    pcopy.phi = 0;
+    const auto smom = compute_S_moments(rho, pcopy);
     const auto [sx1, sx2] = smom[0];
     const auto [sy1, sy2] = smom[1];
     const auto [sz1, sz2] = smom[2];
@@ -739,8 +742,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                const Params& p, const KanamoriParams& kp,
                                MixerType mixer) {
     constexpr int    max_iter   = 999999;
-    constexpr double tol        = 1e-7;
-    constexpr int    diis_max   = 4;
+    double tol        = kp.tol;
+    constexpr int    diis_max   = 8;
     constexpr int    diis_start = 200;
 
     Mat12 rho = rho0;
@@ -754,8 +757,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     std::vector<Mat12> diis_rho;  // rho_new history
     std::vector<Mat12> diis_err;  // residual history: e_i = rho_new_i - rho_i
 
-    constexpr int no_improve_max    = 100;
-    constexpr int linear_reset_steps = 20;
+    constexpr int no_improve_max    = 9999999;
+    constexpr int linear_reset_steps = 150;
     double best_diis_diff   = std::numeric_limits<double>::max();
     int    no_improve_count = 0;
     int    linear_remaining = 0;  // counts down during post-stall linear phase
@@ -785,7 +788,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         const char* tag = (mixer == MixerType::Broyden)
                               ? (broyden_have_prev ? " [Broy]" : "  [mix]")
                               : (using_diis        ? " [DIIS]" : "  [mix]");
-        std::cout << "\nIteration " << std::setw(5) << i << tag
+        std::cout << "\rIteration " << std::setw(5) << i << tag
                   << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff
                   << "   " << std::flush;
 
@@ -865,7 +868,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                 ++no_improve_count;
             }
 
-            if (no_improve_count >= no_improve_max) {
+            if (no_improve_count >= no_improve_max && diff > 1e-7) {
                 std::cout << "\n[DIIS stalled " << no_improve_max
                           << " iters — " << linear_reset_steps << " linear mix steps]\n";
                 diis_rho.clear();

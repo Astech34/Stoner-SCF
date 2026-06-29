@@ -68,6 +68,8 @@ AllParams load_params(const std::string& filename) {
         else if (key == "T")         ap.scf.T        = v;
         else if (key == "N_target")  ap.scf.N_target = v;
         else if (key == "grid")      ap.scf.grid     = static_cast<int>(v);
+        // Convergance
+        else if (key == "tol")         ap.kp.tol        = v;
         else
             std::cerr << "load_params: unknown key '" << key << "', skipping\n";
     }

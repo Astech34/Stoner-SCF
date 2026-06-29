@@ -85,6 +85,7 @@ struct KanamoriParams {
     double U       = 2.0;  // intraorbital Hubbard repulsion
     double U_prime = 1.0;  // interorbital Hubbard repulsion
     double J       = 0.3;  // Hund's coupling (spin-flip exchange + pair hopping)
+    double tol = 1e-12;
 };
 
 // Kanamori mean-field Hamiltonian (12x12 bilayer)
