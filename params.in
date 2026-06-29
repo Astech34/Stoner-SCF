@@ -42,7 +42,7 @@ delta_cf2 = -0.12   # tetragonal CF layer 2
 S0       = 0.3      # initial magnetization guess
 alpha    = 0.03      # linear mixing parameter. If zero it uses DIIS
 T        = 0.005     # temperature (eV)
-N_target = 8.2     # target electron count (5 per layer x 2 layers)
+N_target = 8.0     # target electron count (5 per layer x 2 layers)
 grid     = 50       # k-grid size (grid x grid)
 
 # --- Rho Seed ---
@@ -52,4 +52,15 @@ param_file =
 rho_out_file =
 
 # --- Convergance ---
-tol = 1e-12
+tol = 1e-8
+
+# --- Density-matrix seed (see seeds.h) ---
+# seed selects the starting 12x12 density matrix (4 electrons per layer).
+#   high_spin : S=1 per layer, t2g degenerate
+#   low_spin  : S=0 per layer, t2g degenerate
+#   yz/xz/xy  : high spin with minority electron in that orbital (breaks t2g degeneracy)
+#   none / empty : disable seeding (fall back to param_file / bootstrap)
+# Takes priority over param_file when set.
+seed = high_spin
+seed_strength = 0.01   # Frobenius norm of random Hermitian perturbation (0 = none)
+seed_rng      = 42     # RNG seed for that perturbation

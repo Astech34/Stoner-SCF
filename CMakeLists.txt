@@ -45,7 +45,7 @@ CPMAddPackage(
 
 enable_testing()
 
-add_executable(Stoner-SCF-tests tests.cpp hamiltonian.cpp scf.cpp sweep.cpp)
+add_executable(Stoner-SCF-tests tests.cpp hamiltonian.cpp scf.cpp sweep.cpp params_io.cpp)
 
 target_link_libraries(Stoner-SCF-tests
   PRIVATE

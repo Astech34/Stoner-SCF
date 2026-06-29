@@ -16,7 +16,6 @@ out*/
 *.log
 *.gz
 
-params.in
 CLAUDE.md
 
 memory/

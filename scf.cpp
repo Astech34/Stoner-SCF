@@ -12,6 +12,8 @@
 #include <omp.h>
 #include <fstream>
 #include <string>
+#include <filesystem>
+#include <ctime>
 
 // -----------------------------------------------------------------------------
 // Brent's method
@@ -310,7 +312,7 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
 // -----------------------------------------------------------------------------
 // printKanamoriOccupations — orbital occupations, spin/Lz moments, total energy
 // -----------------------------------------------------------------------------
-static void print_density_matrix(const Mat12& rho) {
+static void print_density_matrix(const Mat12& rho, std::ostream& os = std::cout) {
     constexpr double tol = 5e-5;
 
     auto fmt = [&](cd v) -> std::string {
@@ -336,10 +338,10 @@ static void print_density_matrix(const Mat12& rho) {
 
     for (int i = 0; i < 12; i++) {
         for (int j = 0; j < 12; j++) {
-            if (j > 0) std::cout << "  ";
-            std::cout << std::setw(15) << std::right << fmt(rho(i, j));
+            if (j > 0) os << "  ";
+            os << std::setw(15) << std::right << fmt(rho(i, j));
         }
-        std::cout << "\n";
+        os << "\n";
     }
 }
 
@@ -446,7 +448,7 @@ Mat12 load_density_matrix(const std::string& filename) {
     return rho;
 }
 
-void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
+static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res, const Params& p) {
     const Mat12& rho = res.rho;
 
     // Orbital Moments
@@ -479,8 +481,8 @@ void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
         const int base = layer * 6;
         double layer_up = 0.0, layer_dn = 0.0;
 
-        std::cout << "Layer " << (layer + 1) << "\n";
-        std::cout << " Orbital   Spin Up   Spin Dn\n";
+        os << "Layer " << (layer + 1) << "\n";
+        os << " Orbital   Spin Up   Spin Dn\n";
 
         for (const auto& o : orbs) {
             const double up = rho(base + o.up, base + o.up).real();
@@ -489,69 +491,98 @@ void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
             layer_dn += dn;
             total_up += up;
             total_dn += dn;
-            std::cout << "   " << std::left  << std::setw(6) << o.name
-                      << "   " << std::right << std::fixed << std::setprecision(6)
-                      << up << "    " << dn << "\n";
+            os << "   " << std::left  << std::setw(6) << o.name
+               << "   " << std::right << std::fixed << std::setprecision(6)
+               << up << "    " << dn << "\n";
         }
-        std::cout << "   Spin Up  " << layer_up << "\n";
-        std::cout << "   Spin Dn  " << layer_dn << "\n";
-        std::cout << "   Total    " << (layer_up + layer_dn) << "\n";
-        std::cout << "   Moment   " << (layer_up - layer_dn) << "\n";
+        os << "   Spin Up  " << layer_up << "\n";
+        os << "   Spin Dn  " << layer_dn << "\n";
+        os << "   Total    " << (layer_up + layer_dn) << "\n";
+        os << "   Moment   " << (layer_up - layer_dn) << "\n";
         if (layer == 0) {
-            std::cout << "   Lx       " << lx1 << "\n";
-            std::cout << "   Ly       " << ly1 << "\n";
-            std::cout << "   Lz       " << lz1 << "\n";
-            std::cout << "   L[110]   " << l110_1 << "\n";
-            std::cout << "   Sx       " << sx1 << "\n";
-            std::cout << "   Sy       " << sy1 << "\n";
-            std::cout << "   Sz       " << sz1 << "\n";
-            std::cout << "   S[110]   " << s110_1 << "\n\n";
+            os << "   Lx       " << lx1 << "\n";
+            os << "   Ly       " << ly1 << "\n";
+            os << "   Lz       " << lz1 << "\n";
+            os << "   L[110]   " << l110_1 << "\n";
+            os << "   Sx       " << sx1 << "\n";
+            os << "   Sy       " << sy1 << "\n";
+            os << "   Sz       " << sz1 << "\n";
+            os << "   S[110]   " << s110_1 << "\n\n";
             tlayer1 = layer_up + layer_dn;
             sm1 = layer_up - layer_dn;
         }
         if (layer == 1) {
-            std::cout << "   Lx       " << lx2 << "\n";
-            std::cout << "   Ly       " << ly2 << "\n";
-            std::cout << "   Lz       " << lz2 << "\n";
-            std::cout << "   L[110]   " << l110_2 << "\n";
-            std::cout << "   Sx       " << sx2 << "\n";
-            std::cout << "   Sy       " << sy2 << "\n";
-            std::cout << "   Sz       " << sz2 << "\n";
-            std::cout << "   S[110]   " << s110_2 << "\n\n";
+            os << "   Lx       " << lx2 << "\n";
+            os << "   Ly       " << ly2 << "\n";
+            os << "   Lz       " << lz2 << "\n";
+            os << "   L[110]   " << l110_2 << "\n";
+            os << "   Sx       " << sx2 << "\n";
+            os << "   Sy       " << sy2 << "\n";
+            os << "   Sz       " << sz2 << "\n";
+            os << "   S[110]   " << s110_2 << "\n\n";
             tlayer2 = layer_up + layer_dn;
             sm2 = layer_up - layer_dn;
         }
     }
 
-    std::cout << "Total e-    " << (total_up + total_dn) << "\n";
-    std::cout << "Diff e-     " << (tlayer1 - tlayer2) << "\n";
-    std::cout << "  Moment    " << (total_up - total_dn) << "\n";
-    std::cout << "Lx Total    " << (lx1 + lx2) << "\n";
-    std::cout << "Ly Total    " << (ly1 + ly2) << "\n";
-    std::cout << "Lz Total    " << (lz1 + lz2) << "\n";
-    std::cout << "L[110] Tot  " << (l110_1 + l110_2) << "\n";
-    std::cout << "Sx Total    " << (sx1 + sx2) << "\n";
-    std::cout << "Sy Total    " << (sy1 + sy2) << "\n";
-    std::cout << "Sz Total    " << (sz1 + sz2) << "\n";
-    std::cout << "S[110] Tot  " << (s110_1 + s110_2) << "\n\n";
+    os << "Total e-    " << (total_up + total_dn) << "\n";
+    os << "Diff e-     " << (tlayer1 - tlayer2) << "\n";
+    os << "  Moment    " << (total_up - total_dn) << "\n";
+    os << "Lx Total    " << (lx1 + lx2) << "\n";
+    os << "Ly Total    " << (ly1 + ly2) << "\n";
+    os << "Lz Total    " << (lz1 + lz2) << "\n";
+    os << "L[110] Tot  " << (l110_1 + l110_2) << "\n";
+    os << "Sx Total    " << (sx1 + sx2) << "\n";
+    os << "Sy Total    " << (sy1 + sy2) << "\n";
+    os << "Sz Total    " << (sz1 + sz2) << "\n";
+    os << "S[110] Tot  " << (s110_1 + s110_2) << "\n\n";
 
-    std::cout << "Total energy (eV):    " << res.E_total << "\n\n";
+    os << "Total energy (eV):    " << res.E_total << "\n\n";
 
-    std::cout << "Compare with DFT \n";
-    std::cout << "\nOccupations \n";
-    std::cout << "          n(xz/yz) down     n(xy) down \n";
-    std::cout << "Co1       " << rho(4,4).real() << "            " << rho(5,5).real() << "\n";
-    std::cout << "Co2       " << rho(10,10).real() << "            " << rho(11,11).real() << "\n";
-    std::cout << "\nMoments \n";
-    std::cout << "          Spin moment       Lz moment       L[110] moment\n";
-    std::cout << "Co1       " << sm1 << "            " << lz1 << "            " << l110_1 << "\n";
-    std::cout << "Co2       " << sm2 << "            " << lz2 << "            " << l110_2 << "\n\n";
+    os << "Compare with DFT \n";
+    os << "\nOccupations \n";
+    os << "          n(xz/yz) down     n(xy) down \n";
+    os << "Co1       " << rho(4,4).real() << "            " << rho(5,5).real() << "\n";
+    os << "Co2       " << rho(10,10).real() << "            " << rho(11,11).real() << "\n";
+    os << "\nMoments \n";
+    os << "          Spin moment       Lz moment       L[110] moment\n";
+    os << "Co1       " << sm1 << "            " << lz1 << "            " << l110_1 << "\n";
+    os << "Co2       " << sm2 << "            " << lz2 << "            " << l110_2 << "\n\n";
 
-    std::cout << "--- Initial density matrix (rho0) ---\n";
-    print_density_matrix(res.rho0);
-    std::cout << "\n--- Final density matrix (rho) ---\n";
-    print_density_matrix(res.rho);
-    std::cout << "\n";
+    os << "--- Initial density matrix (rho0) ---\n";
+    print_density_matrix(res.rho0, os);
+    os << "\n--- Final density matrix (rho) ---\n";
+    print_density_matrix(res.rho, os);
+    os << "\n";
+}
+
+void printKanamoriOccupations(const KanamoriResult& res, const Params& p) {
+    writeKanamoriOccupations(std::cout, res, p);
+}
+
+// saveKanamoriOccupations — same report as printKanamoriOccupations, preceded
+// by a dump of all loaded parameters, written to a timestamped .txt file under
+// out/runs (filename is the date/time).
+void saveKanamoriOccupations(const KanamoriResult& res, const AllParams& ap) {
+    std::filesystem::create_directories("out/runs");
+
+    const std::time_t now = std::time(nullptr);
+    std::ostringstream name;
+    name << "out/runs/"
+         << std::put_time(std::localtime(&now), "%Y-%m-%d_%H-%M-%S")
+         << ".txt";
+    const std::string filename = name.str();
+
+    std::ofstream outfile(filename);
+    if (!outfile.is_open()) {
+        std::cerr << "Error: Could not open " << filename << " for writing.\n";
+        return;
+    }
+
+    write_params(outfile, ap);
+    writeKanamoriOccupations(outfile, res, ap.p);
+    outfile.close();
+    std::cout << "Kanamori occupations saved to " << filename << "\n";
 }
 
 // -----------------------------------------------------------------------------

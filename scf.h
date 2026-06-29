@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hamiltonian.h"
+#include "params_io.h"
 #include <vector>
 #include <functional>
 #include <cassert>
@@ -67,6 +68,11 @@ double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp);
 
 // Print orbital occupations, spin/L moments, and total energy.
 void printKanamoriOccupations(const KanamoriResult& res, const Params& p = Params{});
+
+// Same report as printKanamoriOccupations (plus a dump of all loaded
+// parameters), saved to a timestamped .txt file under out/runs (filename is
+// the date/time).
+void saveKanamoriOccupations(const KanamoriResult& res, const AllParams& ap);
 
 // Save density matrix to CSV file (12x12, layer-major ordering)
 void save_density_matrix(const Mat12& rho, const std::string& filename = "density_matrix.txt");

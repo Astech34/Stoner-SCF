@@ -9,7 +9,7 @@
 #include <random>
 
 // Random Hermitian perturbation with Frobenius norm = epsilon.
-static Mat12 random_hermitian_perturbation(double epsilon, unsigned seed) {
+Mat12 random_hermitian_perturbation(double epsilon, unsigned seed) {
     std::mt19937 rng(seed);
     std::normal_distribution<double> dist(0.0, 1.0);
 

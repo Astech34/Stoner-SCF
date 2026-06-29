@@ -7,6 +7,7 @@
 #include "scf.h"
 #include "sweep.h"
 #include "params_io.h"
+#include "seeds.h"
 
 int main(int argc, char* argv[]) {
     const std::string param_file = (argc > 1) ? argv[1] : "params.in";
@@ -48,7 +49,12 @@ int main(int argc, char* argv[]) {
 
     Mat12 loaded_rho = Mat12::Zero();
 
-    if (!ap.param_file.empty()) {
+    if (!ap.seed.empty() && ap.seed != "none") {
+        std::cout << "=== Seeding density matrix: '" << ap.seed << "'"
+                  << " (strength = " << ap.seed_strength
+                  << ", rng = " << ap.seed_rng << ") ===\n";
+        loaded_rho = make_seed(ap.seed, ap.seed_strength, ap.seed_rng);
+    } else if (!ap.param_file.empty() && ap.param_file != "random" && ap.param_file != "bs") {
         std::cout << "Loading density matrix from '" << ap.param_file << "'\n";
         loaded_rho = load_density_matrix(ap.param_file);
     } else {
@@ -80,8 +86,12 @@ int main(int argc, char* argv[]) {
 
         const KanamoriResult res_boot = runKanamoriSCF(rho0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp_boot, MixerType::LinearDIIS);
         loaded_rho = res_boot.rho;
-        apply_symmetry_breaking(loaded_rho, 0.1);
-        loaded_rho += random_hermitian_perturbation(0.1, 42);
+        if (ap.param_file == "random"){
+            loaded_rho += random_hermitian_perturbation(0.01, 42);
+        }
+        if (ap.param_file == "bs"){
+            apply_symmetry_breaking(loaded_rho, 0.1);
+        }
     }
     // const double delta = 0.01;
     /*
@@ -101,6 +111,7 @@ int main(int argc, char* argv[]) {
     const KanamoriResult res_001 = runKanamoriSCF(loaded_rho, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001, p); //be careful angle should be zero maybe hardcode
+    saveKanamoriOccupations(res_001, ap);
     
     
     
