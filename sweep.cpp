@@ -1,6 +1,7 @@
 #include "sweep.h"
 #include "hamiltonian.h"
 #include "scf.h"
+#include "seeds.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -97,11 +98,12 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     printKanamoriOccupations(res_001, p);
     
     //Save
+    //std::string Seed110 = "/home/cmp/Documents/Github/Stoner-SCF/out/LMCA110.csv";
     std::ostringstream filename;
     filename << "out/dmatrices/L100Lam" 
              << std::fixed << std::setprecision(2) << p.lam // Controls decimal places
              << "_density_matrix.csv";
-    save_density_matrix(res_001.rho, filename.str());
+    save_density_matrix(res_001.rho, "/home/cmp/Documents/Github/Stoner-SCF/out/LMCA001.csv");
 
     // Kanamori at [110], seeded from converged [001] rho
     p.theta = M_PI / 2.0;
@@ -125,7 +127,7 @@ MCAResult compute_MCA(double S0, double alpha, int grid, double T, double N_targ
     fname110 << "out/dmatrices/L110Lam" 
              << std::fixed << std::setprecision(2) << p.lam // Controls decimal places
              << "_density_matrix.csv";
-    save_density_matrix(res_001.rho, fname110.str());
+    save_density_matrix(res_110.rho, "/home/cmp/Documents/Github/Stoner-SCF/out/LMCA110.csv");
 
     const double E_MCA = res_110.E_total - res_001.E_total;
     std::cout << "\nE_MCA = E[110] - E[001] = " << E_MCA << " eV\n";
@@ -199,6 +201,7 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     outfile << "lam,E_110, S_110, L_110, E_001, S_001, L_001, MCA\n";
                     
     // Initial Diagonal Seed
+    /*
     Mat12 rho0 = Mat12::Zero();
 
     double n0 = 0.5;
@@ -209,24 +212,26 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
     } else {
         rho0(i, i) = n0 - ndelta;
     }
+    */
     // Seed 001
-    Mat12 StartSeed = Mat12::Zero();
-    const KanamoriResult res_boot = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS);
-    StartSeed = res_boot.rho;
-    save_density_matrix(res_boot.rho, "out/dmatrices/MCAStart001_density_matrix.csv");
+    //Mat12 StartSeed = Mat12::Zero();
+    //const KanamoriResult res_boot = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS);
+    //StartSeed = res_boot.rho;
+    //save_density_matrix(res_boot.rho, "out/dmatrices/MCAStart001_density_matrix.csv");
 
-    p.theta = M_PI / 2.0;
-    p.phi   = M_PI / 4.0;
+    //p.theta = M_PI / 2.0;
+    //p.phi   = M_PI / 4.0;
 
-    const KanamoriResult res_boot1 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS);
+    //const KanamoriResult res_boot1 = runKanamoriSCF(rho0, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS);
     //StartSeed = res_boot1.rho;
-    save_density_matrix(res_boot.rho, "out/dmatrices/MCAStart110_density_matrix.csv");
-
+    //save_density_matrix(res_boot.rho, "out/dmatrices/MCAStart110_density_matrix.csv");
+    
     for (int i = 0; i < N_points; i++) {
 
         p.lam = lam_min + i * (lam_max - lam_min) / (N_points - 1);
         std::cout << "--- lam = " << p.lam << " (" << i+1 << "/" << N_points << ") ---\n";
 
+        /*
         std::string Seed001 = "out/dmatrices/MCAStart001_density_matrix.csv";
         std::string Seed110 = "out/dmatrices/MCAStart110_density_matrix.csv";
 
@@ -245,6 +250,12 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
             Seed001 = flname001.str();
             Seed110 = flname110.str();
         }
+        */
+
+        std::string Seed001 = "/home/cmp/Documents/Github/Stoner-SCF/out/LMCA001.csv";
+        std::string Seed110 = "/home/cmp/Documents/Github/Stoner-SCF/out/LMCA110.csv";
+        std::cout << "Seeding from: " << Seed001;
+        std::cout << "Seeding from: " << Seed110;   
 
 
         const MCAResult mca = compute_MCA(S0, alpha, grid, T, N_target, delta, p, kp, 
@@ -282,7 +293,7 @@ void run_MCA_lam_sweep(double S0, double alpha, int grid, double T, double N_tar
                 << s001R1 + s001R2 << "," << l001R1 + l001R2 << ","
                 << mca.E_MCA << "\n";
         outfile.flush();
-    }
+    //}
 }
     outfile.close();
     std::cout << "Results saved to out/mca_lam_sweep.csv\n";
@@ -346,4 +357,207 @@ KanamoriResult runKanamoriSCF_random(unsigned seed, double S0, double alpha, int
     std::cout << "=== Kanamori SCF (random seed=" << seed
               << ", epsilon=" << epsilon << ") ===\n";
     return runKanamoriSCF(rho0, alpha, grid_size, T, N_target, p, kp);
+}
+
+// Number of electron sweep
+void run_n_electron_sweep(double alpha, int grid, double T, double N_target,
+                      Params p, KanamoriParams kp, int max_iter_start){
+    
+    // Initial Run and Comparison between seeds
+    std::vector<std::string> seeds = {"xy","yz","high_spin","low_spin"};
+    std::vector<KanamoriResult> results;
+    std::vector<std::string> converged_seeds;
+    Mat12 loaded_rho = Mat12::Zero();
+    for (const auto& seed : seeds) {
+        loaded_rho = make_seed(seed, 0.01, 42); //seed, pertubation strength, random seed of pertubation
+        KanamoriResult runResult;
+        try {
+            runResult = runKanamoriSCF(loaded_rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter_start);
+            converged_seeds.push_back(seed);
+            results.push_back(runResult);
+            std::cout << "\n\nConverged: Kanamori SCF for seed " << seed << "\n\n\n";
+        } catch (const std::exception& e) {
+            std::cerr << "Not converged: Kanamori SCF for seed " << seed << ": " << e.what() << std::endl;
+        }
+        
+    }
+    auto minIt = std::min_element(results.begin(), results.end(),
+        [](const KanamoriResult& a, const KanamoriResult& b) {
+            if (std::isnan(a.E_total)) return false;
+            if (std::isnan(b.E_total)) return true;
+            return a.E_total < b.E_total;
+        });
+
+    double minEnergy = minIt->E_total;
+    size_t minIndex = static_cast<size_t>(minIt - results.begin());
+
+    std::cout << "Lowest energy value: " << minEnergy << "\n";
+    std::cout << "Lowest energy is seed: " << converged_seeds[minIndex] << "\n";
+    
+    const double degeneracyTol = 1e-6;
+
+    std::vector<size_t> degenerateIndices;
+    for (size_t i = 0; i < results.size(); ++i) {
+        if (i == minIndex) continue;
+        if (std::isnan(results[i].E_total)) continue;
+        if (std::abs(results[i].E_total - minEnergy) < degeneracyTol) {
+            // If the seeds converge to the same state then this is okay
+            double norm = (results[i].rho - results[minIndex].rho).squaredNorm();
+            if (norm > 1e-6) {
+                degenerateIndices.push_back(i);
+            }
+            else{
+                std::cout << "Seed " << converged_seeds[i] << " has same state as minimum energy seed.\n";
+            }
+        }
+    }
+
+    if (!degenerateIndices.empty()) {
+        std::cout << "Warning: " << degenerateIndices.size()
+                  << " other result(s) are degenerate with the minimum "
+                  << "(within tolerance " << degeneracyTol << "):\n";
+        for (size_t idx : degenerateIndices) {
+            std::cout << "  seed " << converged_seeds[idx]
+                      << ", energy = " << results[idx].E_total
+                      << ", ΔE = " << (results[idx].E_total - minEnergy)
+                      << "\n";
+        }
+
+        std::cout << "Degenerate seeds found. Canceling sweep.\n";
+        return;
+    }
+    else{
+        // If not degenerate, look at yz/xz degeneracy
+        KanamoriResult lowestEnergy = results[minIndex];
+        std::cout << lowestEnergy.rho(3,3).real() << " (yz) vs " << lowestEnergy.rho(4,4).real() << " (xz)\n";
+        if (std::abs(lowestEnergy.rho(3,3).real() - lowestEnergy.rho(4,4).real()) > 1e-6) 
+        {
+            std::cout << "Cancelling sweep due to yz/xz degeneracy broken.\n";
+            return;
+        }
+        else {
+            std::cout << "No yz/xz degeneracy broken. Continuing sweep.\n";
+            //save_projected_dos(lowestEnergy.rho, grid, T, N_target, p, kp, "out/projected_dos.csv");
+            //std::cout << "Press Enter to continue... or ctr+c to cancel...";
+            //std::string dummy;
+            //std::getline(std::cin, dummy);
+            // Increasing N count
+            Mat12 run_rh = lowestEnergy.rho;
+            bool isYZDeg = false;
+            std::vector<double> MCA_V;
+            std::vector<double> Nelec_V;
+            std::vector<double> isYZDeg_V;
+
+
+            std::vector<KanamoriResult> sweepResults;
+            // Increasing
+            for (int i = 0; i < 10; ++i) {
+                double n_electron_target = N_target + (i * 0.1);
+                try {
+                KanamoriResult runResult = runKanamoriSCF(run_rh, alpha, grid, T, n_electron_target, p, kp, MixerType::LinearDIIS, 3000);
+
+                // Check for YZ degeneracy
+                if (std::abs(runResult.rho(3,3).real() - runResult.rho(4,4).real()) < 1e-6) {
+                    isYZDeg_V.push_back(1.0);
+                }
+                else{
+                    isYZDeg_V.push_back(0.0);
+                }
+
+                // Set seed adiabatically
+                run_rh = runResult.rho;
+
+                // 110
+                Params pc = p;
+                pc.theta = M_PI / 2.0;
+                pc.phi   = M_PI / 4.0;
+                KanamoriResult runResult110 = runKanamoriSCF(run_rh, alpha, grid, T, n_electron_target, pc, kp, MixerType::LinearDIIS, 3000);
+
+                double MCA_D = runResult110.E_total - runResult.E_total;
+                MCA_V.push_back(MCA_D);
+                Nelec_V.push_back(n_electron_target);
+                
+                std::cout << "\n\nConverged: Kanamori SCF for n_electron = " << n_electron_target << "\n\n\n";
+            } catch (const std::exception& e) {
+                std::cerr << "Not converged: Kanamori SCF for n_electron = " << n_electron_target << ": " << e.what() << std::endl;
+            }
+            }
+
+            // Decreasing
+            run_rh = lowestEnergy.rho;
+            for (int i = 0; i < 10; ++i) {
+                double n_electron_target = N_target - (i * 0.1);
+                try {
+                KanamoriResult runResult = runKanamoriSCF(run_rh, alpha, grid, T, n_electron_target, p, kp, MixerType::LinearDIIS, 3000);
+
+                // Check for YZ degeneracy
+                if (std::abs(runResult.rho(3,3).real() - runResult.rho(4,4).real()) < 1e-6) {
+                    isYZDeg_V.push_back(1.0);
+                }
+                else{
+                    isYZDeg_V.push_back(0.0);
+                }
+
+                // Set seed adiabatically
+                run_rh = runResult.rho;
+
+                // 110
+                Params pc = p;
+                pc.theta = M_PI / 2.0;
+                pc.phi   = M_PI / 4.0;
+                KanamoriResult runResult110 = runKanamoriSCF(run_rh, alpha, grid, T, n_electron_target, pc, kp, MixerType::LinearDIIS, 3000);
+
+                double MCA_D = runResult110.E_total - runResult.E_total;
+                MCA_V.push_back(MCA_D);
+                Nelec_V.push_back(n_electron_target);
+                
+                std::cout << "\n\nConverged: Kanamori SCF for n_electron = " << n_electron_target << "\n\n\n";
+            } catch (const std::exception& e) {
+                std::cerr << "Not converged: Kanamori SCF for n_electron = " << n_electron_target << ": " << e.what() << std::endl;
+            }
+            }
+
+
+            if (!MCA_V.empty()) {
+                std::cout << "MCA values,";
+                for (double mca : MCA_V) {
+                    std::cout << mca << ",";
+                }
+                std::cout << "\n";
+            }
+            if (!Nelec_V.empty()) {
+                std::cout << "N electron values,";
+                for (double nelec : Nelec_V) {
+                    std::cout << nelec << ",";
+                }
+                std::cout << "\n";
+            }
+
+            // Write CSV
+            std::string filename = "out/n_electron_sweep.csv";
+            std::cout << "Saving results to " << filename << "\n";
+            std::ofstream out(filename);
+            if (!out.is_open()) {
+                std::cerr << "Failed to open " << filename << " for writing\n";
+                return;
+            }
+
+            // Header
+            out << "MCA,Nelec,isYZDeg\n";
+
+            // Assumes all vectors are the same size
+            size_t n = MCA_V.size();
+            out << std::setprecision(15); // adjust precision as needed
+
+            for (size_t i = 0; i < n; ++i) {
+                out << MCA_V[i] << ","
+                    << Nelec_V[i] << ","
+                    << isYZDeg_V[i] << "\n";
+            }
+
+            out.close();
+        }
+       
+    }
+    
 }

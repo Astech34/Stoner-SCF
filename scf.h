@@ -79,6 +79,16 @@ void save_density_matrix(const Mat12& rho, const std::string& filename = "densit
 
 Mat12 load_density_matrix(const std::string& filename = "density_matrix.txt");
 
+// Diagonalise the Kanamori MF Hamiltonian on the grid_size x grid_size k-mesh and
+// save the per-k orbital energy splitting E(yz) - E(zx) to CSV, resolved per
+// layer/spin (L1↑, L1↓, L2↑, L2↓). For each block the yz/zx energy is the
+// eigenvalue of the band carrying the most yz/zx character (max |v_nk(comp)|^2).
+// Columns: kx, ky, then {E_yz, E_zx, diff} for each of the 4 blocks.
+void save_yz_zx_splitting(const Mat12& rho, int grid_size,
+                          const Params& p = Params{},
+                          const KanamoriParams& kp = KanamoriParams{},
+                          const std::string& filename = "out/yz_zx_splitting.csv");
+
 // Compute eigensystem with the full Kanamori MF Hamiltonian (density matrix input)
 Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
                                          const Params& p = Params{},
@@ -91,4 +101,4 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
                                const Params& p = Params{},
                                const KanamoriParams& kp = KanamoriParams{},
-                               MixerType mixer = MixerType::LinearDIIS);
+                               MixerType mixer = MixerType::LinearDIIS, int max_iter = 999999);

@@ -42,3 +42,6 @@ KanamoriResult runKanamoriSCF_random(unsigned seed, double S0, double alpha, int
                                      double T, double N_target,
                                      const Params& p, const KanamoriParams& kp,
                                      double epsilon = 0.05);
+                            
+void run_n_electron_sweep(double alpha, int grid, double T, double N_target,
+                      Params p, KanamoriParams kp, int max_iter_start);

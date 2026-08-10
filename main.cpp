@@ -106,12 +106,16 @@ int main(int argc, char* argv[]) {
     //Mat12 loaded_rho = load_density_matrix("/home/cmp/Documents/Github/Stoner-SCF/out/L110_density_matrix.csv");
     
     // Kanamori at [001]
-    
+    /*
     std::cout << "\n=== Kanamori SCF: [001] ===\n";
     const KanamoriResult res_001 = runKanamoriSCF(loaded_rho, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, MixerType::LinearDIIS);
     std::cout << "\n=== [001] Occupations ===\n";
     printKanamoriOccupations(res_001, p); //be careful angle should be zero maybe hardcode
     saveKanamoriOccupations(res_001, ap);
+    */
+
+    //N electron sweep
+    run_n_electron_sweep(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 1000);
     
     
     
@@ -122,10 +126,10 @@ int main(int argc, char* argv[]) {
 
     //std::cout << "E_MCA = E[110] - E[001] = " << mca.E_MCA << " eV\n";
 
+    
+    //const double delta = 0.01;
+    //run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.02, 0.05, 9, delta, p, kp);
     /*
-    const double delta = 0.01;
-    run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.01, 0.05, 9, delta, p, kp);
-
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";
     //run_delta_V_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.0, 0.1, 20, p, kp);
@@ -145,5 +149,14 @@ int main(int argc, char* argv[]) {
     //save_density_matrix(res_001.rho, "out/L110_density_matrix.csv");
     */
 
+    // Saving
+    /*
+    if (ap.rho_out_file.empty()) {
+        std::cout << "No output file specified for density matrix. Skipping save.\n";
+    } else {
+        save_density_matrix(res_001.rho, ap.rho_out_file);
+    }
+    save_projected_dos(res_001.rho, scf.grid, scf.T, scf.N_target, p, kp, "out/projected_dos.csv");
+    */
     return 0;
 }

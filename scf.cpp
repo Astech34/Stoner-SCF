@@ -771,11 +771,11 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
 KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                double T, double N_target,
                                const Params& p, const KanamoriParams& kp,
-                               MixerType mixer) {
-    constexpr int    max_iter   = 999999;
+                               MixerType mixer, int max_iter) {
+    //constexpr int    max_iter   = 999999;
     double tol        = kp.tol;
-    constexpr int    diis_max   = 8;
-    constexpr int    diis_start = 200;
+    constexpr int    diis_max   = 10;
+    constexpr int    diis_start = 30;
 
     Mat12 rho = rho0;
 
@@ -953,4 +953,110 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     }
 
     throw std::runtime_error("runKanamoriSCF: failed to converge within max_iter");
+}
+
+// -----------------------------------------------------------------------------
+// save_yz_zx_splitting — per-k orbital energy splitting E(yz) - E(zx)
+// -----------------------------------------------------------------------------
+// Builds the same Kanamori MF Hamiltonian as the converged SCF (KanamoriMF(rho)
+// + SOC + interlayer hopping + staggered potential + kinetic H0), diagonalises it
+// at every point of the grid_size x grid_size k-mesh, and for each layer/spin
+// block picks out the eigenvalue whose eigenstate carries the most yz (or zx=xz)
+// character, i.e. the band n maximising |v_nk(component)|^2. The difference
+// E_yz - E_zx is written per k-point, resolved for L1↑, L1↓, L2↑, L2↓.
+// Basis ordering (layer-major / spin-major / orbital-minor): yz,xz,xy per block.
+//   0-2  L1 up   3-5  L1 dn   6-8  L2 up   9-11 L2 dn
+// Columns: kx, ky, then {E_yz, E_zx, diff} for each of the 4 layer/spin blocks.
+void save_yz_zx_splitting(const Mat12& rho, int grid_size,
+                          const Params& p, const KanamoriParams& kp,
+                          const std::string& filename) {
+    const int N = grid_size * grid_size;
+
+    // k-mesh from -pi to pi (M_PI omitted, already counted at -M_PI), matching
+    // compute_eigensystem_kanamori.
+    std::vector<double> k_lin(grid_size);
+    for (int i = 0; i < grid_size; i++)
+        k_lin[i] = -M_PI + i * (2.0 * M_PI / grid_size);
+
+    // yz (=0 offset) and zx (=1 offset) component indices for each layer/spin block.
+    struct Block { const char* name; int yz; int zx; };
+    const std::array<Block, 4> blocks = {{
+        {"L1_up", 0,  1},
+        {"L1_dn", 3,  4},
+        {"L2_up", 6,  7},
+        {"L2_dn", 9, 10}
+    }};
+
+    // Precompute all k-independent contributions once.
+    const Mat6 Hsoc  = SOC(p.lam, p.theta, p.phi);
+    const Mat6 Tperp = T_perp_mat(p);
+
+    Mat12 H_kfree = KanamoriMF(rho, kp);
+    H_kfree.block<6,6>(0, 0) += Hsoc;
+    H_kfree.block<6,6>(6, 6) += Hsoc;
+    H_kfree.block<6,6>(0, 6) += Tperp;
+    H_kfree.block<6,6>(6, 0) += Tperp;
+    H_kfree += staggered_potential(p);
+
+    // Eigenvalue whose eigenstate has maximal weight on basis component `comp`.
+    auto dominant_eval = [](const Mat12& V, const Eigen::Vector<double, 12>& e, int comp) {
+        int best = 0;
+        double best_w = -1.0;
+        for (int n = 0; n < 12; n++) {
+            const double w = std::norm(V(comp, n));  // |v_n(comp)|^2
+            if (w > best_w) { best_w = w; best = n; }
+        }
+        return e[best];
+    };
+
+    // Per k-point row: kx, ky, then {E_yz, E_zx, diff} x 4 blocks.
+    constexpr int n_cols = 2 + 3 * 4;
+    std::vector<std::array<double, n_cols>> rows(N);
+
+    #pragma omp parallel for schedule(static)
+    for (int idx = 0; idx < N; idx++) {
+        const double kx = k_lin[idx % grid_size];
+        const double ky = k_lin[idx / grid_size];
+
+        Mat12 H = H_kfree;
+        H.block<6,6>(0, 0) += H0(kx, ky, p, p.delta_cf1);
+        H.block<6,6>(6, 6) += H0(kx, ky, p, p.delta_cf2);
+
+        Eigen::SelfAdjointEigenSolver<Mat12> solver(H);
+        const auto& evals = solver.eigenvalues();
+        const auto& evecs = solver.eigenvectors();
+
+        auto& row = rows[idx];
+        row[0] = kx;
+        row[1] = ky;
+        for (int b = 0; b < 4; b++) {
+            const double e_yz = dominant_eval(evecs, evals, blocks[b].yz);
+            const double e_zx = dominant_eval(evecs, evals, blocks[b].zx);
+            row[2 + 3*b + 0] = e_yz;
+            row[2 + 3*b + 1] = e_zx;
+            row[2 + 3*b + 2] = e_yz - e_zx;
+        }
+    }
+
+    std::ofstream file(filename);
+    if (!file.is_open())
+        throw std::runtime_error("save_yz_zx_splitting: could not open " + filename);
+
+    file << "kx,ky";
+    for (const auto& blk : blocks)
+        file << "," << blk.name << "_yz"
+             << "," << blk.name << "_zx"
+             << "," << blk.name << "_diff";
+    file << "\n";
+
+    file << std::fixed << std::setprecision(8);
+    for (const auto& row : rows) {
+        file << row[0];
+        for (int c = 1; c < n_cols; c++)
+            file << "," << row[c];
+        file << "\n";
+    }
+
+    std::cout << "yz-zx splitting written to " << filename
+              << " (" << N << " k-points)\n";
 }
