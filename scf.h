@@ -14,6 +14,30 @@ struct Eigensystem {
 
 struct CalcResult { double S_new; double mu; double E_total; };
 
+struct Observables {
+    double Lx;
+    double Ly;
+    double Lz;
+    double L110;
+    double Sx;
+    double Sy;
+    double Sz;
+    double S110;
+};
+
+struct Occupations{
+    double yz_up, double yz_down;
+    double zx_up, double zx_down;
+    double xy_up, double xy_down;
+}
+
+struct RhoInformation {
+    Observables O1;
+    Observables O2;
+    Occupations occ1;
+    Occupations occ2;
+}
+
 // Density-matrix mixing scheme for runKanamoriSCF.
 //   LinearDIIS : linear (α) mixing for the first diis_start iters, then Pulay DIIS
 //   Broyden    : modified Broyden second method (Johnson, PRB 38, 12807 (1988))
@@ -62,7 +86,7 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
 
 // ---- Kanamori SCF ----
 
-struct KanamoriResult { Mat12 rho0; Mat12 rho; double mu; double E_total; };
+struct KanamoriResult { Mat12 rho0; Mat12 rho; double mu; double E_total; bool isConverged=false;};
 
 double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp);
 
@@ -102,3 +126,6 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                const Params& p = Params{},
                                const KanamoriParams& kp = KanamoriParams{},
                                MixerType mixer = MixerType::LinearDIIS, int max_iter = 999999);
+
+void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+    int num_random_states, int max_iter);

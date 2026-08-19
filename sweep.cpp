@@ -24,6 +24,23 @@ Mat12 random_hermitian_perturbation(double epsilon, unsigned seed) {
     return H;
 }
 
+Mat12 build_random_density_matrix(unsigned seed, double N_target){
+
+    Mat12 Hrandom = random_hermitian_perturbation(1.0, seed);
+
+    // Diagonalize
+    Eigen::SelfAdjointEigenSolver<Mat12> solver(Hrandom);
+    Eigen::Vector<double, 12> evals = solver.eigenvalues();
+    Eigen::Matrix<cd, 12, 12> evecs = solver.eigenvectors();
+
+    Mat12 rho = Mat12::Zero();
+    for (int m = 0; m < N_target; m++) {
+        rho += evecs.col(m) * evecs.col(m).adjoint();
+    }
+
+    return rho;
+}
+
 // Internal order per layer block: yz=0, xz=1, xy=2 (up) | yz=3, xz=4, xy=5 (dn)
 void apply_symmetry_breaking(Mat12& rho, double delta) {
     //PO Phase

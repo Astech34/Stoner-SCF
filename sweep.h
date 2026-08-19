@@ -4,6 +4,8 @@
 
 Mat12 random_hermitian_perturbation(double epsilon, unsigned seed);
 
+Mat12 build_random_density_matrix(unsigned seed, double N_target);
+
 void run_U_sweep(double S0, double alpha, int grid, double T, double N_target,
                  double U_min, double U_max, int N_points, Params p);
 

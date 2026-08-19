@@ -114,8 +114,14 @@ int main(int argc, char* argv[]) {
     saveKanamoriOccupations(res_001, ap);
     */
 
+    // Find G.S
+    //find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+    //int num_random_states, int max_iter)
+    find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 10, 1000);
+
+
     //N electron sweep
-    run_n_electron_sweep(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 1000);
+    //run_n_electron_sweep(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 1000);
     
     
     
@@ -129,6 +135,8 @@ int main(int argc, char* argv[]) {
     
     //const double delta = 0.01;
     //run_MCA_lam_sweep(scf.S0, scf.alpha, scf.grid, scf.T, scf.N_target, 0.02, 0.05, 9, delta, p, kp);
+    
+    
     /*
     // --- delta_V sweep ---
     //std::cout << "\n=== Stage 3: delta_V sweep (0 -> 0.1) ===\n\n";

@@ -1,5 +1,6 @@
 #include "scf.h"
 #include "hamiltonian.h"
+#include "sweep.h"
 #include <cmath>
 #include <limits>
 #include <iostream>
@@ -448,6 +449,53 @@ Mat12 load_density_matrix(const std::string& filename) {
     return rho;
 }
 
+// Idea put all this information in a struct, the make a function to calculate
+// Then can reuse.
+RhoInformation compute_rho_information(const Mat12& rho, const Params& p) {
+    RhoInformation info;
+
+    // Orbital Moments
+    const auto lmom = compute_L_moments(rho, p);
+    const auto [lx1, lx2] = lmom[0];
+    const auto [ly1, ly2] = lmom[1];
+    const auto [lz1, lz2] = lmom[2];
+    const double l110_1 = (lx1 + ly1) / std::sqrt(2.0);
+    const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
+
+    info.O1.lx = lx1;
+    info.O1.ly = ly1;
+    info.O1.lz = lz1;
+    info.O1.l110 = l110_1;
+
+    info.O2.lx = lx2;
+    info.O2.ly = ly2;
+    info.O2.lz = lz2;
+    info.O2.l110 = l110_2;
+
+    // Spin Moments
+    Params pcopy = p;
+    pcopy.theta = 0;
+    pcopy.phi = 0;
+    const auto smom = compute_S_moments(rho, pcopy);
+    const auto [sx1, sx2] = smom[0];
+    const auto [sy1, sy2] = smom[1];
+    const auto [sz1, sz2] = smom[2];
+    const double s110_1 = (sx1 + sy1) / std::sqrt(2.0);
+    const double s110_2 = (sx2 + sy2) / std::sqrt(2.0);
+
+    info.O1.sx = sx1;
+    info.O1.sy = sy1;
+    info.O1.sz = sz1;
+    info.O1.s110 = s110_1;
+
+    info.O2.sx = sx2;
+    info.O2.sy = sy2;
+    info.O2.sz = sz2;
+    info.O2.s110 = s110_2;
+
+    return info;
+}
+
 static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res, const Params& p) {
     const Mat12& rho = res.rho;
 
@@ -831,7 +879,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                       << "\n Band Energy = " << bandsum
                       << "\n DC Correction = " << dc
                       << ", E_total = " << bandsum - dc << "\n";
-            return {rho0, rho, mu, bandsum - dc};
+            return {rho0, rho, mu, bandsum - dc, true};
         }
 
         if (mixer == MixerType::Broyden) {
@@ -952,7 +1000,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         }
     }
 
-    throw std::runtime_error("runKanamoriSCF: failed to converge within max_iter");
+    //throw std::runtime_error("runKanamoriSCF: failed to converge within max_iter");
+    return {rho0, rho, 0, 0, false};
 }
 
 // -----------------------------------------------------------------------------
@@ -1059,4 +1108,82 @@ void save_yz_zx_splitting(const Mat12& rho, int grid_size,
 
     std::cout << "yz-zx splitting written to " << filename
               << " (" << N << " k-points)\n";
+}
+
+void appendDensityMatrix(std::ofstream& out, const Mat12& rho) {
+        for (int i = 0; i < 12; ++i) {
+            for (int j = 0; j < 12; ++j) {
+                std::complex<double> val = rho(i, j);
+                out << val.real() << " " << val.imag();
+                if (!(i == 11 && j == 11)) out << " ";
+            }
+        }
+        out << "\n";
+}
+
+void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+    int num_random_states, int max_iter){   
+    
+    // Num of random states
+    std::vector<int> seeds;
+    std::vector<double> energies;
+    std::vector<double> is_converged;
+    std::vector<double> rho_trace;
+    std::vector<Mat12> rhos;
+    
+    Mat12 loaded_rho = Mat12::Zero();
+    for (int i = 0; i < num_random_states; i++){
+
+        std::cout << "Running random state " << i << " of " << num_random_states << "\n";
+        Mat12 rho = build_random_density_matrix(i, N_target);
+
+        double tolerance = kp.tol;
+        KanamoriResult runResult = runKanamoriSCF(rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter);
+        
+        if (!runResult.isConverged){
+            for (int j = 0; j < 5; j++){
+                tolerance *= 10;
+                runResult = runKanamoriSCF(rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter);
+                if (runResult.isConverged){
+                    break;
+                }
+            }
+        }
+
+        seeds.push_back(i);
+        energies.push_back(runResult.E_total);
+        is_converged.push_back(runResult.isConverged ? tolerance : 0);
+        rho_trace.push_back(runResult.rho.squaredNorm());
+        rhos.push_back(runResult.rho);
+    }
+
+    // Write CSV
+    std::string filename = "out/find_gs.csv";
+    std::cout << "Saving results to " << filename << "\n";
+    std::ofstream out(filename);
+    if (!out.is_open()) {
+        std::cerr << "Failed to open " << filename << " for writing\n";
+        return;
+    }
+
+    // Header
+    out << "Seed,Energy,Threshold,Rho2Trace,Rho\n";
+
+    // Assumes all vectors are the same size
+    size_t n = seeds.size();
+    out << std::setprecision(10); // adjust precision as needed
+
+    for (size_t i = 0; i < n; ++i) {
+        out << std::defaultfloat << std::setprecision(10) << seeds[i] << ","
+            << energies[i] << ","
+            << std::scientific << std::setprecision(2) << is_converged[i] << ","
+            << std::defaultfloat << std::setprecision(10) << rho_trace[i] << ",";
+        appendDensityMatrix(out, rhos[i]);
+        out << "\n";
+    }
+
+    out.close();
+
+
+
 }
