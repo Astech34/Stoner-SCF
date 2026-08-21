@@ -21,7 +21,7 @@ phi      = 0      # azimuthal angle
 # phi = 0.7854
 
 # --- Hubbard / Kanamori ---
-U        = 4.0     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
+U        = 2.5     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
 J        = 1.0      # Hund's coupling; U_prime = U - 2*J is enforced automatically
 # K_U    = 4.0      # override Kanamori U independently of Stoner U
 # U_prime = 2.4    # set explicitly to bypass the U - 2*J rule

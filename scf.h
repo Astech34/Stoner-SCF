@@ -15,28 +15,24 @@ struct Eigensystem {
 struct CalcResult { double S_new; double mu; double E_total; };
 
 struct Observables {
-    double Lx;
-    double Ly;
-    double Lz;
-    double L110;
-    double Sx;
-    double Sy;
-    double Sz;
-    double S110;
+    double Lx, Ly, Lz, L110;
+    double Sx, Sy, Sz, S110;
 };
 
-struct Occupations{
-    double yz_up, double yz_down;
-    double zx_up, double zx_down;
-    double xy_up, double xy_down;
-}
+struct Occupations {
+    double yz_up, yz_dn;
+    double xz_up, xz_dn;
+    double xy_up, xy_dn;
+};
 
 struct RhoInformation {
     Observables O1;
     Observables O2;
     Occupations occ1;
     Occupations occ2;
-}
+};
+
+RhoInformation compute_rho_information(const Mat12& rho, const Params& p);
 
 // Density-matrix mixing scheme for runKanamoriSCF.
 //   LinearDIIS : linear (α) mixing for the first diis_start iters, then Pulay DIIS

@@ -462,15 +462,15 @@ RhoInformation compute_rho_information(const Mat12& rho, const Params& p) {
     const double l110_1 = (lx1 + ly1) / std::sqrt(2.0);
     const double l110_2 = (lx2 + ly2) / std::sqrt(2.0);
 
-    info.O1.lx = lx1;
-    info.O1.ly = ly1;
-    info.O1.lz = lz1;
-    info.O1.l110 = l110_1;
+    info.O1.Lx = lx1;
+    info.O1.Ly = ly1;
+    info.O1.Lz = lz1;
+    info.O1.L110 = l110_1;
 
-    info.O2.lx = lx2;
-    info.O2.ly = ly2;
-    info.O2.lz = lz2;
-    info.O2.l110 = l110_2;
+    info.O2.Lx = lx2;
+    info.O2.Ly = ly2;
+    info.O2.Lz = lz2;
+    info.O2.L110 = l110_2;
 
     // Spin Moments
     Params pcopy = p;
@@ -483,15 +483,30 @@ RhoInformation compute_rho_information(const Mat12& rho, const Params& p) {
     const double s110_1 = (sx1 + sy1) / std::sqrt(2.0);
     const double s110_2 = (sx2 + sy2) / std::sqrt(2.0);
 
-    info.O1.sx = sx1;
-    info.O1.sy = sy1;
-    info.O1.sz = sz1;
-    info.O1.s110 = s110_1;
+    info.O1.Sx = sx1;
+    info.O1.Sy = sy1;
+    info.O1.Sz = sz1;
+    info.O1.S110 = s110_1;
 
-    info.O2.sx = sx2;
-    info.O2.sy = sy2;
-    info.O2.sz = sz2;
-    info.O2.s110 = s110_2;
+    info.O2.Sx = sx2;
+    info.O2.Sy = sy2;
+    info.O2.Sz = sz2;
+    info.O2.S110 = s110_2;
+
+    // Occupations
+    info.occ1.yz_up = rho(0, 0).real();
+    info.occ1.xz_up = rho(1, 1).real();
+    info.occ1.xy_up = rho(2, 2).real();
+    info.occ1.yz_dn = rho(3, 3).real();
+    info.occ1.xz_dn = rho(4, 4).real();
+    info.occ1.xy_dn = rho(5, 5).real();
+
+    info.occ2.yz_up = rho(6, 6).real();
+    info.occ2.xz_up = rho(7, 7).real();
+    info.occ2.xy_up = rho(8, 8).real();
+    info.occ2.yz_dn = rho(9, 9).real();
+    info.occ2.xz_dn = rho(10, 10).real();
+    info.occ2.xy_dn = rho(11, 11).real();
 
     return info;
 }
@@ -1110,6 +1125,8 @@ void save_yz_zx_splitting(const Mat12& rho, int grid_size,
               << " (" << N << " k-points)\n";
 }
 
+// Writing
+
 void appendDensityMatrix(std::ofstream& out, const Mat12& rho) {
         for (int i = 0; i < 12; ++i) {
             for (int j = 0; j < 12; ++j) {
@@ -1121,6 +1138,24 @@ void appendDensityMatrix(std::ofstream& out, const Mat12& rho) {
         out << "\n";
 }
 
+void writeObservables(std::ofstream& out, const Observables& obs) {
+    out << obs.Lx << "," << obs.Ly << "," << obs.Lz << "," << obs.L110 << ","
+        << obs.Sx << "," << obs.Sy << "," << obs.Sz << "," << obs.S110;
+}
+
+void writeOccupations(std::ofstream& out, const Occupations& occ) {
+    out << occ.yz_up << "," << occ.yz_dn << ","
+        << occ.xz_up << "," << occ.xz_dn << ","
+        << occ.xy_up << "," << occ.xy_dn;
+}
+
+void writeRhoInformation(std::ofstream& out, const RhoInformation& info) {
+    writeObservables(out, info.O1);   out << ",";
+    writeObservables(out, info.O2);   out << ",";
+    writeOccupations(out, info.occ1); out << ",";
+    writeOccupations(out, info.occ2);
+}
+
 void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     int num_random_states, int max_iter){   
     
@@ -1130,6 +1165,7 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
     std::vector<double> is_converged;
     std::vector<double> rho_trace;
     std::vector<Mat12> rhos;
+    std::vector<RhoInformation> rho_info;
     
     Mat12 loaded_rho = Mat12::Zero();
     for (int i = 0; i < num_random_states; i++){
@@ -1155,6 +1191,7 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
         is_converged.push_back(runResult.isConverged ? tolerance : 0);
         rho_trace.push_back(runResult.rho.squaredNorm());
         rhos.push_back(runResult.rho);
+        rho_info.push_back(compute_rho_information(runResult.rho, p));
     }
 
     // Write CSV
@@ -1167,7 +1204,11 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
     }
 
     // Header
-    out << "Seed,Energy,Threshold,Rho2Trace,Rho\n";
+    out << "Seed,Energy,Threshold,Rho2Trace,";
+    out << "O1_Lx,O1_Ly,O1_Lz,O1_L110,O1_Sx,O1_Sy,O1_Sz,O1_S110,"
+        << "O2_Lx,O2_Ly,O2_Lz,O2_L110,O2_Sx,O2_Sy,O2_Sz,O2_S110,"
+        << "occ1_yz_up,occ1_yz_down,occ1_zx_up,occ1_zx_down,occ1_xy_up,occ1_xy_down,"
+        << "occ2_yz_up,occ2_yz_down,occ2_zx_up,occ2_zx_down,occ2_xy_up,occ2_xy_down \n";
 
     // Assumes all vectors are the same size
     size_t n = seeds.size();
@@ -1178,7 +1219,8 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
             << energies[i] << ","
             << std::scientific << std::setprecision(2) << is_converged[i] << ","
             << std::defaultfloat << std::setprecision(10) << rho_trace[i] << ",";
-        appendDensityMatrix(out, rhos[i]);
+        //appendDensityMatrix(out, rhos[i]);
+        writeRhoInformation(out, rho_info[i]);
         out << "\n";
     }
 
