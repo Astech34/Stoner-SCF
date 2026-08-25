@@ -117,7 +117,8 @@ int main(int argc, char* argv[]) {
     // Find G.S
     //find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     //int num_random_states, int max_iter)
-    find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 100, 1000);
+    gsprintout(0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 100, 1000);
+    //find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 30, 1000);
 
 
     //N electron sweep

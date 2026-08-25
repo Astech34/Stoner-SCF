@@ -123,5 +123,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                                const KanamoriParams& kp = KanamoriParams{},
                                MixerType mixer = MixerType::LinearDIIS, int max_iter = 999999);
 
+void gsprintout(int seed, double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+    int num_random_states, int max_iter);
+
 void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     int num_random_states, int max_iter);

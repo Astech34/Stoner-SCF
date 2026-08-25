@@ -1156,6 +1156,18 @@ void writeRhoInformation(std::ofstream& out, const RhoInformation& info) {
     writeOccupations(out, info.occ2);
 }
 
+// Using old Kanamori Code to test
+void gsprintout(int seed, double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+    int num_random_states, int max_iter){ 
+
+    Mat12 loaded_rho = Mat12::Zero();
+    Mat12 rho = build_random_density_matrix(seed, N_target);
+    KanamoriResult runResult = runKanamoriSCF(rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter);
+    save_projected_dos(runResult.rho, grid, T, N_target, p, kp, "out/projected_dos.csv");
+    printKanamoriOccupations(runResult, p);
+
+}
+
 void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     int num_random_states, int max_iter){   
     
