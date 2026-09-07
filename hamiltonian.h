@@ -16,6 +16,7 @@ struct Params {
     double t2yzxz      = 0;
     double tg = 0;
     double lam     = 0.1;
+    double con_lam = 0.0;
     double U       = 0.0;
     double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)
     double phi     = 0.0;  // azimuthal angle of SOC spin quantization axis
@@ -92,7 +93,7 @@ struct KanamoriParams {
 // rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
 // Acts within each layer independently (on-site interaction)
 Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp);
-Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp = KanamoriParams{});
+Mat12 KanamoriMF(const Mat12& rho, const Params& p, const KanamoriParams& kp = KanamoriParams{});
 
 // Save band structure along high-symmetry path to CSV (for plotting in Python)
 void save_band_structure(const Mat12& rho, int n_points, const Params& p, const KanamoriParams& kp,

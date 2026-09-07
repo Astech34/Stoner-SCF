@@ -64,12 +64,17 @@ SpinMatrices spin_matrices(double theta, double phi) {
         const cd     em = std::exp(cd(0, -phi/2));
 
         Eigen::Matrix<cd, 2, 2> U;
-        U << em * cd(c, 0),  -sv * em,
-              sv * ep,   ep * cd(c, 0);
+        U << em * cd(c, 0),  -cd(sv,0) * em,
+              cd(sv,0) * ep,   ep * cd(c, 0);
 
-        s.sx = U.adjoint() * s.sx * U;
-        s.sy = U.adjoint() * s.sy * U;
-        s.sz = U.adjoint() * s.sz * U;
+        // Check Order
+        //s.sx = U.adjoint() * s.sx * U;
+        //s.sy = U.adjoint() * s.sy * U;
+        //s.sz = U.adjoint() * s.sz * U;
+
+        s.sx = U * s.sx * U.adjoint();
+        s.sy = U * s.sy * U.adjoint();
+        s.sz = U * s.sz * U.adjoint();
     }
 
     return s;
@@ -253,10 +258,48 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
     return H;
 }
 
-Mat12 KanamoriMF(const Mat12& rho, const KanamoriParams& kp) {
+// Angle constraint
+Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp) {
+    Params pcopy = p;
+    pcopy.theta = 0;
+    pcopy.phi = 0;
+    const auto smom = compute_S_moments(rho, pcopy);
+    const auto [sx1, sx2] = smom[0];
+    const auto [sy1, sy2] = smom[1];
+    const auto [sz1, sz2] = smom[2];
+
+    // Calculate mhat
+    const double m1 = std::sqrt(sx1*sx1 + sy1*sy1 + sz1*sz1);
+    const double m2 = std::sqrt(sx2*sx2 + sy2*sy2 + sz2*sz2);
+    const double mhat1_x = (m1 > 0) ? sx1 / m1 : 0.0;
+    const double mhat1_y = (m1 > 0) ? sy1 / m1 : 0.0;
+    double mhat1_z = (m1 > 0) ? sz1 / m1 : 0.0;
+    const double mhat2_x = (m2 > 0) ? sx2 / m2 : 0.0;
+    const double mhat2_y = (m2 > 0) ? sy2 / m2 : 0.0;
+    double mhat2_z = (m2 > 0) ? sz2 / m2 : 0.0;
+
+    // Apply minus z hat
+    mhat1_z -= 1.0;
+    mhat2_z -= 1.0;
+
+    // Compute (\hat m - \hat z) . s_i for each layer
+    double dot_prod1 = mhat1_x * sx1 + mhat1_y * sy1 + mhat1_z * sz1;
+    double dot_prod2 = mhat2_x * sx2 + mhat2_y * sy2 + mhat2_z * sz2;
+
+
+
+    Mat12 H = Mat12::Zero();
+    H.block<6,6>(0, 0) = p.con_lam * dot_prod1 * Eigen::Matrix<cd, 6, 6>::Identity();
+    H.block<6,6>(6, 6) = p.con_lam * dot_prod2 * Eigen::Matrix<cd, 6, 6>::Identity();
+    return H;
+}
+
+Mat12 KanamoriMF(const Mat12& rho, const Params& p,const KanamoriParams& kp) {
     Mat12 H = Mat12::Zero();
     H.block<6,6>(0, 0) = kanamori_layer(rho.block<6,6>(0, 0), kp);
     H.block<6,6>(6, 6) = kanamori_layer(rho.block<6,6>(6, 6), kp);
+
+    H += ConstrainField(rho, p, kp);
     return H;
 }
 
@@ -318,7 +361,7 @@ void save_band_structure(const Mat12& rho, int n_points, const Params& p, const 
     const Mat6 Hsoc  = SOC(p.lam, p.theta, p.phi);
     const Mat6 Tperp = T_perp_mat(p);
 
-    Mat12 H_kfree = KanamoriMF(rho, kp);
+    Mat12 H_kfree = KanamoriMF(rho, p, kp);
     H_kfree.block<6,6>(0, 0) += Hsoc;
     H_kfree.block<6,6>(6, 6) += Hsoc;
     H_kfree.block<6,6>(0, 6) += Tperp;

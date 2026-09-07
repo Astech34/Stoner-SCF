@@ -126,5 +126,5 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 void gsprintout(int seed, double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     int num_random_states, int max_iter);
 
-void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+int find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     int num_random_states, int max_iter);

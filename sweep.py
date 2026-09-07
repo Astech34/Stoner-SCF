@@ -90,20 +90,47 @@ env["OMP_NUM_THREADS"] = "32"
 
 command = ["./build/Stoner-SCF"]
 
-if __name__ == "__main__":
-    for j in np.linspace(0.1, 1, 10):
-        for cf in np.linspace(-0.2, 0.2, 10):
-            for ne in [8.0, 9.0, 10.0]:
-                update_file(Path("params.in"), {"J": str(j), "delta_cf1": str(cf), "delta_cf2": str(cf), "N_target": str(ne)})
+plot_command = [sys.executable, "plot_pdos.py"]
 
+plotting = False
+
+if __name__ == "__main__":
+    for ne in [9.0, 9.25, 9.5, 9.75, 10.0, 10.25, 10.5, 10.75, 11.0, 11.25, 11.5]:
+        for direction in ["001", "110"]:
+            thet_val = 0.0
+            phi_val = 0.0
+
+            if direction == "110":
+                thet_val = np.pi/2.0
+                phi_val = np.pi/4.0
+
+            update_file(Path("params.in"), {"theta": str(thet_val),
+                                            "phi": str(phi_val),
+                                            "N_target": str(ne)})
+
+            try:
+                result = subprocess.run(command, env=env, check=True, text=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Run failed for ne={ne}: {e}")
+                continue  # or break, depending on what you want
+
+            print("Success!")
+            try:
+                archive_csv(Path("out/find_gs.csv"), Path(f"out/sweeps/NoSOCNsweep/{direction}gsoutN={ne}.csv"))
+            except FileNotFoundError as e:
+                print(e)
+
+            if plotting:
+                # Plotting
                 try:
-                    result = subprocess.run(command, env=env, check=True, text=True)
+                    result = subprocess.run(plot_command, env=env, check=True, text=True)
                 except subprocess.CalledProcessError as e:
-                    print(f"Run failed for j={j}, cf={cf}, ne={ne}: {e}")
+                    print(f"Plotting failed for ne={ne}: {e}")
                     continue  # or break, depending on what you want
 
-                print("Success!")
+                # Now archive the plotted results if needed
                 try:
-                    archive_csv(Path("out/n_electron_sweep.csv"), Path(f"out/n_sweep_csv/nsweep_j{j}_{cf}_{ne}.csv"))
+                    archive_csv(Path("out/projected_dos.csv"), Path(f"out/sweeps/NoSOCNsweep/{direction}pdosN={ne}.csv"))
+                    archive_csv(Path("out/projected_dos.png"), Path(f"out/sweeps/NoSOCNsweep/{direction}pdosN={ne}.png"))
                 except FileNotFoundError as e:
                     print(e)

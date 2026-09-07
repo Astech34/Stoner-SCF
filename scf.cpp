@@ -11,10 +11,13 @@
 #include <utility>
 #include <sstream>
 #include <omp.h>
+#include "seeds.h"
 #include <fstream>
 #include <string>
 #include <filesystem>
 #include <ctime>
+#include <algorithm> // for std::min_element
+#include <iterator>  // for std::distance
 
 // -----------------------------------------------------------------------------
 // Brent's method
@@ -301,8 +304,8 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
         return (rho.block<6,6>(base, base) * op).trace().real();
     };
 
-    std::cout << "Compute S";
-    std::cout << p.theta << " " << p.phi << "\n";
+    //std::cout << "Compute S";
+    //std::cout << p.theta << " " << p.phi << "\n";
 
     return {{
         {layer_moment(Sx_op, 0), layer_moment(Sx_op, 6)},
@@ -801,7 +804,7 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
     const Mat6 Hsoc  = SOC(p.lam, p.theta, p.phi);
     const Mat6 Tperp = T_perp_mat(p);
 
-    Mat12 H_kfree = KanamoriMF(rho, kp);
+    Mat12 H_kfree = KanamoriMF(rho, p, kp);
     H_kfree.block<6,6>(0, 0) += Hsoc;
     H_kfree.block<6,6>(6, 6) += Hsoc;
     H_kfree.block<6,6>(0, 6) += Tperp;
@@ -882,7 +885,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         const char* tag = (mixer == MixerType::Broyden)
                               ? (broyden_have_prev ? " [Broy]" : "  [mix]")
                               : (using_diis        ? " [DIIS]" : "  [mix]");
-        std::cout << "\rIteration " << std::setw(5) << i << tag
+        std::cout << "\rIterations" << std::setw(5) << i << tag
                   << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff
                   << "   " << std::flush;
 
@@ -1055,7 +1058,7 @@ void save_yz_zx_splitting(const Mat12& rho, int grid_size,
     const Mat6 Hsoc  = SOC(p.lam, p.theta, p.phi);
     const Mat6 Tperp = T_perp_mat(p);
 
-    Mat12 H_kfree = KanamoriMF(rho, kp);
+    Mat12 H_kfree = KanamoriMF(rho, p, kp);
     H_kfree.block<6,6>(0, 0) += Hsoc;
     H_kfree.block<6,6>(6, 6) += Hsoc;
     H_kfree.block<6,6>(0, 6) += Tperp;
@@ -1168,7 +1171,7 @@ void gsprintout(int seed, double alpha, int grid, double T, double N_target, Par
 
 }
 
-void find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
+int find_gs(double alpha, int grid, double T, double N_target, Params p, KanamoriParams kp, 
     int num_random_states, int max_iter){   
     
     // Num of random states
@@ -1180,10 +1183,21 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
     std::vector<RhoInformation> rho_info;
     
     Mat12 loaded_rho = Mat12::Zero();
-    for (int i = 0; i < num_random_states; i++){
+    for (int i = 0; i < num_random_states + 5; i++){
 
-        std::cout << "Running random state " << i << " of " << num_random_states << "\n";
-        Mat12 rho = build_random_density_matrix(i, N_target);
+        Mat12 rho;
+
+        if (i < num_random_states){
+            std::cout << "Running random state " << i << " of " << num_random_states << "\n";
+            rho = build_random_density_matrix(i, N_target);
+        }
+        else{
+            // Fixed z directions
+            std::vector<std::string> fixed_z_seeds = {"high_spin","low_spin","yz","xz","xy"};
+            std::cout << "Running fixed z seed " << fixed_z_seeds[i - num_random_states] << "\n";
+            rho = make_seed(fixed_z_seeds[i - num_random_states], 0.01, 0);
+
+        }
 
         double tolerance = kp.tol;
         KanamoriResult runResult = runKanamoriSCF(rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter);
@@ -1198,7 +1212,14 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
             }
         }
 
-        seeds.push_back(i);
+        if (i < num_random_states){
+            seeds.push_back(i);
+        }
+        else{
+            seeds.push_back(-1 * (i - num_random_states)); // Indicate fixed z seed
+        }
+
+
         energies.push_back(runResult.E_total);
         is_converged.push_back(runResult.isConverged ? tolerance : 0);
         rho_trace.push_back(runResult.rho.squaredNorm());
@@ -1212,7 +1233,7 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
     std::ofstream out(filename);
     if (!out.is_open()) {
         std::cerr << "Failed to open " << filename << " for writing\n";
-        return;
+        return -1;
     }
 
     // Header
@@ -1237,6 +1258,20 @@ void find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamo
     }
 
     out.close();
+
+    // Check which is max
+    if (energies.empty()) {
+        // Handle empty vector case
+        return -1;
+    }
+
+    auto minIt = std::min_element(energies.begin(), energies.end());
+    size_t minIdx = std::distance(energies.begin(), minIt);
+
+    int bestSeed = seeds[minIdx];
+    double bestEnergy = *minIt;
+    std::cout << "Best seed: " << bestSeed << " with energy: " << bestEnergy << "\n";
+    return bestSeed;
 
 
 
