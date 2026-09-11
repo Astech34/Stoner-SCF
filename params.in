@@ -10,12 +10,12 @@ t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
-lam      = 0.03
+lam      = 0.00
 theta    = 0.0     # polar angle of spin quantization axis (0 = out-of-plane)
 phi      = 0.0      # azimuthal angle
 
 # --- Constraint ---
-con_lam = 0.01
+con_lam = 0.0
 
 # --- Hubbard / Kanamori ---
 U        = 4.0     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
@@ -39,7 +39,7 @@ delta_cf2 = -0.1   # tetragonal CF layer 2
 S0       = 0.3      # initial magnetization guess
 alpha    = 0.05      # linear mixing parameter. If zero it uses DIIS
 T        = 0.005     # temperature (eV)
-N_target = 9.0   # target electron count (5 per layer x 2 layers)
+N_target = 8.5   # target electron count (5 per layer x 2 layers)
 grid     = 50       # k-grid size (grid x grid)
 
 # --- Rho Seed ---

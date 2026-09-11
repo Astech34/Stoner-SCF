@@ -953,10 +953,14 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
                 rho = rho_next;
             }
-        } else if (!using_diis) {
+        } 
+        // ====== Linear Mix ======
+        else if (!using_diis) {
             if (linear_remaining > 0) --linear_remaining;
             rho = alpha * rho_new + (1.0 - alpha) * rho;
-        } else {
+        } 
+        // ====== DIIS ====== 
+        else {
             // Track improvement; on stall, do linear_reset_steps of linear mixing then retry DIIS.
             if (diff < best_diis_diff) {
                 best_diis_diff  = diff;
@@ -977,7 +981,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                 continue;
             }
 
-            // Pulay DIIS
+            // ===== Pulay DIIS ====
             diis_rho.push_back(rho_new);
             diis_err.push_back(rho_new - rho);
 
@@ -1265,11 +1269,23 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
         return -1;
     }
 
-    auto minIt = std::min_element(energies.begin(), energies.end());
-    size_t minIdx = std::distance(energies.begin(), minIt);
+    size_t minIdx = seeds.size();  // sentinel: "not found yet"
+    double bestEnergy = std::numeric_limits<double>::infinity();
+
+    for (size_t i = 0; i < energies.size(); ++i) {
+        double e = energies[i];
+
+        if (e == 0.0) {
+            continue;  // non-convergence, skip this seed
+        }
+
+        if (e < bestEnergy) {
+            bestEnergy = e;
+            minIdx = i;
+        }
+    }
 
     int bestSeed = seeds[minIdx];
-    double bestEnergy = *minIt;
     std::cout << "Best seed: " << bestSeed << " with energy: " << bestEnergy << "\n";
     return bestSeed;
 

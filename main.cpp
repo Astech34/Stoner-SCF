@@ -121,11 +121,12 @@ int main(int argc, char* argv[]) {
 
     //
     int best_seed = -9999;
-    best_seed = find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 1000, 1000);
+    best_seed = find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 30, 1000);
     
     //gsprintout(0, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 30, 1000);
     
-    //if (best_seed >= 0){
+    
+    //if (best_seed >= -6){
     //    gsprintout(best_seed, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 30, 1000);
     //}
 
