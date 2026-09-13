@@ -603,7 +603,8 @@ static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res
     os << "Sz Total    " << (sz1 + sz2) << "\n";
     os << "S[110] Tot  " << (s110_1 + s110_2) << "\n\n";
 
-    os << "Total energy (eV):    " << res.E_total << "\n\n";
+    os << "Total energy (eV):    " << res.E_total << "\n";
+    os << "con_lam (constraint): " << res.con_lam << "\n\n";
 
     os << "Compare with DFT \n";
     os << "\nOccupations \n";
@@ -828,8 +829,31 @@ Eigensystem compute_eigensystem_kanamori(const Mat12& rho, int grid_size,
     return result;
 }
 
-// Self-consistent loop converging the full density matrix.
-// Convergence: Frobenius norm ||rho_new - rho||_F < tol.
+// Self-consistent loop converging the full density matrix together with the
+// constraint multiplier con_lam.
+//
+// The mixed unknown is the pair x = (rho, con_lam); both channels are driven to a
+// fixed point by the same mixer.
+//   rho     : the usual diagonalise-and-refill map, rho_new = F(rho, con_lam).
+//   con_lam : dual ascent on the constrained functional. The constraint field adds
+//             E_con = con_lam * g(rho), g = g_1 + g_2 >= 0 with
+//             g_i = |<S_i>| - <S_i^z> (see constraint_violation), so g measures how far
+//             the layer moments tilt off +z and dE/d(con_lam) = g. Stepping
+//                 con_lam_new = con_lam + con_eta * g(rho_new)
+//             raises the multiplier while the moments are still tilted and leaves it
+//             stationary exactly when the constraint is met.
+// The residual pair the mixer annihilates is therefore
+//     e = (rho_new - rho,  con_lam_new - con_lam) = (rho_new - rho,  con_eta * g),
+// and con_eta doubles as the relative weight of the con_lam channel in the DIIS /
+// Broyden inner products — residuals are compared in the metric they are stepped in,
+// which keeps the dimensionless rho block and the energy-valued multiplier commensurate.
+// Convergence uses the norm of that combined residual against tol.
+//
+// p.con_eta <= 0 pins con_lam at its input value and reproduces the previous behaviour
+// exactly: every con_lam residual is then identically zero and drops out of both the
+// mixing metric and the convergence test.
+//
+// Convergence: ||e||_2 < tol.
 // Total energy = band sum + double-counting correction from converged rho.
 // Mixing (selected by `mixer`):
 //   LinearDIIS : linear (α) for the first diis_start iterations, then Pulay DIIS.
@@ -845,14 +869,21 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
     Mat12 rho = rho0;
 
+    // --- Constraint multiplier state ---
+    const bool solve_lam = (p.con_eta > 0.0);
+    double     lam       = p.con_lam;
+    Params     p_iter    = p;  // copy of p whose con_lam is refreshed every iteration
+
     // Frobenius inner product Re<A, B>_F (matches the DIIS residual metric).
     auto frob = [](const Mat12& A, const Mat12& B) {
         return (A.array().conjugate() * B.array()).sum().real();
     };
 
     // --- LinearDIIS state ---
-    std::vector<Mat12> diis_rho;  // rho_new history
-    std::vector<Mat12> diis_err;  // residual history: e_i = rho_new_i - rho_i
+    std::vector<Mat12>  diis_rho;      // rho_new history
+    std::vector<Mat12>  diis_err;      // residual history: e_i = rho_new_i - rho_i
+    std::vector<double> diis_lam;      // con_lam_new history (parallel to diis_rho)
+    std::vector<double> diis_lam_err;  // con_lam residual history
 
     constexpr int no_improve_max    = 9999999;
     constexpr int linear_reset_steps = 150;
@@ -863,14 +894,20 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     // --- Broyden state ---
     constexpr int    broyden_max = 5;     // max history length
     constexpr double broyden_w0  = 0.01;  // diagonal regularisation weight
-    std::vector<Mat12> broyden_dF;  // normalised residual differences
-    std::vector<Mat12> broyden_u;   // corresponding update vectors
+    std::vector<Mat12>  broyden_dF;      // normalised residual differences
+    std::vector<Mat12>  broyden_u;       // corresponding update vectors
+    std::vector<double> broyden_dF_lam;  // con_lam component of the same vectors
+    std::vector<double> broyden_u_lam;
     Mat12  F_prev      = Mat12::Zero();
     Mat12  rho_in_prev = Mat12::Zero();
+    double F_lam_prev  = 0.0;
+    double lam_in_prev = 0.0;
     bool   broyden_have_prev = false;
 
     for (int i = 0; i < max_iter; i++) {
-        const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p, kp);
+        p_iter.con_lam = lam;
+
+        const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p_iter, kp);
         const double mu = find_mu(sys, T, N_target);
         if (std::isnan(mu)) {
             std::cout << "runKanamoriSCF: could not find mu at iteration " << i << "\n";
@@ -878,7 +915,16 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
         }
 
         const Mat12 rho_new = compute_density_matrix(sys, mu, T);
-        const double diff = (rho_new - rho).norm();
+
+        // Constraint channel: violation of the new density matrix and the dual step it
+        // implies. Both are identically zero when con_lam is not being solved for.
+        const auto [g1, g2]  = constraint_violation(rho_new, p_iter);
+        const double g       = solve_lam ? (g1 + g2) : 0.0;
+        const double lam_new = lam + p.con_eta * g;
+        const double lam_err = lam_new - lam;
+
+        const double rho_diff = (rho_new - rho).norm();
+        const double diff     = std::sqrt(rho_diff * rho_diff + lam_err * lam_err);
 
         const bool using_diis = (mixer == MixerType::LinearDIIS)
                               && (i >= diis_start) && (linear_remaining == 0);
@@ -886,8 +932,11 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                               ? (broyden_have_prev ? " [Broy]" : "  [mix]")
                               : (using_diis        ? " [DIIS]" : "  [mix]");
         std::cout << "\rIterations" << std::setw(5) << i << tag
-                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << diff
-                  << "   " << std::flush;
+                  << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << rho_diff;
+        if (solve_lam)
+            std::cout << ", con_lam = " << std::fixed << std::setprecision(6) << lam
+                      << ", g = " << std::scientific << std::setprecision(4) << g;
+        std::cout << "   " << std::flush;
 
         if (diff < tol) {
             const double bandsum = calculate_band_energy(sys, mu, T);
@@ -897,40 +946,59 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                       << "\n Band Energy = " << bandsum
                       << "\n DC Correction = " << dc
                       << ", E_total = " << bandsum - dc << "\n";
-            return {rho0, rho, mu, bandsum - dc, true};
+            if (solve_lam)
+                std::cout << " con_lam = " << lam
+                          << ", constraint violation g = " << g << "\n";
+            return {rho0, rho, mu, bandsum - dc, true, lam};
         }
 
         if (mixer == MixerType::Broyden) {
             // Modified Broyden second method (Johnson 1988).
-            // Residual of the fixed-point map ρ ↦ ρ_new: F = ρ_new − ρ.
-            const Mat12 F = rho_new - rho;
+            // Residual of the fixed-point map x ↦ x_new: F = ρ_new − ρ in the matrix
+            // channel, F_lam = con_lam_new − con_lam in the multiplier channel. Both
+            // channels share one set of Broyden vectors and one γ solve, so the inner
+            // products below carry the extra scalar term.
+            const Mat12  F     = rho_new - rho;
+            const double F_lam = lam_err;
 
             if (!broyden_have_prev) {
                 // Bootstrap with a single linear-mixing step.
                 rho_in_prev = rho;
+                lam_in_prev = lam;
                 F_prev      = F;
+                F_lam_prev  = F_lam;
                 broyden_have_prev = true;
                 rho += alpha * F;
+                lam += alpha * F_lam;
             } else {
-                const Mat12  dF_raw = F - F_prev;
-                const double nrm    = std::sqrt(frob(dF_raw, dF_raw));
+                const Mat12  dF_raw     = F - F_prev;
+                const double dF_raw_lam = F_lam - F_lam_prev;
+                const double nrm = std::sqrt(frob(dF_raw, dF_raw) + dF_raw_lam * dF_raw_lam);
 
                 if (nrm > 0.0) {
                     broyden_dF.push_back(dF_raw / nrm);
                     broyden_u.push_back(alpha * (dF_raw / nrm)
                                         + (rho - rho_in_prev) / nrm);
+                    broyden_dF_lam.push_back(dF_raw_lam / nrm);
+                    broyden_u_lam.push_back(alpha * (dF_raw_lam / nrm)
+                                            + (lam - lam_in_prev) / nrm);
 
                     if (static_cast<int>(broyden_dF.size()) > broyden_max) {
                         broyden_dF.erase(broyden_dF.begin());
                         broyden_u.erase(broyden_u.begin());
+                        broyden_dF_lam.erase(broyden_dF_lam.begin());
+                        broyden_u_lam.erase(broyden_u_lam.begin());
                     }
                 }
 
                 rho_in_prev = rho;
+                lam_in_prev = lam;
                 F_prev      = F;
+                F_lam_prev  = F_lam;
 
                 const int m = static_cast<int>(broyden_dF.size());
-                Mat12 rho_next = rho + alpha * F;  // linear step + Broyden correction
+                Mat12  rho_next = rho + alpha * F;      // linear step + Broyden correction
+                double lam_next = lam + alpha * F_lam;
 
                 if (m > 0) {
                     // a_ij = <dF_i, dF_j>, regularised; c_k = <dF_k, F>; γ = (w0²I + a)⁻¹ c
@@ -938,26 +1006,31 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                     Eigen::VectorXd c(m);
                     for (int ii = 0; ii < m; ii++) {
                         for (int jj = ii; jj < m; jj++) {
-                            const double aij = frob(broyden_dF[ii], broyden_dF[jj]);
+                            const double aij = frob(broyden_dF[ii], broyden_dF[jj])
+                                             + broyden_dF_lam[ii] * broyden_dF_lam[jj];
                             a(ii, jj) = aij;
                             a(jj, ii) = aij;
                         }
                         a(ii, ii) += broyden_w0 * broyden_w0;
-                        c(ii) = frob(broyden_dF[ii], F);
+                        c(ii) = frob(broyden_dF[ii], F) + broyden_dF_lam[ii] * F_lam;
                     }
 
                     const Eigen::VectorXd gamma = a.colPivHouseholderQr().solve(c);
-                    for (int l = 0; l < m; l++)
+                    for (int l = 0; l < m; l++) {
                         rho_next.noalias() -= gamma(l) * broyden_u[l];
+                        lam_next           -= gamma(l) * broyden_u_lam[l];
+                    }
                 }
 
                 rho = rho_next;
+                lam = lam_next;
             }
         } 
         // ====== Linear Mix ======
         else if (!using_diis) {
             if (linear_remaining > 0) --linear_remaining;
             rho = alpha * rho_new + (1.0 - alpha) * rho;
+            lam = alpha * lam_new + (1.0 - alpha) * lam;
         } 
         // ====== DIIS ====== 
         else {
@@ -974,38 +1047,50 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                           << " iters — " << linear_reset_steps << " linear mix steps]\n";
                 diis_rho.clear();
                 diis_err.clear();
+                diis_lam.clear();
+                diis_lam_err.clear();
                 best_diis_diff   = std::numeric_limits<double>::max();
                 no_improve_count = 0;
                 linear_remaining = linear_reset_steps;
                 rho = alpha * rho_new + (1.0 - alpha) * rho;
+                lam = alpha * lam_new + (1.0 - alpha) * lam;
                 continue;
             }
 
             // ===== Pulay DIIS ====
+            // History entries are the full pair (rho_new, con_lam_new) with the matching
+            // pair of residuals; the extrapolation coefficients c_i are shared, so the
+            // multiplier is extrapolated on exactly the same footing as the density matrix.
             diis_rho.push_back(rho_new);
             diis_err.push_back(rho_new - rho);
+            diis_lam.push_back(lam_new);
+            diis_lam_err.push_back(lam_err);
 
             if (static_cast<int>(diis_rho.size()) > diis_max) {
                 diis_rho.erase(diis_rho.begin());
                 diis_err.erase(diis_err.begin());
+                diis_lam.erase(diis_lam.begin());
+                diis_lam_err.erase(diis_lam_err.begin());
             }
 
             const int m = static_cast<int>(diis_rho.size());
 
             if (m < 2) {
                 rho = rho_new;
+                lam = lam_new;
             } else {
                 // Build (m+1)×(m+1) Pulay system
                 //   [B   -1] [c]   [ 0]
                 //   [-1   0] [λ] = [-1]
-                // B_ij = Re(<e_i, e_j>_F),  Σc_i = 1 enforced by λ
+                // B_ij = Re(<e_i, e_j>_F) + e^lam_i e^lam_j,  Σc_i = 1 enforced by λ
                 Eigen::MatrixXd A = Eigen::MatrixXd::Zero(m + 1, m + 1);
                 Eigen::VectorXd b = Eigen::VectorXd::Zero(m + 1);
                 b(m) = -1.0;
 
                 for (int ii = 0; ii < m; ii++) {
                     for (int jj = ii; jj < m; jj++) {
-                        const double Bij = frob(diis_err[ii], diis_err[jj]);
+                        const double Bij = frob(diis_err[ii], diis_err[jj])
+                                         + diis_lam_err[ii] * diis_lam_err[jj];
                         A(ii, jj) = Bij;
                         A(jj, ii) = Bij;
                     }
@@ -1016,14 +1101,17 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                 const Eigen::VectorXd c = A.colPivHouseholderQr().solve(b);
 
                 rho = Mat12::Zero();
-                for (int ii = 0; ii < m; ii++)
+                lam = 0.0;
+                for (int ii = 0; ii < m; ii++) {
                     rho.noalias() += c(ii) * diis_rho[ii];
+                    lam           += c(ii) * diis_lam[ii];
+                }
             }
         }
     }
 
     //throw std::runtime_error("runKanamoriSCF: failed to converge within max_iter");
-    return {rho0, rho, 0, 0, false};
+    return {rho0, rho, 0, 0, false, lam};
 }
 
 // -----------------------------------------------------------------------------

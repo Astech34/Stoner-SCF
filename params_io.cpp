@@ -57,6 +57,7 @@ AllParams load_params(const std::string& filename) {
         else if (key == "tg")        ap.p.tg        = v;
         else if (key == "lam")       ap.p.lam       = v;
         else if (key == "con_lam")   ap.p.con_lam   = v;
+        else if (key == "con_eta")   ap.p.con_eta   = v;
         else if (key == "U")         { ap.p.U = v; if (!kp_U_explicit) ap.kp.U = v; }
         else if (key == "theta")     ap.p.theta     = v;
         else if (key == "phi")       ap.p.phi       = v;
@@ -108,6 +109,7 @@ void write_params(std::ostream& os, const AllParams& ap) {
     os << "  tg        = " << p.tg        << "\n";
     os << "  lam       = " << p.lam       << "\n";
     os << "  con_lam       = " << p.con_lam       << "\n";
+    os << "  con_eta       = " << p.con_eta       << "\n";
     os << "  U         = " << p.U         << "\n";
     os << "  t_perp    = " << p.t_perp    << "\n";
     os << "  t_perp_xy = " << p.t_perp_xy << "\n";

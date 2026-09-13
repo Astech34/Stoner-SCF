@@ -259,38 +259,71 @@ Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp) {
 }
 
 // Angle constraint
-Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp) {
+// -----------------------------------------------------------------------------
+// The constrained functional adds E_con = con_lam * sum_i g_i, with the per-layer
+// violation
+//   g_i(rho) = (m̂_i - ẑ)·<S_i> = |<S_i>| - <S_i^z>   (>= 0, zero only for m̂_i = ẑ)
+// measuring how far layer i's moment tilts away from +z. con_lam is the Lagrange
+// multiplier conjugate to it (see runKanamoriSCF, which solves for con_lam).
+// -----------------------------------------------------------------------------
+
+namespace {
+
+// Per-layer spin moment <S_i> and constraint direction n_i = m̂_i - ẑ. Always taken in
+// the global z frame: the constraint axis is +z irrespective of p.theta/p.phi. For a
+// vanishing moment m̂ is ill-defined and is taken as 0, which sends g_i -> 0 as well.
+struct LayerTilt {
+    Eigen::Vector3d S[2];
+    Eigen::Vector3d n[2];
+};
+
+LayerTilt layer_tilts(const Mat12& rho, const Params& p) {
     Params pcopy = p;
     pcopy.theta = 0;
-    pcopy.phi = 0;
+    pcopy.phi   = 0;
     const auto smom = compute_S_moments(rho, pcopy);
-    const auto [sx1, sx2] = smom[0];
-    const auto [sy1, sy2] = smom[1];
-    const auto [sz1, sz2] = smom[2];
 
-    // Calculate mhat
-    const double m1 = std::sqrt(sx1*sx1 + sy1*sy1 + sz1*sz1);
-    const double m2 = std::sqrt(sx2*sx2 + sy2*sy2 + sz2*sz2);
-    const double mhat1_x = (m1 > 0) ? sx1 / m1 : 0.0;
-    const double mhat1_y = (m1 > 0) ? sy1 / m1 : 0.0;
-    double mhat1_z = (m1 > 0) ? sz1 / m1 : 0.0;
-    const double mhat2_x = (m2 > 0) ? sx2 / m2 : 0.0;
-    const double mhat2_y = (m2 > 0) ? sy2 / m2 : 0.0;
-    double mhat2_z = (m2 > 0) ? sz2 / m2 : 0.0;
+    LayerTilt t;
+    for (int i = 0; i < 2; i++) {
+        t.S[i] = Eigen::Vector3d((i == 0) ? smom[0].first : smom[0].second,
+                                 (i == 0) ? smom[1].first : smom[1].second,
+                                 (i == 0) ? smom[2].first : smom[2].second);
 
-    // Apply minus z hat
-    mhat1_z -= 1.0;
-    mhat2_z -= 1.0;
+        const double m = t.S[i].norm();
+        t.n[i] = (m > 0.0) ? Eigen::Vector3d(t.S[i] / m) : Eigen::Vector3d::Zero();
+        t.n[i].z() -= 1.0;  // m̂ - ẑ
+    }
+    return t;
+}
 
-    // Compute (\hat m - \hat z) . s_i for each layer
-    double dot_prod1 = mhat1_x * sx1 + mhat1_y * sy1 + mhat1_z * sz1;
-    double dot_prod2 = mhat2_x * sx2 + mhat2_y * sy2 + mhat2_z * sz2;
+}  // namespace
 
+std::pair<double, double> constraint_violation(const Mat12& rho, const Params& p) {
+    const LayerTilt t = layer_tilts(rho, p);
+    return {t.n[0].dot(t.S[0]), t.n[1].dot(t.S[1])};
+}
 
+Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp) {
+    // Mean-field term of E_con, i.e. its derivative with respect to the density matrix:
+    //   dg_i/drho_i = n_i·s,   n_i = m̂_i - ẑ
+    // (the chain rule through m̂_i drops out because d|m|/d<S> = m̂), so the constraint
+    // enters as an effective magnetic field along n_i acting on that layer's spin.
+    // This must be the spin operator and not the identity: a term proportional to I_6
+    // commutes with every spin operator, so it can only shift the layer's energy — it
+    // exerts no torque and cannot rotate the moment toward ẑ.
+    const LayerTilt     t  = layer_tilts(rho, p);
+    const SpinMatrices  s  = spin_matrices(0.0, 0.0);
+    const Eigen::Matrix<cd, 3, 3> I3 = Eigen::Matrix<cd, 3, 3>::Identity();
+
+    // n·s on the layer's (spin ⊗ orbital) block; orbital-diagonal.
+    auto layer_field = [&](const Eigen::Vector3d& n) {
+        const Eigen::Matrix<cd, 2, 2> n_dot_s = n.x() * s.sx + n.y() * s.sy + n.z() * s.sz;
+        return kron(n_dot_s, I3);
+    };
 
     Mat12 H = Mat12::Zero();
-    H.block<6,6>(0, 0) = p.con_lam * dot_prod1 * Eigen::Matrix<cd, 6, 6>::Identity();
-    H.block<6,6>(6, 6) = p.con_lam * dot_prod2 * Eigen::Matrix<cd, 6, 6>::Identity();
+    H.block<6,6>(0, 0) = p.con_lam * layer_field(t.n[0]);
+    H.block<6,6>(6, 6) = p.con_lam * layer_field(t.n[1]);
     return H;
 }
 

@@ -10,12 +10,18 @@ t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
-lam      = 0.00
-theta    = 0.0     # polar angle of spin quantization axis (0 = out-of-plane)
-phi      = 0.0      # azimuthal angle
+lam      = 0.03
+theta    = 1.57079632679     # polar angle of spin quantization axis (0 = out-of-plane)
+phi      = 0.785398163397      # azimuthal angle
 
 # --- Constraint ---
-con_lam = 0.0
+# con_lam is the Lagrange multiplier on g = sum_layers (|<S_i>| - <S_i^z>), the
+# tilt of each layer moment away from +z. con_eta is the dual-ascent step used to
+# solve con_lam self-consistently alongside rho (same mixer, DIIS or Broyden):
+#   con_lam <- con_lam + con_eta * g.
+# con_eta = 0 holds con_lam fixed at the value below (previous behaviour).
+con_lam = 0.05
+con_eta = 0.1
 
 # --- Hubbard / Kanamori ---
 U        = 4.0     # intraorbital U (also sets KanamoriParams.U unless K_U is given)

@@ -16,7 +16,8 @@ struct Params {
     double t2yzxz      = 0;
     double tg = 0;
     double lam     = 0.1;
-    double con_lam = 0.0;
+    double con_lam = 0.0;  // constraint multiplier (Lagrange multiplier conjugate to g, below)
+    double con_eta = 0.0;  // dual-ascent step for con_lam; <= 0 keeps con_lam pinned at its input value
     double U       = 0.0;
     double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)
     double phi     = 0.0;  // azimuthal angle of SOC spin quantization axis
@@ -93,6 +94,17 @@ struct KanamoriParams {
 // rho(a,b) = <c†_a c_b>, layer-major / spin-major / orbital-minor ordering
 // Acts within each layer independently (on-site interaction)
 Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp);
+
+// Constraint violation per layer:
+//   g_i(rho) = (m̂_i - ẑ) · <S_i> = |<S_i>| - <S_i^z>   (>= 0)
+// which vanishes exactly when layer i's spin moment is aligned with +z. This is the
+// quantity ConstrainField multiplies by con_lam, i.e. E_con = con_lam * (g_1 + g_2),
+// so dE/d(con_lam) = g_1 + g_2 and the self-consistent con_lam is the one driving
+// g_1 + g_2 -> 0. Moments are always taken in the global z frame (theta = phi = 0).
+std::pair<double, double> constraint_violation(const Mat12& rho, const Params& p);
+
+// Constraint field entering the MF Hamiltonian: con_lam * g_i on layer block i.
+Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp);
 Mat12 KanamoriMF(const Mat12& rho, const Params& p, const KanamoriParams& kp = KanamoriParams{});
 
 // Save band structure along high-symmetry path to CSV (for plotting in Python)
