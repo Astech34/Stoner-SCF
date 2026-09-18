@@ -872,6 +872,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     // --- Constraint multiplier state ---
     const bool solve_lam = (p.con_eta > 0.0);
     double     lam       = p.con_lam;
+    double     lam_L     = p.con_lam_L;
     Params     p_iter    = p;  // copy of p whose con_lam is refreshed every iteration
 
     // Frobenius inner product Re<A, B>_F (matches the DIIS residual metric).
@@ -884,6 +885,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     std::vector<Mat12>  diis_err;      // residual history: e_i = rho_new_i - rho_i
     std::vector<double> diis_lam;      // con_lam_new history (parallel to diis_rho)
     std::vector<double> diis_lam_err;  // con_lam residual history
+    std::vector<double> diis_lam_L;      // con_lam_L_new history (parallel to diis_rho)
+    std::vector<double> diis_lam_L_err;  // con_lam_L residual history
 
     constexpr int no_improve_max    = 9999999;
     constexpr int linear_reset_steps = 150;
@@ -898,10 +901,14 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     std::vector<Mat12>  broyden_u;       // corresponding update vectors
     std::vector<double> broyden_dF_lam;  // con_lam component of the same vectors
     std::vector<double> broyden_u_lam;
+    std::vector<double> broyden_dF_lam_L;  // con_lam_L component of the same vectors
+    std::vector<double> broyden_u_lam_L;
     Mat12  F_prev      = Mat12::Zero();
     Mat12  rho_in_prev = Mat12::Zero();
     double F_lam_prev  = 0.0;
     double lam_in_prev = 0.0;
+    double F_lam_L_prev = 0.0;
+    double lam_L_in_prev = 0.0;
     bool   broyden_have_prev = false;
 
     for (int i = 0; i < max_iter; i++) {
@@ -918,13 +925,16 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
         // Constraint channel: violation of the new density matrix and the dual step it
         // implies. Both are identically zero when con_lam is not being solved for.
-        const auto [g1, g2]  = constraint_violation(rho_new, p_iter);
+        const auto [g1, g2, g1_L, g2_L]  = constraint_violation(rho_new, p_iter);
         const double g       = solve_lam ? (g1 + g2) : 0.0;
+        const double g_L    = solve_lam ? (g1_L + g2_L) : 0.0;
         const double lam_new = lam + p.con_eta * g;
         const double lam_err = lam_new - lam;
+        const double lam_L_new = lam_L + p.con_eta_L * g_L;
+        const double lam_L_err = lam_L_new - lam_L;
 
         const double rho_diff = (rho_new - rho).norm();
-        const double diff     = std::sqrt(rho_diff * rho_diff + lam_err * lam_err);
+        const double diff     = std::sqrt(rho_diff * rho_diff + lam_err * lam_err + lam_L_err * lam_L_err);
 
         const bool using_diis = (mixer == MixerType::LinearDIIS)
                               && (i >= diis_start) && (linear_remaining == 0);
@@ -948,7 +958,9 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                       << ", E_total = " << bandsum - dc << "\n";
             if (solve_lam)
                 std::cout << " con_lam = " << lam
-                          << ", constraint violation g = " << g << "\n";
+                          << ", constraint violation spin g = " << g << "\n"
+                          << " con_lam_L = " << lam_L
+                          << ", constraint violation orbital g = " << g_L << "\n";
             return {rho0, rho, mu, bandsum - dc, true, lam};
         }
 
@@ -960,20 +972,25 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             // products below carry the extra scalar term.
             const Mat12  F     = rho_new - rho;
             const double F_lam = lam_err;
+            const double F_lam_L = lam_L_err;
 
             if (!broyden_have_prev) {
                 // Bootstrap with a single linear-mixing step.
                 rho_in_prev = rho;
                 lam_in_prev = lam;
+                lam_L_in_prev = lam_L;
                 F_prev      = F;
                 F_lam_prev  = F_lam;
+                F_lam_L_prev = F_lam_L;
                 broyden_have_prev = true;
                 rho += alpha * F;
                 lam += alpha * F_lam;
+                lam_L += alpha * F_lam_L;
             } else {
                 const Mat12  dF_raw     = F - F_prev;
                 const double dF_raw_lam = F_lam - F_lam_prev;
-                const double nrm = std::sqrt(frob(dF_raw, dF_raw) + dF_raw_lam * dF_raw_lam);
+                const double dF_raw_lam_L = F_lam_L - F_lam_L_prev;
+                const double nrm = std::sqrt(frob(dF_raw, dF_raw) + dF_raw_lam * dF_raw_lam + dF_raw_lam_L * dF_raw_lam_L);
 
                 if (nrm > 0.0) {
                     broyden_dF.push_back(dF_raw / nrm);
@@ -982,23 +999,31 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                     broyden_dF_lam.push_back(dF_raw_lam / nrm);
                     broyden_u_lam.push_back(alpha * (dF_raw_lam / nrm)
                                             + (lam - lam_in_prev) / nrm);
+                    broyden_dF_lam_L.push_back(dF_raw_lam_L / nrm);
+                    broyden_u_lam_L.push_back(alpha * (dF_raw_lam_L / nrm)
+                                              + (lam_L - lam_L_in_prev) / nrm);
 
                     if (static_cast<int>(broyden_dF.size()) > broyden_max) {
                         broyden_dF.erase(broyden_dF.begin());
                         broyden_u.erase(broyden_u.begin());
                         broyden_dF_lam.erase(broyden_dF_lam.begin());
                         broyden_u_lam.erase(broyden_u_lam.begin());
+                        broyden_dF_lam_L.erase(broyden_dF_lam_L.begin());
+                        broyden_u_lam_L.erase(broyden_u_lam_L.begin());
                     }
                 }
 
                 rho_in_prev = rho;
                 lam_in_prev = lam;
+                lam_L_in_prev = lam_L;
                 F_prev      = F;
                 F_lam_prev  = F_lam;
+                F_lam_L_prev = F_lam_L;
 
                 const int m = static_cast<int>(broyden_dF.size());
                 Mat12  rho_next = rho + alpha * F;      // linear step + Broyden correction
                 double lam_next = lam + alpha * F_lam;
+                double lam_L_next = lam_L + alpha * F_lam_L;
 
                 if (m > 0) {
                     // a_ij = <dF_i, dF_j>, regularised; c_k = <dF_k, F>; γ = (w0²I + a)⁻¹ c
@@ -1007,23 +1032,27 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                     for (int ii = 0; ii < m; ii++) {
                         for (int jj = ii; jj < m; jj++) {
                             const double aij = frob(broyden_dF[ii], broyden_dF[jj])
-                                             + broyden_dF_lam[ii] * broyden_dF_lam[jj];
+                                             + broyden_dF_lam[ii] * broyden_dF_lam[jj]
+                                             + broyden_dF_lam_L[ii] * broyden_dF_lam_L[jj];
                             a(ii, jj) = aij;
                             a(jj, ii) = aij;
                         }
                         a(ii, ii) += broyden_w0 * broyden_w0;
-                        c(ii) = frob(broyden_dF[ii], F) + broyden_dF_lam[ii] * F_lam;
+                        c(ii) = frob(broyden_dF[ii], F) + broyden_dF_lam[ii] * F_lam
+                              + broyden_dF_lam_L[ii] * F_lam_L;
                     }
 
                     const Eigen::VectorXd gamma = a.colPivHouseholderQr().solve(c);
                     for (int l = 0; l < m; l++) {
                         rho_next.noalias() -= gamma(l) * broyden_u[l];
                         lam_next           -= gamma(l) * broyden_u_lam[l];
+                        lam_L_next         -= gamma(l) * broyden_u_lam_L[l];
                     }
                 }
 
                 rho = rho_next;
                 lam = lam_next;
+                lam_L = lam_L_next;
             }
         } 
         // ====== Linear Mix ======
@@ -1031,6 +1060,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             if (linear_remaining > 0) --linear_remaining;
             rho = alpha * rho_new + (1.0 - alpha) * rho;
             lam = alpha * lam_new + (1.0 - alpha) * lam;
+            lam_L = alpha * lam_L_new + (1.0 - alpha) * lam_L;
         } 
         // ====== DIIS ====== 
         else {
@@ -1049,11 +1079,14 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                 diis_err.clear();
                 diis_lam.clear();
                 diis_lam_err.clear();
+                diis_lam_L.clear();
+                diis_lam_L_err.clear();
                 best_diis_diff   = std::numeric_limits<double>::max();
                 no_improve_count = 0;
                 linear_remaining = linear_reset_steps;
                 rho = alpha * rho_new + (1.0 - alpha) * rho;
                 lam = alpha * lam_new + (1.0 - alpha) * lam;
+                lam_L = alpha * lam_L_new + (1.0 - alpha) * lam_L;
                 continue;
             }
 
@@ -1065,12 +1098,16 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             diis_err.push_back(rho_new - rho);
             diis_lam.push_back(lam_new);
             diis_lam_err.push_back(lam_err);
+            diis_lam_L.push_back(lam_L_new);
+            diis_lam_L_err.push_back(lam_L_err);
 
             if (static_cast<int>(diis_rho.size()) > diis_max) {
                 diis_rho.erase(diis_rho.begin());
                 diis_err.erase(diis_err.begin());
                 diis_lam.erase(diis_lam.begin());
                 diis_lam_err.erase(diis_lam_err.begin());
+                diis_lam_L.erase(diis_lam_L.begin());
+                diis_lam_L_err.erase(diis_lam_L_err.begin());
             }
 
             const int m = static_cast<int>(diis_rho.size());
@@ -1078,6 +1115,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
             if (m < 2) {
                 rho = rho_new;
                 lam = lam_new;
+                lam_L = lam_L_new;
             } else {
                 // Build (m+1)×(m+1) Pulay system
                 //   [B   -1] [c]   [ 0]
@@ -1090,7 +1128,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                 for (int ii = 0; ii < m; ii++) {
                     for (int jj = ii; jj < m; jj++) {
                         const double Bij = frob(diis_err[ii], diis_err[jj])
-                                         + diis_lam_err[ii] * diis_lam_err[jj];
+                                         + diis_lam_err[ii] * diis_lam_err[jj]
+                                         + diis_lam_L_err[ii] * diis_lam_L_err[jj];
                         A(ii, jj) = Bij;
                         A(jj, ii) = Bij;
                     }
@@ -1102,9 +1141,11 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
                 rho = Mat12::Zero();
                 lam = 0.0;
+                lam_L = 0.0;
                 for (int ii = 0; ii < m; ii++) {
                     rho.noalias() += c(ii) * diis_rho[ii];
                     lam           += c(ii) * diis_lam[ii];
+                    lam_L         += c(ii) * diis_lam_L[ii];
                 }
             }
         }

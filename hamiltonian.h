@@ -18,6 +18,8 @@ struct Params {
     double lam     = 0.1;
     double con_lam = 0.0;  // constraint multiplier (Lagrange multiplier conjugate to g, below)
     double con_eta = 0.0;  // dual-ascent step for con_lam; <= 0 keeps con_lam pinned at its input value
+    double con_lam_L = 0.0;  // constraint multiplier for orbital angular momentum
+    double con_eta_L = 0.0;  // dual-ascent step for con_lam_L; <= 0 keeps con_lam_L pinned at its input value
     double U       = 0.0;
     double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)
     double phi     = 0.0;  // azimuthal angle of SOC spin quantization axis
@@ -31,7 +33,7 @@ struct Params {
 // Kinetic hopping term (k-dependent, real diagonal). delta_cf shifts the xy orbital energy.
 Mat6 H0(double kx, double ky, const Params& p = Params{}, double delta_cf = 0.0);
 
-// Kronecker product of two square complex matrices: result[i*N+k, j*N+l] = A[i,j] * B[k,l]
+// Kronecker product of two complex matrices: result[i*N+k, j*N+l] = A[i,j] * B[k,l]
 // Write a test to test this.
 template<int M, int N>
 Eigen::Matrix<cd, M*N, M*N> kron(
@@ -96,12 +98,7 @@ struct KanamoriParams {
 Mat6 kanamori_layer(const Mat6& rho, const KanamoriParams& kp);
 
 // Constraint violation per layer:
-//   g_i(rho) = (m̂_i - ẑ) · <S_i> = |<S_i>| - <S_i^z>   (>= 0)
-// which vanishes exactly when layer i's spin moment is aligned with +z. This is the
-// quantity ConstrainField multiplies by con_lam, i.e. E_con = con_lam * (g_1 + g_2),
-// so dE/d(con_lam) = g_1 + g_2 and the self-consistent con_lam is the one driving
-// g_1 + g_2 -> 0. Moments are always taken in the global z frame (theta = phi = 0).
-std::pair<double, double> constraint_violation(const Mat12& rho, const Params& p);
+std::array<double, 4> constraint_violation(const Mat12& rho, const Params& p);
 
 // Constraint field entering the MF Hamiltonian: con_lam * g_i on layer block i.
 Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp);

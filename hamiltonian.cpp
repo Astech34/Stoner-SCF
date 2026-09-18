@@ -274,7 +274,9 @@ namespace {
 // vanishing moment m̂ is ill-defined and is taken as 0, which sends g_i -> 0 as well.
 struct LayerTilt {
     Eigen::Vector3d S[2];
-    Eigen::Vector3d n[2];
+    Eigen::Vector3d Sn[2];
+    Eigen::Vector3d L[2];
+    Eigen::Vector3d Ln[2];
 };
 
 LayerTilt layer_tilts(const Mat12& rho, const Params& p) {
@@ -282,25 +284,41 @@ LayerTilt layer_tilts(const Mat12& rho, const Params& p) {
     pcopy.theta = 0;
     pcopy.phi   = 0;
     const auto smom = compute_S_moments(rho, pcopy);
+    const auto lmom = compute_L_moments(rho, pcopy);
 
     LayerTilt t;
     for (int i = 0; i < 2; i++) {
+        // S constraint
         t.S[i] = Eigen::Vector3d((i == 0) ? smom[0].first : smom[0].second,
                                  (i == 0) ? smom[1].first : smom[1].second,
                                  (i == 0) ? smom[2].first : smom[2].second);
 
         const double m = t.S[i].norm();
-        t.n[i] = (m > 0.0) ? Eigen::Vector3d(t.S[i] / m) : Eigen::Vector3d::Zero();
-        t.n[i].z() -= 1.0;  // m̂ - ẑ
+        t.Sn[i] = (m > 0.0) ? Eigen::Vector3d(t.S[i] / m) : Eigen::Vector3d::Zero();
+        t.Sn[i].z() -= 1.0;  // m̂ - ẑ
+        // L constraint
+        t.L[i] = Eigen::Vector3d((i == 0) ? lmom[0].first : lmom[0].second,
+                                 (i == 0) ? lmom[1].first : lmom[1].second,
+                                 (i == 0) ? lmom[2].first : lmom[2].second);
+
+        const double mL = t.L[i].norm();
+        t.Ln[i] = (mL > 0.0) ? Eigen::Vector3d(t.L[i] / mL) : Eigen::Vector3d::Zero();
+        t.Ln[i].z() -= 1.0;  // m̂ - ẑ
+
     }
     return t;
 }
 
 }  // namespace
 
-std::pair<double, double> constraint_violation(const Mat12& rho, const Params& p) {
+std::array<double, 4> constraint_violation(const Mat12& rho, const Params& p) {
     const LayerTilt t = layer_tilts(rho, p);
-    return {t.n[0].dot(t.S[0]), t.n[1].dot(t.S[1])};
+    return {
+        t.Sn[0].dot(t.S[0]),
+        t.Sn[1].dot(t.S[1]),
+        t.Ln[0].dot(t.L[0]),
+        t.Ln[1].dot(t.L[1])
+    };
 }
 
 Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp) {
@@ -312,7 +330,9 @@ Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp
     // commutes with every spin operator, so it can only shift the layer's energy — it
     // exerts no torque and cannot rotate the moment toward ẑ.
     const LayerTilt     t  = layer_tilts(rho, p);
-    const SpinMatrices  s  = spin_matrices(0.0, 0.0);
+    const SpinMatrices  s  = spin_matrices(0, 0);
+    const LMatrices     L  = l_matrices();
+    const Eigen::Matrix<cd, 2, 2> I2 = Eigen::Matrix<cd, 2, 2>::Identity();
     const Eigen::Matrix<cd, 3, 3> I3 = Eigen::Matrix<cd, 3, 3>::Identity();
 
     // n·s on the layer's (spin ⊗ orbital) block; orbital-diagonal.
@@ -320,10 +340,18 @@ Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp
         const Eigen::Matrix<cd, 2, 2> n_dot_s = n.x() * s.sx + n.y() * s.sy + n.z() * s.sz;
         return kron(n_dot_s, I3);
     };
+    
+    // Ln · L on the layer's (spin ⊗ orbital) block; spin-diagonal.
+    auto layer_field_L = [&](const Eigen::Vector3d& n) {
+        const Eigen::Matrix<cd, 3, 3> n_dot_L = n.x() * L.Lx + n.y() * L.Ly + n.z() * L.Lz;
+        return kron(I2, n_dot_L);
+    };
 
     Mat12 H = Mat12::Zero();
-    H.block<6,6>(0, 0) = p.con_lam * layer_field(t.n[0]);
-    H.block<6,6>(6, 6) = p.con_lam * layer_field(t.n[1]);
+    H.block<6,6>(0, 0) = p.con_lam * layer_field(t.Sn[0])
+                      + p.con_lam_L * layer_field_L(t.Ln[0]);
+    H.block<6,6>(6, 6) = p.con_lam * layer_field(t.Sn[1])
+                      + p.con_lam_L * layer_field_L(t.Ln[1]);
     return H;
 }
 

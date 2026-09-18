@@ -110,6 +110,8 @@ void write_params(std::ostream& os, const AllParams& ap) {
     os << "  lam       = " << p.lam       << "\n";
     os << "  con_lam       = " << p.con_lam       << "\n";
     os << "  con_eta       = " << p.con_eta       << "\n";
+    os << "  con_lam_L     = " << p.con_lam_L     << "\n";
+    os << "  con_eta_L     = " << p.con_eta_L     << "\n";
     os << "  U         = " << p.U         << "\n";
     os << "  t_perp    = " << p.t_perp    << "\n";
     os << "  t_perp_xy = " << p.t_perp_xy << "\n";
