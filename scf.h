@@ -83,7 +83,7 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
 // ---- Kanamori SCF ----
 
 struct KanamoriResult { Mat12 rho0; Mat12 rho; double mu; double E_total; bool isConverged=false;
-                        double con_lam = 0.0; };  // converged constraint multiplier (== p.con_lam if not solved for)
+                        double con_lam1 = 0.0; double con_lam2 = 0.0; };  // converged constraint multiplier (== p.con_lam if not solved for)
 
 double kanamori_dc_layer(const Mat6& rho, const KanamoriParams& kp);
 

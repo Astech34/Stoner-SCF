@@ -95,47 +95,48 @@ plot_command = [sys.executable, "plot_pdos.py"]
 plotting = False
 
 if __name__ == "__main__":
-    #for ne in [8.0, 8.25, 8.5, 8.75, 9.0]:
-    for cf1 in np.arange(0.25, 0.41, 0.05):
-        cf1 = np.round(cf1, 3)  # Round to avoid floating point issues
-        update_file(Path("params.in"), {"delta_cf1": str(cf1)})
-        for cf2 in np.arange(0.0, -0.2, -0.05):
-            cf2 = np.round(cf2, 3)  # Round to avoid floating point issues
-            update_file(Path("params.in"), {"delta_cf2": str(cf2)})
-            for direction in ["001", "110"]:
-                thet_val = 0.0
-                phi_val = 0.0
+    for ne in [8.0, 8.25, 8.5, 8.75, 9.0]:
+        update_file(Path("params.in"), {"N_target": str(ne)})
+        for cf1 in np.arange(0, 0.3, 0.05):
+            cf1 = np.round(cf1, 5)  # Round to avoid floating point issues
+            update_file(Path("params.in"), {"delta_cf1": str(cf1)})
+            for cf2 in np.arange(0.0, -0.3, -0.05):
+                cf2 = np.round(cf2, 5)  # Round to avoid floating point issues
+                update_file(Path("params.in"), {"delta_cf2": str(cf2)})
+                for direction in ["001", "110"]:
+                    thet_val = 0.0
+                    phi_val = 0.0
 
-                if direction == "110":
-                    thet_val = np.pi/2.0
-                    phi_val = np.pi/4.0
+                    if direction == "110":
+                        thet_val = np.pi/2.0
+                        phi_val = np.pi/4.0
 
-                update_file(Path("params.in"), {"theta": str(thet_val),
-                                                "phi": str(phi_val)})
+                    update_file(Path("params.in"), {"theta": str(thet_val),
+                                                    "phi": str(phi_val)})
 
-                try:
-                    result = subprocess.run(command, env=env, check=True, text=True)
-                except subprocess.CalledProcessError as e:
-                    print(f"Run failed for: {e}")
-                    continue  # or break, depending on what you want
-
-                print("Success!")
-                try:
-                    archive_csv(Path("out/find_gs.csv"), Path(f"out/sweeps/CFSweep/{direction}gsoutCF1={cf1}CF2={cf2}.csv"))
-                except FileNotFoundError as e:
-                    print(e)
-
-                if plotting:
-                    # Plotting
                     try:
-                        result = subprocess.run(plot_command, env=env, check=True, text=True)
+                        result = subprocess.run(command, env=env, check=True, text=True)
                     except subprocess.CalledProcessError as e:
-                        print(f"Plotting failed for: {e}")
+                        print(f"Run failed for: {e}")
                         continue  # or break, depending on what you want
 
-                    # Now archive the plotted results if needed
+                    print("Success!")
                     try:
-                        archive_csv(Path("out/projected_dos.csv"), Path(f"out/sweeps/CFSweep/{direction}pdosCF1={cf1}CF2={cf2}.csv"))
-                        archive_csv(Path("out/projected_dos.png"), Path(f"out/sweeps/CFSweep/{direction}pdosCF1={cf1}CF2={cf2}.png"))
+                        archive_csv(Path("out/find_gs.csv"), Path(f"out/sweeps/NewCFSweeps/{direction}N={ne}gsoutCF1={cf1}CF2={cf2}.csv"))
                     except FileNotFoundError as e:
                         print(e)
+
+                    if plotting:
+                        # Plotting
+                        try:
+                            result = subprocess.run(plot_command, env=env, check=True, text=True)
+                        except subprocess.CalledProcessError as e:
+                            print(f"Plotting failed for: {e}")
+                            continue  # or break, depending on what you want
+
+                        # Now archive the plotted results if needed
+                        try:
+                            archive_csv(Path("out/projected_dos.csv"), Path(f"out/sweeps/NewCFSweeps/{direction}N={ne}pdosCF1={cf1}CF2={cf2}.csv"))
+                            archive_csv(Path("out/projected_dos.png"), Path(f"out/sweeps/NewCFSweeps/{direction}N={ne}pdosCF1={cf1}CF2={cf2}.png"))
+                        except FileNotFoundError as e:
+                            print(e)

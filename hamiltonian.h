@@ -16,9 +16,12 @@ struct Params {
     double t2yzxz      = 0;
     double tg = 0;
     double lam     = 0.1;
-    double con_lam = 0.0;  // constraint multiplier (Lagrange multiplier conjugate to g, below)
+    double con_lam1 = 0.0;  // constraint multiplier (Lagrange multiplier conjugate to g, below)
+    double con_lam2 = 0.0;  // constraint multiplier (Lagrange multiplier conjugate to g, below)
     double con_eta = 0.0;  // dual-ascent step for con_lam; <= 0 keeps con_lam pinned at its input value
-    double con_lam_L = 0.0;  // constraint multiplier for orbital angular momentum
+    double thresh_con = 1e-7;  // threshold for convergence of constraint multipliers
+    double con_lam1_L = 0.0;  // constraint multiplier for orbital angular momentum
+    double con_lam2_L = 0.0;  // constraint multiplier for orbital angular momentum
     double con_eta_L = 0.0;  // dual-ascent step for con_lam_L; <= 0 keeps con_lam_L pinned at its input value
     double U       = 0.0;
     double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)

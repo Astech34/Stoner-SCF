@@ -56,8 +56,10 @@ AllParams load_params(const std::string& filename) {
         else if (key == "t2yzxz")    ap.p.t2yzxz    = v;
         else if (key == "tg")        ap.p.tg        = v;
         else if (key == "lam")       ap.p.lam       = v;
-        else if (key == "con_lam")   ap.p.con_lam   = v;
+        else if (key == "con_lam1")   ap.p.con_lam1   = v;
+        else if (key == "con_lam2")   ap.p.con_lam2   = v;
         else if (key == "con_eta")   ap.p.con_eta   = v;
+        else if (key == "thresh_con")   ap.p.thresh_con   = v;
         else if (key == "U")         { ap.p.U = v; if (!kp_U_explicit) ap.kp.U = v; }
         else if (key == "theta")     ap.p.theta     = v;
         else if (key == "phi")       ap.p.phi       = v;
@@ -108,9 +110,12 @@ void write_params(std::ostream& os, const AllParams& ap) {
     os << "  t2yzxz    = " << p.t2yzxz    << "\n";
     os << "  tg        = " << p.tg        << "\n";
     os << "  lam       = " << p.lam       << "\n";
-    os << "  con_lam       = " << p.con_lam       << "\n";
+    os << "  con_lam1       = " << p.con_lam1       << "\n";
+    os << "  con_lam2       = " << p.con_lam2       << "\n";
     os << "  con_eta       = " << p.con_eta       << "\n";
-    os << "  con_lam_L     = " << p.con_lam_L     << "\n";
+    os << "  thresh_con       = " << p.thresh_con       << "\n";
+    os << "  con_lam1_L     = " << p.con_lam1_L     << "\n";
+    os << "  con_lam2_L     = " << p.con_lam2_L     << "\n";
     os << "  con_eta_L     = " << p.con_eta_L     << "\n";
     os << "  U         = " << p.U         << "\n";
     os << "  t_perp    = " << p.t_perp    << "\n";

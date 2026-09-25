@@ -10,12 +10,9 @@ t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
-lam      = 0.00
-#theta    = 1.5707963267948966     # polar angle of spin quantization axis (0 = out-of-plane)
-#phi      = 0.7853981633974483      # azimuthal angle
-
-theta = 1.5707963267948966
-phi =  0.7853981633974483
+lam      = 0.03
+theta    = 0.0     # polar angle of spin quantization axis (0 = out-of-plane)
+phi      = 0.0      # azimuthal angle
 
 # --- Constraint ---
 # con_lam is the Lagrange multiplier on g = sum_layers (|<S_i>| - <S_i^z>), the
@@ -27,11 +24,13 @@ phi =  0.7853981633974483
 #con_lam = 0.0
 #con_eta = 0.0
 
-con_lam = 0.02
+con_lam1 = 0.02
+con_lam2 = 0.02
 con_eta = 0.1
 
-con_lam_L = 0.02
-con_eta_L = 0.1
+con_lam_L1 = 0.00
+con_lam_L2 = 0.00
+con_eta_L = 0.0
 
 # --- Hubbard / Kanamori ---
 U        = 4.0     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
@@ -48,8 +47,8 @@ t_perp_xy = 0.005 #0.005
 
 # --- Crystal fields and layer potential ---
 delta_V   = 0.0    # staggered layer potential
-delta_cf1 = 0.2    # tetragonal CF layer 1 (positive = xy above yz/xz)
-delta_cf2 = -0.05   # tetragonal CF layer 2
+delta_cf1 = 0.0    # tetragonal CF layer 1 (positive = xy above yz/xz)
+delta_cf2 = 0.0   # tetragonal CF layer 2
 
 # --- SCF loop ---
 S0       = 0.3      # initial magnetization guess
@@ -66,6 +65,7 @@ rho_out_file =
 
 # --- Convergance ---
 tol = 1e-7
+thresh_con = 1e-7
 
 # --- Density-matrix seed (see seeds.h) ---
 # seed selects the starting 12x12 density matrix (4 electrons per layer).

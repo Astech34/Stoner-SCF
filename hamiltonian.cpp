@@ -68,13 +68,13 @@ SpinMatrices spin_matrices(double theta, double phi) {
               cd(sv,0) * ep,   ep * cd(c, 0);
 
         // Check Order
-        //s.sx = U.adjoint() * s.sx * U;
-        //s.sy = U.adjoint() * s.sy * U;
-        //s.sz = U.adjoint() * s.sz * U;
+        s.sx = U.adjoint() * s.sx * U;
+        s.sy = U.adjoint() * s.sy * U;
+        s.sz = U.adjoint() * s.sz * U;
 
-        s.sx = U * s.sx * U.adjoint();
-        s.sy = U * s.sy * U.adjoint();
-        s.sz = U * s.sz * U.adjoint();
+        //s.sx = U * s.sx * U.adjoint();
+        //s.sy = U * s.sy * U.adjoint();
+        //s.sz = U * s.sz * U.adjoint();
     }
 
     return s;
@@ -348,10 +348,10 @@ Mat12 ConstrainField(const Mat12& rho, const Params& p, const KanamoriParams& kp
     };
 
     Mat12 H = Mat12::Zero();
-    H.block<6,6>(0, 0) = p.con_lam * layer_field(t.Sn[0])
-                      + p.con_lam_L * layer_field_L(t.Ln[0]);
-    H.block<6,6>(6, 6) = p.con_lam * layer_field(t.Sn[1])
-                      + p.con_lam_L * layer_field_L(t.Ln[1]);
+    H.block<6,6>(0, 0) = p.con_lam1 * layer_field(t.Sn[0]);
+                      //+ p.con_lam1_L * layer_field_L(t.Ln[0]);
+    H.block<6,6>(6, 6) = p.con_lam2 * layer_field(t.Sn[1]);
+                      //+ p.con_lam2_L * layer_field_L(t.Ln[1]);
     return H;
 }
 
