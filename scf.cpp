@@ -894,23 +894,6 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     int    no_improve_count = 0;
     int    linear_remaining = 0;  // counts down during post-stall linear phase
 
-    // --- Broyden state ---
-    constexpr int    broyden_max = 5;     // max history length
-    constexpr double broyden_w0  = 0.01;  // diagonal regularisation weight
-    std::vector<Mat12>  broyden_dF;      // normalised residual differences
-    std::vector<Mat12>  broyden_u;       // corresponding update vectors
-    std::vector<double> broyden_dF_lam;  // con_lam component of the same vectors
-    std::vector<double> broyden_u_lam;
-    std::vector<double> broyden_dF_lam_L;  // con_lam_L component of the same vectors
-    std::vector<double> broyden_u_lam_L;
-    Mat12  F_prev      = Mat12::Zero();
-    Mat12  rho_in_prev = Mat12::Zero();
-    double F_lam_prev  = 0.0;
-    double lam_in_prev = 0.0;
-    double F_lam_L_prev = 0.0;
-    double lam_L_in_prev = 0.0;
-    bool   broyden_have_prev = false;
-
     for (int i = 0; i < max_iter; i++) {
         p_iter.con_lam = lam;
 
@@ -938,9 +921,7 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
         const bool using_diis = (mixer == MixerType::LinearDIIS)
                               && (i >= diis_start) && (linear_remaining == 0);
-        const char* tag = (mixer == MixerType::Broyden)
-                              ? (broyden_have_prev ? " [Broy]" : "  [mix]")
-                              : (using_diis        ? " [DIIS]" : "  [mix]");
+        const char* tag = using_diis ? " [DIIS]" : "  [mix]";
         std::cout << "\rIterations" << std::setw(5) << i << tag
                   << ", |Δρ|_F = " << std::scientific << std::setprecision(4) << rho_diff;
         if (solve_lam)
@@ -963,100 +944,8 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
                           << ", constraint violation orbital g = " << g_L << "\n";
             return {rho0, rho, mu, bandsum - dc, true, lam};
         }
-
-        if (mixer == MixerType::Broyden) {
-            // Modified Broyden second method (Johnson 1988).
-            // Residual of the fixed-point map x ↦ x_new: F = ρ_new − ρ in the matrix
-            // channel, F_lam = con_lam_new − con_lam in the multiplier channel. Both
-            // channels share one set of Broyden vectors and one γ solve, so the inner
-            // products below carry the extra scalar term.
-            const Mat12  F     = rho_new - rho;
-            const double F_lam = lam_err;
-            const double F_lam_L = lam_L_err;
-
-            if (!broyden_have_prev) {
-                // Bootstrap with a single linear-mixing step.
-                rho_in_prev = rho;
-                lam_in_prev = lam;
-                lam_L_in_prev = lam_L;
-                F_prev      = F;
-                F_lam_prev  = F_lam;
-                F_lam_L_prev = F_lam_L;
-                broyden_have_prev = true;
-                rho += alpha * F;
-                lam += alpha * F_lam;
-                lam_L += alpha * F_lam_L;
-            } else {
-                const Mat12  dF_raw     = F - F_prev;
-                const double dF_raw_lam = F_lam - F_lam_prev;
-                const double dF_raw_lam_L = F_lam_L - F_lam_L_prev;
-                const double nrm = std::sqrt(frob(dF_raw, dF_raw) + dF_raw_lam * dF_raw_lam + dF_raw_lam_L * dF_raw_lam_L);
-
-                if (nrm > 0.0) {
-                    broyden_dF.push_back(dF_raw / nrm);
-                    broyden_u.push_back(alpha * (dF_raw / nrm)
-                                        + (rho - rho_in_prev) / nrm);
-                    broyden_dF_lam.push_back(dF_raw_lam / nrm);
-                    broyden_u_lam.push_back(alpha * (dF_raw_lam / nrm)
-                                            + (lam - lam_in_prev) / nrm);
-                    broyden_dF_lam_L.push_back(dF_raw_lam_L / nrm);
-                    broyden_u_lam_L.push_back(alpha * (dF_raw_lam_L / nrm)
-                                              + (lam_L - lam_L_in_prev) / nrm);
-
-                    if (static_cast<int>(broyden_dF.size()) > broyden_max) {
-                        broyden_dF.erase(broyden_dF.begin());
-                        broyden_u.erase(broyden_u.begin());
-                        broyden_dF_lam.erase(broyden_dF_lam.begin());
-                        broyden_u_lam.erase(broyden_u_lam.begin());
-                        broyden_dF_lam_L.erase(broyden_dF_lam_L.begin());
-                        broyden_u_lam_L.erase(broyden_u_lam_L.begin());
-                    }
-                }
-
-                rho_in_prev = rho;
-                lam_in_prev = lam;
-                lam_L_in_prev = lam_L;
-                F_prev      = F;
-                F_lam_prev  = F_lam;
-                F_lam_L_prev = F_lam_L;
-
-                const int m = static_cast<int>(broyden_dF.size());
-                Mat12  rho_next = rho + alpha * F;      // linear step + Broyden correction
-                double lam_next = lam + alpha * F_lam;
-                double lam_L_next = lam_L + alpha * F_lam_L;
-
-                if (m > 0) {
-                    // a_ij = <dF_i, dF_j>, regularised; c_k = <dF_k, F>; γ = (w0²I + a)⁻¹ c
-                    Eigen::MatrixXd a = Eigen::MatrixXd::Zero(m, m);
-                    Eigen::VectorXd c(m);
-                    for (int ii = 0; ii < m; ii++) {
-                        for (int jj = ii; jj < m; jj++) {
-                            const double aij = frob(broyden_dF[ii], broyden_dF[jj])
-                                             + broyden_dF_lam[ii] * broyden_dF_lam[jj]
-                                             + broyden_dF_lam_L[ii] * broyden_dF_lam_L[jj];
-                            a(ii, jj) = aij;
-                            a(jj, ii) = aij;
-                        }
-                        a(ii, ii) += broyden_w0 * broyden_w0;
-                        c(ii) = frob(broyden_dF[ii], F) + broyden_dF_lam[ii] * F_lam
-                              + broyden_dF_lam_L[ii] * F_lam_L;
-                    }
-
-                    const Eigen::VectorXd gamma = a.colPivHouseholderQr().solve(c);
-                    for (int l = 0; l < m; l++) {
-                        rho_next.noalias() -= gamma(l) * broyden_u[l];
-                        lam_next           -= gamma(l) * broyden_u_lam[l];
-                        lam_L_next         -= gamma(l) * broyden_u_lam_L[l];
-                    }
-                }
-
-                rho = rho_next;
-                lam = lam_next;
-                lam_L = lam_L_next;
-            }
-        } 
         // ====== Linear Mix ======
-        else if (!using_diis) {
+        if (!using_diis) {
             if (linear_remaining > 0) --linear_remaining;
             rho = alpha * rho_new + (1.0 - alpha) * rho;
             lam = alpha * lam_new + (1.0 - alpha) * lam;
