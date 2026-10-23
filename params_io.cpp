@@ -63,6 +63,7 @@ AllParams load_params(const std::string& filename) {
         else if (key == "U")         { ap.p.U = v; if (!kp_U_explicit) ap.kp.U = v; }
         else if (key == "theta")     ap.p.theta     = v;
         else if (key == "phi")       ap.p.phi       = v;
+        else if (key == "comp_dft")  ap.p.comp_dft       = v;
         else if (key == "t_perp")    ap.p.t_perp    = v;
         else if (key == "t_perp_xy") ap.p.t_perp_xy = v;
         else if (key == "delta_cf1") ap.p.delta_cf1 = v;
@@ -125,6 +126,7 @@ void write_params(std::ostream& os, const AllParams& ap) {
     os << "  delta_V   = " << p.delta_V   << "\n";
     os << "  theta     = " << p.theta     << " rad\n";
     os << "  phi       = " << p.phi       << " rad\n";
+    os << "  comp_dft   = " << p.comp_dft   << "\n";
     os << "  S0        = " << scf.S0      << "\n";
     os << "  alpha     = " << scf.alpha   << "\n";
     os << "  T         = " << scf.T       << "\n";

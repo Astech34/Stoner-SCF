@@ -870,6 +870,19 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
     Mat12 rho = rho0;
 
+    // DFT Constraint.
+    if (p.comp_dft == 1.0) {
+        // To Compare with Collinear DFT+U without SOC we make real
+        rho = rho.real().cast<cd>();
+        // Then we set off diagonal elements to zero.
+        auto spin_of = [](int i) { return (i / 3) % 2; };
+        for (int i = 0; i < 12; ++i)
+        for (int j = 0; j < 12; ++j)
+            if (spin_of(i) != spin_of(j))
+                rho(i, j) = cd(0.0, 0.0);
+    }
+
+
     // --- Constraint multiplier state ---
     const bool solve_lam = (p.con_eta > 0.0);
     double     lam1       = p.con_lam1;
@@ -1246,8 +1259,8 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
     std::vector<Mat12> rhos;
     std::vector<RhoInformation> rho_info;
     
-    Mat12 loaded_rho = Mat12::Zero();
-    for (int i = 0; i < num_random_states + 5; i++){
+    Mat12 loaded_rho = Mat12::Zero(); // num_random_states + 5
+    for (int i = 0; i < num_random_states; i++){
 
         Mat12 rho;
 
@@ -1335,7 +1348,7 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
     for (size_t i = 0; i < energies.size(); ++i) {
         double e = energies[i];
 
-        if (e == 0.0) {
+        if (e == 0.0 || e > 1e5) {
             continue;  // non-convergence, skip this seed
         }
 

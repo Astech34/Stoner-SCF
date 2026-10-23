@@ -26,6 +26,7 @@ struct Params {
     double U       = 0.0;
     double theta   = 0.0;  // polar angle of SOC spin quantization axis (0 = z-axis / out-of-plane)
     double phi     = 0.0;  // azimuthal angle of SOC spin quantization axis
+    double comp_dft   = 0.0;  // If 1.0 then compare with DFT is true.
     double t_perp    = 0.0;  // interlayer hopping for yz and xz orbitals
     double t_perp_xy = 0.0;  // interlayer hopping for xy orbital (zero by symmetry for ideal stacking)
     double delta_cf1 = 0.0;  // tetragonal crystal field for layer 1 (positive = xy higher)

@@ -10,9 +10,12 @@ t2yzxz   = 0.08 # Changes yzxz hump
 tg       = 0.05
 
 # --- Spin-orbit coupling ---
-lam      = 0.03
-theta    = 0.0     # polar angle of spin quantization axis (0 = out-of-plane)
-phi      = 0.0      # azimuthal angle
+lam      = 0.00
+theta    = 1.5707963267948966   # polar angle of spin quantization axis (0 = out-of-plane)
+phi      = 0.7853981633974483     # azimuthal angle
+
+# Is comparing to DFT (set to 1.0)
+comp_dft = 1.0
 
 # --- Constraint ---
 # con_lam is the Lagrange multiplier on g = sum_layers (|<S_i>| - <S_i^z>), the
@@ -24,17 +27,17 @@ phi      = 0.0      # azimuthal angle
 #con_lam = 0.0
 #con_eta = 0.0
 
-con_lam1 = 0.02
+con_lam1 = 0.02 #0.02
 con_lam2 = 0.02
-con_eta = 0.1
+con_eta = 0.1 #0.1
 
 con_lam_L1 = 0.00
 con_lam_L2 = 0.00
 con_eta_L = 0.0
 
 # --- Hubbard / Kanamori ---
-U        = 4.0     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
-J        = 1.0      # Hund's coupling; U_prime = U - 2*J is enforced automatically
+U        = 3.5     # intraorbital U (also sets KanamoriParams.U unless K_U is given)
+J        = 0.9      # Hund's coupling; U_prime = U - 2*J is enforced automatically
 # K_U    = 4.0      # override Kanamori U independently of Stoner U
 # U_prime = 2.4    # set explicitly to bypass the U - 2*J rule
 
@@ -47,14 +50,14 @@ t_perp_xy = 0.005 #0.005
 
 # --- Crystal fields and layer potential ---
 delta_V   = 0.0    # staggered layer potential
-delta_cf1 = 0.0    # tetragonal CF layer 1 (positive = xy above yz/xz)
-delta_cf2 = 0.0   # tetragonal CF layer 2
+delta_cf1 = 0.25    # tetragonal CF layer 1 (positive = xy above yz/xz)
+delta_cf2 = -0.1   # tetragonal CF layer 2
 
 # --- SCF loop ---
 S0       = 0.3      # initial magnetization guess
 alpha    = 0.05      # linear mixing parameter. If zero it uses DIIS
 T        = 0.005     # temperature (eV)
-N_target = 8.0   # target electron count (5 per layer x 2 layers)
+N_target = 8.5   # target electron count (5 per layer x 2 layers)
 grid     = 50       # k-grid size (grid x grid)
 
 # --- Rho Seed ---

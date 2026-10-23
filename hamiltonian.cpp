@@ -23,6 +23,11 @@ Mat6 H0(double kx, double ky, const Params& p, double delta_cf) {
     H(0,0) = e_yz - 0.5*delta_cf;               H(1,1) = e_xz - 0.5*delta_cf;               H(2,2) = e_xy + delta_cf;
     H(3,3) = e_yz - 0.5*delta_cf;               H(4,4) = e_xz - 0.5*delta_cf;               H(5,5) = e_xy + delta_cf;
 
+    H(0,1) = g;  H(1,0) = g;   // spin up:   yz–xz
+    H(3,4) = g;  H(4,3) = g;   // spin down: yz–xz
+
+    
+
     return H;
 }
 
