@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
 
     //
     int best_seed = -9999;
-    best_seed = find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 20, 1000);
+    best_seed = find_gs(scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 5, 1000);
     
     gsprintout(best_seed, scf.alpha, scf.grid, scf.T, scf.N_target, p, kp, 30, 1000);
     

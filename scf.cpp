@@ -278,7 +278,7 @@ std::array<std::pair<double,double>, 3> compute_L_moments(const Mat12& rho, cons
     const Eigen::Matrix<cd, 6, 6> Lz_op = kron(I2, Lz);
 
     auto layer_moment = [&](const Eigen::Matrix<cd, 6, 6>& op, int base) {
-        return (rho.block<6,6>(base, base) * op).trace().real();
+        return (rho.block<6,6>(base, base) * op.transpose()).trace().real();
     };
 
     return {{
@@ -301,7 +301,7 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
     const Eigen::Matrix<cd, 6, 6> Sz_op = kron(sz, I3);
 
     auto layer_moment = [&](const Eigen::Matrix<cd, 6, 6>& op, int base) {
-        return (rho.block<6,6>(base, base) * op).trace().real();
+        return (rho.block<6,6>(base, base) * op.transpose()).trace().real();
     };
 
     //std::cout << "Compute S";
