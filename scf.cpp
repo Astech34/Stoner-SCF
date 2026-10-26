@@ -313,6 +313,36 @@ std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, cons
         {layer_moment(Sz_op, 0), layer_moment(Sz_op, 6)}
     }};
 }
+
+std::pair<double,double> compute_LS_moments(const Mat12& rho, const Params& p){
+    const auto [sx, sy, sz] = spin_matrices(p.theta, p.phi);
+    const auto [Lx, Ly, Lz] = l_matrices();
+
+    const Eigen::Matrix<cd, 3, 3> I3 = Eigen::Matrix<cd, 3, 3>::Identity();
+    const Eigen::Matrix<cd, 6, 6> LSx_op = kron(sx, Lx);
+    const Eigen::Matrix<cd, 6, 6> LSy_op = kron(sy, Ly);
+    const Eigen::Matrix<cd, 6, 6> LSz_op = kron(sz, Lz);
+
+    auto layer_moment = [&](const Eigen::Matrix<cd, 6, 6>& op, int base) {
+        return (rho.block<6,6>(base, base) * op.transpose()).trace().real();
+    };
+
+    const double Sx_L1 = layer_moment(LSx_op, 0);
+    const double Sx_L2 = layer_moment(LSx_op, 6);
+    const double Sy_L1 = layer_moment(LSy_op, 0);
+    const double Sy_L2 = layer_moment(LSy_op, 6);
+    const double Sz_L1 = layer_moment(LSz_op, 0);
+    const double Sz_L2 = layer_moment(LSz_op, 6);
+
+    double LS_L1 = Sx_L1 + Sy_L1 + Sz_L1;
+    double LS_L2 = Sx_L2 + Sy_L2 + Sz_L2;
+
+    //std::cout << "Compute S";
+    //std::cout << p.theta << " " << p.phi << "\n";
+
+    return {LS_L1, LS_L2};
+}
+
 // -----------------------------------------------------------------------------
 // printKanamoriOccupations — orbital occupations, spin/Lz moments, total energy
 // -----------------------------------------------------------------------------
@@ -475,6 +505,10 @@ RhoInformation compute_rho_information(const Mat12& rho, const Params& p) {
     info.O2.Lz = lz2;
     info.O2.L110 = l110_2;
 
+    const auto [ls1, ls2] = compute_LS_moments(rho, p);
+    info.O1.LS = ls1;
+    info.O2.LS = ls2;
+
     // Spin Moments
     Params pcopy = p;
     pcopy.theta = 0;
@@ -536,6 +570,8 @@ static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res
     const double s110_1 = (sx1 + sy1) / std::sqrt(2.0);
     const double s110_2 = (sx2 + sy2) / std::sqrt(2.0);
 
+    const auto [ls1, ls2] = compute_LS_moments(rho, p);
+
     struct OrbEntry { const char* name; int up; int dn; };
     const OrbEntry orbs[] = {{"dxy", 2, 5}, {"dxz", 1, 4}, {"dyz", 0, 3}};
 
@@ -570,6 +606,7 @@ static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res
             os << "   Ly       " << ly1 << "\n";
             os << "   Lz       " << lz1 << "\n";
             os << "   L[110]   " << l110_1 << "\n";
+            os << "   LS       " << ls1 << "\n";
             os << "   Sx       " << sx1 << "\n";
             os << "   Sy       " << sy1 << "\n";
             os << "   Sz       " << sz1 << "\n";
@@ -582,6 +619,7 @@ static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res
             os << "   Ly       " << ly2 << "\n";
             os << "   Lz       " << lz2 << "\n";
             os << "   L[110]   " << l110_2 << "\n";
+            os << "   LS       " << ls2 << "\n";
             os << "   Sx       " << sx2 << "\n";
             os << "   Sy       " << sy2 << "\n";
             os << "   Sz       " << sz2 << "\n";
@@ -596,6 +634,7 @@ static void writeKanamoriOccupations(std::ostream& os, const KanamoriResult& res
     os << "  Moment    " << (total_up - total_dn) << "\n";
     os << "Lx Total    " << (lx1 + lx2) << "\n";
     os << "Ly Total    " << (ly1 + ly2) << "\n";
+    os << "LS Total    " << (ls1 + ls2) << "\n";
     os << "Lz Total    " << (lz1 + lz2) << "\n";
     os << "L[110] Tot  " << (l110_1 + l110_2) << "\n";
     os << "Sx Total    " << (sx1 + sx2) << "\n";
@@ -1220,7 +1259,8 @@ void appendDensityMatrix(std::ofstream& out, const Mat12& rho) {
 
 void writeObservables(std::ofstream& out, const Observables& obs) {
     out << obs.Lx << "," << obs.Ly << "," << obs.Lz << "," << obs.L110 << ","
-        << obs.Sx << "," << obs.Sy << "," << obs.Sz << "," << obs.S110;
+        << obs.Sx << "," << obs.Sy << "," << obs.Sz << "," << obs.S110 << ","
+        << obs.LS;
 }
 
 void writeOccupations(std::ofstream& out, const Occupations& occ) {
@@ -1255,6 +1295,7 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
     std::vector<int> seeds;
     std::vector<double> energies;
     std::vector<double> is_converged;
+    std::vector<double> tol_list;
     std::vector<double> rho_trace;
     std::vector<Mat12> rhos;
     std::vector<RhoInformation> rho_info;
@@ -1280,7 +1321,7 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
         KanamoriResult runResult = runKanamoriSCF(rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter);
         
         if (!runResult.isConverged){
-            for (int j = 0; j < 5; j++){
+            for (int j = 0; j < 1; j++){
                 tolerance *= 10;
                 runResult = runKanamoriSCF(rho, alpha, grid, T, N_target, p, kp, MixerType::LinearDIIS, max_iter);
                 if (runResult.isConverged){
@@ -1299,6 +1340,7 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
 
         energies.push_back(runResult.E_total);
         is_converged.push_back(runResult.isConverged ? tolerance : 0);
+        tol_list.push_back(tolerance);
         rho_trace.push_back(runResult.rho.squaredNorm());
         rhos.push_back(runResult.rho);
         rho_info.push_back(compute_rho_information(runResult.rho, p));
@@ -1310,13 +1352,13 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
     std::ofstream out(filename);
     if (!out.is_open()) {
         std::cerr << "Failed to open " << filename << " for writing\n";
-        return -1;
+        return -999;
     }
 
     // Header
     out << "Seed,Energy,Threshold,Rho2Trace,";
-    out << "O1_Lx,O1_Ly,O1_Lz,O1_L110,O1_Sx,O1_Sy,O1_Sz,O1_S110,"
-        << "O2_Lx,O2_Ly,O2_Lz,O2_L110,O2_Sx,O2_Sy,O2_Sz,O2_S110,"
+    out << "O1_Lx,O1_Ly,O1_Lz,O1_L110,O1_Sx,O1_Sy,O1_Sz,O1_S110,O1_LS,"
+        << "O2_Lx,O2_Ly,O2_Lz,O2_L110,O2_Sx,O2_Sy,O2_Sz,O2_S110,O2_LS,"
         << "occ1_yz_up,occ1_yz_down,occ1_zx_up,occ1_zx_down,occ1_xy_up,occ1_xy_down,"
         << "occ2_yz_up,occ2_yz_down,occ2_zx_up,occ2_zx_down,occ2_xy_up,occ2_xy_down \n";
 
@@ -1339,7 +1381,7 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
     // Check which is max
     if (energies.empty()) {
         // Handle empty vector case
-        return -1;
+        return -999;
     }
 
     size_t minIdx = seeds.size();  // sentinel: "not found yet"
@@ -1353,8 +1395,10 @@ int find_gs(double alpha, int grid, double T, double N_target, Params p, Kanamor
         }
 
         if (e < bestEnergy) {
-            bestEnergy = e;
-            minIdx = i;
+            if (tol_list[i] <= kp.tol) { //require converged
+                bestEnergy = e;
+                minIdx = i;
+            }
         }
     }
 

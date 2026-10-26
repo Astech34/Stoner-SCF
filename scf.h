@@ -17,6 +17,7 @@ struct CalcResult { double S_new; double mu; double E_total; };
 struct Observables {
     double Lx, Ly, Lz, L110;
     double Sx, Sy, Sz, S110;
+    double LS;
 };
 
 struct Occupations {
@@ -79,6 +80,9 @@ std::array<std::pair<double,double>, 3> compute_L_moments(const Mat12& rho, cons
 // Operator in full space: I_2 ⊗ s_i ⊗ I_3. s_i rotated to p.theta/phi quantization axis.
 // Returns array of {(Sx_L1, Sx_L2), (Sy_L1, Sy_L2), (Sz_L1, Sz_L2)}.
 std::array<std::pair<double,double>, 3> compute_S_moments(const Mat12& rho, const Params& p);
+
+// Compute <L.S> per layer
+std::pair<double,double> compute_LS_moments(const Mat12& rho, const Params& p);
 
 // ---- Kanamori SCF ----
 

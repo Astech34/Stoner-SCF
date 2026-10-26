@@ -95,7 +95,7 @@ plot_command = [sys.executable, "plot_pdos.py"]
 plotting = False
 
 if __name__ == "__main__":
-    for ne in [8.1111, 8.2222, 8.3333, 8.4444, 8.5556, 8.6667, 8.7778, 8.8889]:
+    for ne in [9.5, 9.75, 10.0, 10.25, 10.5]:
         ne = np.round(ne, 4)
         update_file(Path("params.in"), {"N_target": str(ne)})
         for direction in ["001", "110"]:
