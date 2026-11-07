@@ -909,18 +909,6 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
 
     Mat12 rho = rho0;
 
-    // DFT Constraint.
-    if (p.comp_dft == 1.0) {
-        // To Compare with Collinear DFT+U without SOC we make real
-        rho = rho.real().cast<cd>();
-        // Then we set off diagonal elements to zero.
-        auto spin_of = [](int i) { return (i / 3) % 2; };
-        for (int i = 0; i < 12; ++i)
-        for (int j = 0; j < 12; ++j)
-            if (spin_of(i) != spin_of(j))
-                rho(i, j) = cd(0.0, 0.0);
-    }
-
 
     // --- Constraint multiplier state ---
     const bool solve_lam = (p.con_eta > 0.0);
@@ -956,6 +944,18 @@ KanamoriResult runKanamoriSCF(const Mat12& rho0, double alpha, int grid_size,
     for (int i = 0; i < max_iter; i++) {
         p_iter.con_lam1 = lam1;
         p_iter.con_lam2 = lam2;
+
+        // DFT Constraint.
+        if (p.comp_dft == 1.0) {
+            // To Compare with Collinear DFT+U without SOC we make real
+            rho = rho.real().cast<cd>();
+            // Then we set off diagonal elements to zero.
+            auto spin_of = [](int i) { return (i / 3) % 2; };
+            for (int i = 0; i < 12; ++i)
+            for (int j = 0; j < 12; ++j)
+                if (spin_of(i) != spin_of(j))
+                    rho(i, j) = cd(0.0, 0.0);
+        }
 
         const Eigensystem sys = compute_eigensystem_kanamori(rho, grid_size, p_iter, kp);
         const double mu = find_mu(sys, T, N_target);

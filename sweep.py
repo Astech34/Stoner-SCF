@@ -95,9 +95,9 @@ plot_command = [sys.executable, "plot_pdos.py"]
 plotting = False
 
 if __name__ == "__main__":
-    for ne in [9.5, 9.75, 10.0, 10.25, 10.5]:
-        ne = np.round(ne, 4)
-        update_file(Path("params.in"), {"N_target": str(ne)})
+    for j in [0.8]:
+        j = np.round(j, 4)
+        update_file(Path("params.in"), {"J": str(j)})
         for direction in ["001", "110"]:
             thet_val = 0.0
             phi_val = 0.0
@@ -117,7 +117,8 @@ if __name__ == "__main__":
 
             print("Success!")
             try:
-                archive_csv(Path("out/find_gs.csv"), Path(f"out/sweeps/FinalMCA/{direction}ne={ne}.csv"))
+                archive_csv(Path("out/find_gs.csv"), Path(f"out/sweeps/FinalMCA/{direction}J={j}.csv"))
+                #archive_csv(Path("params.in"), Path(f"out/sweeps/FinalMCA/params.in"))
             except FileNotFoundError as e:
                 print(e)
 
@@ -131,7 +132,7 @@ if __name__ == "__main__":
 
                 # Now archive the plotted results if needed
                 try:
-                    archive_csv(Path("out/projected_dos.csv"), Path(f"out/sweeps/FinalMCA/{direction}ne={ne}.csv"))
-                    archive_csv(Path("out/projected_dos.png"), Path(f"out/sweeps/FinalMCA/{direction}ne={ne}.png"))
+                    archive_csv(Path("out/projected_dos.csv"), Path(f"out/sweeps/FinalMCA/PDOS{direction}J={j}.csv"))
+                    archive_csv(Path("out/projected_dos.png"), Path(f"out/sweeps/FinalMCA/{direction}J={j}.png"))
                 except FileNotFoundError as e:
                     print(e)
